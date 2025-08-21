@@ -1,0 +1,732 @@
+name: Performance Benchmarking
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run benchmarks weekly on Sunday at 4 AM UTC
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      benchmark_type:
+        description: 'Type of benchmark to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - cli-performance
+        - memory-usage
+        - analysis-speed
+        - file-operations
+      iterations:
+        description: 'Number of benchmark iterations'
+        required: false
+        default: '10'
+        type: string
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+  BENCHMARK_ITERATIONS: ${{ github.event.inputs.iterations || '10' }}
+
+jobs:
+  setup:
+    name: Setup Benchmark Environment
+    runs-on: ubuntu-latest
+    
+    outputs:
+      benchmark-id: ${{ steps.id.outputs.benchmark-id }}
+      baseline-exists: ${{ steps.baseline.outputs.exists }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate benchmark ID
+        id: id
+        run: |
+          BENCHMARK_ID="benchmark-$(date +%Y%m%d-%H%M%S)-${{ github.sha }}"
+          echo "benchmark-id=$BENCHMARK_ID" >> $GITHUB_OUTPUT
+
+      - name: Check for baseline benchmark
+        id: baseline
+        run: |
+          if [[ -f ".github/benchmark-baseline.json" ]]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Create benchmark workspace
+        run: |
+          mkdir -p benchmark-workspace/{small,medium,large,complex}
+          
+          # Small project
+          cat > benchmark-workspace/small/components.json << 'EOF'
+          {
+            "$schema": "https://ui.shadcn.com/schema.json",
+            "style": "default",
+            "rsc": false,
+            "tsx": true,
+            "tailwind": {
+              "config": "tailwind.config.js",
+              "css": "app/globals.css",
+              "baseColor": "slate",
+              "cssVariables": true
+            },
+            "aliases": {
+              "components": "@/components",
+              "utils": "@/lib/utils"
+            }
+          }
+          EOF
+          
+          # Medium project
+          cat > benchmark-workspace/medium/components.json << 'EOF'
+          {
+            "$schema": "https://ui.shadcn.com/schema.json",
+            "style": "default",
+            "rsc": true,
+            "tsx": true,
+            "tailwind": {
+              "config": "tailwind.config.ts",
+              "css": "app/globals.css",
+              "baseColor": "slate",
+              "cssVariables": true,
+              "prefix": ""
+            },
+            "aliases": {
+              "components": "@/components",
+              "utils": "@/lib/utils",
+              "ui": "@/components/ui",
+              "hooks": "@/hooks",
+              "lib": "@/lib"
+            }
+          }
+          EOF
+          
+          # Large project
+          cat > benchmark-workspace/large/components.json << 'EOF'
+          {
+            "$schema": "https://ui.shadcn.com/schema.json",
+            "style": "default",
+            "rsc": true,
+            "tsx": true,
+            "tailwind": {
+              "config": "tailwind.config.ts",
+              "css": "app/globals.css",
+              "baseColor": "zinc",
+              "cssVariables": true,
+              "prefix": "ui-"
+            },
+            "aliases": {
+              "components": "@/components",
+              "utils": "@/lib/utils",
+              "ui": "@/components/ui",
+              "hooks": "@/hooks",
+              "lib": "@/lib",
+              "types": "@/types",
+              "contexts": "@/contexts",
+              "providers": "@/providers",
+              "services": "@/services",
+              "api": "@/api"
+            }
+          }
+          EOF
+          
+          # Complex project with edge cases
+          cat > benchmark-workspace/complex/components.json << 'EOF'
+          {
+            "$schema": "https://ui.shadcn.com/schema.json",
+            "style": "new-york",
+            "rsc": true,
+            "tsx": true,
+            "tailwind": {
+              "config": "./config/tailwind.config.ts",
+              "css": "./src/styles/globals.css",
+              "baseColor": "rose",
+              "cssVariables": false,
+              "prefix": "tw-"
+            },
+            "aliases": {
+              "components": "~/components",
+              "utils": "~/lib/utils",
+              "ui": "~/components/ui",
+              "hooks": "~/hooks",
+              "lib": "~/lib",
+              "types": "~/types",
+              "contexts": "~/contexts",
+              "providers": "~/providers",
+              "services": "~/services",
+              "api": "~/api",
+              "config": "~/config",
+              "constants": "~/constants",
+              "helpers": "~/helpers",
+              "stores": "~/stores"
+            }
+          }
+          EOF
+
+      - name: Upload benchmark workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-workspace
+          path: benchmark-workspace/
+          retention-days: 7
+
+  cli-performance:
+    name: CLI Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'cli-performance' || github.event.inputs.benchmark_type == ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Download benchmark workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-workspace
+          path: benchmark-workspace/
+
+      - name: Install GNU time for precise measurements
+        run: sudo apt-get update && sudo apt-get install -y time
+
+      - name: CLI Performance Benchmark
+        run: |
+          echo "Starting CLI performance benchmarks..."
+          mkdir -p benchmark-results
+          
+          for project in small medium large complex; do
+            echo "Benchmarking CLI performance on $project project..."
+            cd benchmark-workspace/$project
+            
+            # Initialize result file
+            echo "[]" > ../../benchmark-results/cli-performance-$project.json
+            
+            for i in $(seq 1 $BENCHMARK_ITERATIONS); do
+              echo "Iteration $i for $project project"
+              
+              # Measure help command
+              HELP_TIME=$(/usr/bin/time -f "%e" node ../../dist/index.js --help 2>&1 >/dev/null | tail -1)
+              
+              # Measure analyze command
+              ANALYZE_TIME=$(/usr/bin/time -f "%e" node ../../dist/index.js analyze 2>&1 >/dev/null | tail -1 || echo "0")
+              
+              # Measure configure command
+              CONFIGURE_TIME=$(/usr/bin/time -f "%e" node ../../dist/index.js configure --dry-run 2>&1 >/dev/null | tail -1 || echo "0")
+              
+              # Store results
+              jq --arg help "$HELP_TIME" --arg analyze "$ANALYZE_TIME" --arg configure "$CONFIGURE_TIME" --arg iteration "$i" \
+                '. += [{"iteration": ($iteration | tonumber), "help_time": ($help | tonumber), "analyze_time": ($analyze | tonumber), "configure_time": ($configure | tonumber)}]' \
+                ../../benchmark-results/cli-performance-$project.json > tmp.json && mv tmp.json ../../benchmark-results/cli-performance-$project.json
+            done
+            
+            cd ../..
+            
+            # Calculate statistics
+            HELP_AVG=$(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-$project.json)
+            ANALYZE_AVG=$(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-$project.json)
+            CONFIGURE_AVG=$(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-$project.json)
+            
+            echo "Project: $project" >> benchmark-results/cli-performance-summary.txt
+            echo "  Help command average: ${HELP_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "  Analyze command average: ${ANALYZE_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "  Configure command average: ${CONFIGURE_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "" >> benchmark-results/cli-performance-summary.txt
+          done
+
+      - name: Upload CLI performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-performance-results
+          path: benchmark-results/cli-performance-*
+          retention-days: 30
+
+  memory-usage:
+    name: Memory Usage Benchmarks
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'memory-usage' || github.event.inputs.benchmark_type == ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Download benchmark workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-workspace
+          path: benchmark-workspace/
+
+      - name: Memory Usage Benchmark
+        run: |
+          echo "Starting memory usage benchmarks..."
+          mkdir -p benchmark-results
+          
+          for project in small medium large complex; do
+            echo "Benchmarking memory usage on $project project..."
+            cd benchmark-workspace/$project
+            
+            echo "[]" > ../../benchmark-results/memory-usage-$project.json
+            
+            for i in $(seq 1 $BENCHMARK_ITERATIONS); do
+              echo "Memory iteration $i for $project project"
+              
+              # Measure memory usage using /usr/bin/time
+              MEMORY_OUTPUT=$(/usr/bin/time -v node ../../dist/index.js analyze 2>&1 >/dev/null || true)
+              
+              # Extract memory metrics
+              MAX_RSS=$(echo "$MEMORY_OUTPUT" | grep "Maximum resident set size" | awk '{print $6}' || echo "0")
+              AVG_RSS=$(echo "$MEMORY_OUTPUT" | grep "Average resident set size" | awk '{print $6}' || echo "0")
+              PEAK_MEMORY=$(echo "$MEMORY_OUTPUT" | grep "Maximum resident set size" | awk '{print $6}' || echo "0")
+              
+              # Store results (convert KB to MB)
+              jq --arg maxrss "$MAX_RSS" --arg avgrss "$AVG_RSS" --arg peak "$PEAK_MEMORY" --arg iteration "$i" \
+                '. += [{"iteration": ($iteration | tonumber), "max_rss_kb": ($maxrss | tonumber), "avg_rss_kb": ($avgrss | tonumber), "peak_memory_kb": ($peak | tonumber), "max_rss_mb": (($maxrss | tonumber) / 1024), "peak_memory_mb": (($peak | tonumber) / 1024)}]' \
+                ../../benchmark-results/memory-usage-$project.json > tmp.json && mv tmp.json ../../benchmark-results/memory-usage-$project.json
+            done
+            
+            cd ../..
+            
+            # Calculate statistics
+            MAX_RSS_AVG=$(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-$project.json)
+            PEAK_MEMORY_AVG=$(jq '[.[].peak_memory_mb] | add / length' benchmark-results/memory-usage-$project.json)
+            
+            echo "Project: $project" >> benchmark-results/memory-usage-summary.txt
+            echo "  Average max RSS: ${MAX_RSS_AVG} MB" >> benchmark-results/memory-usage-summary.txt
+            echo "  Average peak memory: ${PEAK_MEMORY_AVG} MB" >> benchmark-results/memory-usage-summary.txt
+            echo "" >> benchmark-results/memory-usage-summary.txt
+          done
+
+      - name: Upload memory usage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-usage-results
+          path: benchmark-results/memory-usage-*
+          retention-days: 30
+
+  analysis-speed:
+    name: Analysis Speed Benchmarks
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'analysis-speed' || github.event.inputs.benchmark_type == ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Download benchmark workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-workspace
+          path: benchmark-workspace/
+
+      - name: Create test component files
+        run: |
+          for project in small medium large complex; do
+            mkdir -p benchmark-workspace/$project/components/ui
+            
+            # Create varying numbers of component files based on project size
+            case $project in
+              small) NUM_COMPONENTS=5 ;;
+              medium) NUM_COMPONENTS=15 ;;
+              large) NUM_COMPONENTS=30 ;;
+              complex) NUM_COMPONENTS=50 ;;
+            esac
+            
+            for i in $(seq 1 $NUM_COMPONENTS); do
+              cat > benchmark-workspace/$project/components/ui/component$i.tsx << EOF
+          import React from 'react'
+          import { cn } from '@/lib/utils'
+          
+          interface Component${i}Props {
+            className?: string
+            children?: React.ReactNode
+            variant?: 'default' | 'secondary' | 'outline'
+          }
+          
+          export function Component$i({ className, children, variant = 'default' }: Component${i}Props) {
+            return (
+              <div className={cn('component-$i', className)}>
+                {children}
+              </div>
+            )
+          }
+          EOF
+            done
+          done
+
+      - name: Analysis Speed Benchmark
+        run: |
+          echo "Starting analysis speed benchmarks..."
+          mkdir -p benchmark-results
+          
+          for project in small medium large complex; do
+            echo "Benchmarking analysis speed on $project project..."
+            cd benchmark-workspace/$project
+            
+            echo "[]" > ../../benchmark-results/analysis-speed-$project.json
+            
+            for i in $(seq 1 $BENCHMARK_ITERATIONS); do
+              echo "Analysis iteration $i for $project project"
+              
+              # Measure analysis time with detailed breakdown
+              START_TIME=$(date +%s.%N)
+              node ../../dist/index.js analyze > analysis-output.txt 2>&1 || true
+              END_TIME=$(date +%s.%N)
+              
+              ANALYSIS_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+              COMPONENT_COUNT=$(find components -name "*.tsx" -o -name "*.jsx" | wc -l)
+              OUTPUT_SIZE=$(wc -l < analysis-output.txt)
+              
+              # Store results
+              jq --arg time "$ANALYSIS_TIME" --arg components "$COMPONENT_COUNT" --arg output "$OUTPUT_SIZE" --arg iteration "$i" \
+                '. += [{"iteration": ($iteration | tonumber), "analysis_time": ($time | tonumber), "component_count": ($components | tonumber), "output_lines": ($output | tonumber)}]' \
+                ../../benchmark-results/analysis-speed-$project.json > tmp.json && mv tmp.json ../../benchmark-results/analysis-speed-$project.json
+            done
+            
+            cd ../..
+            
+            # Calculate statistics
+            TIME_AVG=$(jq '[.[].analysis_time] | add / length' benchmark-results/analysis-speed-$project.json)
+            COMPONENTS=$(jq '.[0].component_count' benchmark-results/analysis-speed-$project.json)
+            
+            echo "Project: $project" >> benchmark-results/analysis-speed-summary.txt
+            echo "  Components analyzed: $COMPONENTS" >> benchmark-results/analysis-speed-summary.txt
+            echo "  Average analysis time: ${TIME_AVG}s" >> benchmark-results/analysis-speed-summary.txt
+            echo "  Time per component: $(echo "$TIME_AVG / $COMPONENTS" | bc -l)s" >> benchmark-results/analysis-speed-summary.txt
+            echo "" >> benchmark-results/analysis-speed-summary.txt
+          done
+
+      - name: Upload analysis speed results
+        uses: actions/upload-artifact@v4
+        with:
+          name: analysis-speed-results
+          path: benchmark-results/analysis-speed-*
+          retention-days: 30
+
+  file-operations:
+    name: File Operations Benchmarks
+    runs-on: ubuntu-latest
+    needs: setup
+    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'file-operations' || github.event.inputs.benchmark_type == ''
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Download benchmark workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-workspace
+          path: benchmark-workspace/
+
+      - name: File Operations Benchmark
+        run: |
+          echo "Starting file operations benchmarks..."
+          mkdir -p benchmark-results
+          
+          for project in small medium large complex; do
+            echo "Benchmarking file operations on $project project..."
+            cd benchmark-workspace/$project
+            
+            echo "[]" > ../../benchmark-results/file-operations-$project.json
+            
+            for i in $(seq 1 $BENCHMARK_ITERATIONS); do
+              echo "File operations iteration $i for $project project"
+              
+              # Measure config file read time
+              START_TIME=$(date +%s.%N)
+              cat components.json > /dev/null
+              END_TIME=$(date +%s.%N)
+              READ_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+              
+              # Measure config file parse time
+              START_TIME=$(date +%s.%N)
+              node -e "const fs = require('fs'); JSON.parse(fs.readFileSync('components.json', 'utf8'))" > /dev/null
+              END_TIME=$(date +%s.%N)
+              PARSE_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+              
+              # Measure directory traversal time
+              START_TIME=$(date +%s.%N)
+              find . -name "*.tsx" -o -name "*.jsx" -o -name "*.ts" -o -name "*.js" > file-list.txt
+              END_TIME=$(date +%s.%N)
+              TRAVERSE_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+              FILE_COUNT=$(wc -l < file-list.txt)
+              
+              # Store results
+              jq --arg read "$READ_TIME" --arg parse "$PARSE_TIME" --arg traverse "$TRAVERSE_TIME" --arg files "$FILE_COUNT" --arg iteration "$i" \
+                '. += [{"iteration": ($iteration | tonumber), "read_time": ($read | tonumber), "parse_time": ($parse | tonumber), "traverse_time": ($traverse | tonumber), "file_count": ($files | tonumber)}]' \
+                ../../benchmark-results/file-operations-$project.json > tmp.json && mv tmp.json ../../benchmark-results/file-operations-$project.json
+            done
+            
+            cd ../..
+            
+            # Calculate statistics
+            READ_AVG=$(jq '[.[].read_time] | add / length' benchmark-results/file-operations-$project.json)
+            PARSE_AVG=$(jq '[.[].parse_time] | add / length' benchmark-results/file-operations-$project.json)
+            TRAVERSE_AVG=$(jq '[.[].traverse_time] | add / length' benchmark-results/file-operations-$project.json)
+            FILE_COUNT=$(jq '.[0].file_count' benchmark-results/file-operations-$project.json)
+            
+            echo "Project: $project" >> benchmark-results/file-operations-summary.txt
+            echo "  Files found: $FILE_COUNT" >> benchmark-results/file-operations-summary.txt
+            echo "  Average read time: ${READ_AVG}s" >> benchmark-results/file-operations-summary.txt
+            echo "  Average parse time: ${PARSE_AVG}s" >> benchmark-results/file-operations-summary.txt
+            echo "  Average traverse time: ${TRAVERSE_AVG}s" >> benchmark-results/file-operations-summary.txt
+            echo "" >> benchmark-results/file-operations-summary.txt
+          done
+
+      - name: Upload file operations results
+        uses: actions/upload-artifact@v4
+        with:
+          name: file-operations-results
+          path: benchmark-results/file-operations-*
+          retention-days: 30
+
+  compare-baseline:
+    name: Compare Against Baseline
+    runs-on: ubuntu-latest
+    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations]
+    if: always() && needs.setup.outputs.baseline-exists == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-results"
+          merge-multiple: true
+          path: benchmark-results/
+
+      - name: Compare with baseline
+        run: |
+          echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "Comparing current results with baseline..." >> $GITHUB_STEP_SUMMARY
+          
+          if [[ -f ".github/benchmark-baseline.json" ]]; then
+            echo "| Metric | Baseline | Current | Change |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|----------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+            
+            # Compare CLI performance for medium project
+            if [[ -f "benchmark-results/cli-performance-medium.json" ]]; then
+              CURRENT_ANALYZE=$(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-medium.json)
+              BASELINE_ANALYZE=$(jq '.cli_performance.medium.analyze_time // 1' .github/benchmark-baseline.json)
+              CHANGE_PERCENT=$(echo "scale=2; (($CURRENT_ANALYZE - $BASELINE_ANALYZE) / $BASELINE_ANALYZE) * 100" | bc || echo "0")
+              
+              if (( $(echo "$CHANGE_PERCENT > 20" | bc -l) )); then
+                CHANGE_ICON="🔴"
+              elif (( $(echo "$CHANGE_PERCENT > 10" | bc -l) )); then
+                CHANGE_ICON="🟡"
+              else
+                CHANGE_ICON="🟢"
+              fi
+              
+              echo "| CLI Analyze Time | ${BASELINE_ANALYZE}s | ${CURRENT_ANALYZE}s | ${CHANGE_ICON} ${CHANGE_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Compare memory usage for medium project
+            if [[ -f "benchmark-results/memory-usage-medium.json" ]]; then
+              CURRENT_MEMORY=$(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-medium.json)
+              BASELINE_MEMORY=$(jq '.memory_usage.medium.max_rss_mb // 50' .github/benchmark-baseline.json)
+              CHANGE_PERCENT=$(echo "scale=2; (($CURRENT_MEMORY - $BASELINE_MEMORY) / $BASELINE_MEMORY) * 100" | bc || echo "0")
+              
+              if (( $(echo "$CHANGE_PERCENT > 25" | bc -l) )); then
+                CHANGE_ICON="🔴"
+              elif (( $(echo "$CHANGE_PERCENT > 15" | bc -l) )); then
+                CHANGE_ICON="🟡"
+              else
+                CHANGE_ICON="🟢"
+              fi
+              
+              echo "| Memory Usage | ${BASELINE_MEMORY}MB | ${CURRENT_MEMORY}MB | ${CHANGE_ICON} ${CHANGE_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "No baseline found for comparison" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  update-baseline:
+    name: Update Baseline
+    runs-on: ubuntu-latest
+    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download all benchmark results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-results"
+          merge-multiple: true
+          path: benchmark-results/
+
+      - name: Update baseline
+        run: |
+          # Create new baseline from current results
+          cat > .github/benchmark-baseline.json << EOF
+          {
+            "updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "commit": "${{ github.sha }}",
+            "cli_performance": {
+              "small": {
+                "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
+                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
+                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-small.json || echo "0")
+              },
+              "medium": {
+                "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
+                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
+                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0")
+              },
+              "large": {
+                "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
+                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
+                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-large.json || echo "0")
+              }
+            },
+            "memory_usage": {
+              "small": {
+                "max_rss_mb": $(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-small.json || echo "0")
+              },
+              "medium": {
+                "max_rss_mb": $(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-medium.json || echo "0")
+              },
+              "large": {
+                "max_rss_mb": $(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-large.json || echo "0")
+              }
+            }
+          }
+          EOF
+
+      - name: Commit baseline update
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .github/benchmark-baseline.json
+          git commit -m "chore: update performance baseline after ${{ github.sha }}" || exit 0
+          git push
+
+  benchmark-summary:
+    name: Benchmark Summary
+    runs-on: ubuntu-latest
+    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations, compare-baseline, update-baseline]
+    if: always()
+    
+    steps:
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-results"
+          merge-multiple: true
+          path: results/
+
+      - name: Generate summary
+        run: |
+          echo "## Performance Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Benchmark ID:** ${{ needs.setup.outputs.benchmark-id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Iterations:** $BENCHMARK_ITERATIONS" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### CLI Performance Results" >> $GITHUB_STEP_SUMMARY
+          if [[ -f results/cli-performance-summary.txt ]]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat results/cli-performance-summary.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Memory Usage Results" >> $GITHUB_STEP_SUMMARY
+          if [[ -f results/memory-usage-summary.txt ]]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat results/memory-usage-summary.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### Analysis Speed Results" >> $GITHUB_STEP_SUMMARY
+          if [[ -f results/analysis-speed-summary.txt ]]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat results/analysis-speed-summary.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "### File Operations Results" >> $GITHUB_STEP_SUMMARY
+          if [[ -f results/file-operations-summary.txt ]]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat results/file-operations-summary.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Full benchmark results are available in the workflow artifacts.**" >> $GITHUB_STEP_SUMMARY

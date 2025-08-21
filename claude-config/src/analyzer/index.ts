@@ -16,6 +16,13 @@ export interface ComponentsData {
   templates: any;
 }
 
+export interface SelectedComponents {
+  agents: string[];
+  commands: string[];
+  hooks: string[];
+  mcps: string[];
+}
+
 export interface UserRequirements {
   projectType?: string;
   programmingLanguages?: string[];

@@ -1,0 +1,146 @@
+version: 2
+updates:
+  # Enable version updates for npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "eladbenhaim"
+    assignees:
+      - "eladbenhaim"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+    milestone: "Next Release"
+    target-branch: "develop"
+    allow:
+      # Allow updates for all dependency types
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore major version updates for critical dependencies that may break compatibility
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group TypeScript related updates
+      typescript:
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "ts-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group testing dependencies
+      testing:
+        patterns:
+          - "jest"
+          - "@types/jest"
+          - "ts-jest"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group linting dependencies
+      linting:
+        patterns:
+          - "eslint*"
+          - "prettier"
+          - "@typescript-eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group AI/ML dependencies
+      ai-ml:
+        patterns:
+          - "@google/generative-ai"
+          - "@langchain/*"
+          - "openai"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "eladbenhaim"
+    assignees:
+      - "eladbenhaim"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "github-actions"
+      - "ci/cd"
+    target-branch: "develop"
+    groups:
+      # Group Docker related actions
+      docker:
+        patterns:
+          - "docker/*"
+          - "aquasecurity/*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
+      # Group Node.js setup actions
+      nodejs:
+        patterns:
+          - "actions/setup-node"
+          - "actions/cache"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
+
+  # Enable version updates for Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "eladbenhaim"
+    assignees:
+      - "eladbenhaim"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "docker"
+      - "infrastructure"
+    target-branch: "develop"
+
+# Auto-merge configuration for low-risk updates
+# Note: This requires additional GitHub configuration and branch protection rules
+# Consider enabling auto-merge for:
+# - patch updates to dev dependencies
+# - security updates
+# - GitHub Actions minor updates
+
+# Example branch protection rule settings to work with Dependabot:
+# - Require status checks to pass before merging
+# - Require branches to be up to date before merging
+# - Include administrators
+# - Allow force pushes (for Dependabot)
+# - Allow deletions (for cleanup)

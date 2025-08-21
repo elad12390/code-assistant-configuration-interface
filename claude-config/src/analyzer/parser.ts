@@ -3,6 +3,19 @@ import * as path from 'path';
 import { ComponentsData, Component } from './index';
 
 /**
+ * Converts array format to object format for components
+ * @param components Array of components
+ * @returns Object with component names as keys
+ */
+function arrayToObject(components: Component[]): Record<string, Component> {
+  const result: Record<string, Component> = {};
+  for (const component of components) {
+    result[component.name] = component;
+  }
+  return result;
+}
+
+/**
  * Parses the components.json file and returns the structured data
  * @param filePath Path to the components.json file
  * @returns Parsed components data
@@ -16,7 +29,25 @@ export function parseComponentsFile(filePath: string): ComponentsData {
 
     // Read and parse the JSON file
     const rawData = fs.readFileSync(filePath, 'utf-8');
-    const componentsData: ComponentsData = JSON.parse(rawData);
+    const rawComponentsData = JSON.parse(rawData);
+    
+    // Convert array format to object format if needed
+    const componentsData: ComponentsData = {
+      agents: Array.isArray(rawComponentsData.agents) 
+        ? arrayToObject(rawComponentsData.agents) 
+        : rawComponentsData.agents || {},
+      commands: Array.isArray(rawComponentsData.commands) 
+        ? arrayToObject(rawComponentsData.commands) 
+        : rawComponentsData.commands || {},
+      hooks: Array.isArray(rawComponentsData.hooks) 
+        ? arrayToObject(rawComponentsData.hooks) 
+        : rawComponentsData.hooks || {},
+      mcps: Array.isArray(rawComponentsData.mcps) 
+        ? arrayToObject(rawComponentsData.mcps) 
+        : rawComponentsData.mcps || {},
+      settings: rawComponentsData.settings || {},
+      templates: rawComponentsData.templates || {}
+    };
     
     return componentsData;
   } catch (error: any) {

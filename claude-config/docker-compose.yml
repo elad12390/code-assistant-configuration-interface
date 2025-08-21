@@ -1,0 +1,66 @@
+services:
+  claude-config:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: claude-config:latest
+    container_name: claude-config-dev
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=development
+      # GOOGLE_API_KEY should be provided via .env file or command line
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    
+    # Volume mounts for development
+    volumes:
+      # Mount the project directory you want to configure
+      - ${PROJECT_PATH:-./test-workspace}:/workspace
+      # Optional: Mount source code for development (uncomment for dev mode)
+      # - ./src:/app/src
+      # - ./dist:/app/dist
+    
+    # Working directory inside container
+    working_dir: /workspace
+    
+    # Keep container running for interactive use
+    stdin_open: true
+    tty: true
+    
+    # Override default command for development
+    command: ["sh"]
+    
+    # Network mode
+    network_mode: "host"
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Production-like service for testing
+  claude-config-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: claude-config:latest
+    container_name: claude-config-prod
+    
+    environment:
+      - NODE_ENV=production
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    
+    volumes:
+      - ${PROJECT_PATH:-./test-workspace}:/workspace:ro
+    
+    working_dir: /workspace
+    
+    # Use default entrypoint and command
+    profiles:
+      - production

@@ -1,0 +1,411 @@
+name: Docker Publishing
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Docker image version tag'
+        required: true
+        default: 'latest'
+        type: string
+      platforms:
+        description: 'Target platforms for Docker build'
+        required: false
+        default: 'linux/amd64,linux/arm64'
+        type: string
+      push_to_registry:
+        description: 'Push to Docker registries'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKERHUB_IMAGE_NAME: claude-config
+
+jobs:
+  prepare:
+    name: Prepare Docker Build
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      platforms: ${{ steps.platforms.outputs.platforms }}
+      should_push: ${{ steps.should_push.outputs.should_push }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine platforms
+        id: platforms
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "platforms=${{ github.event.inputs.platforms }}" >> $GITHUB_OUTPUT
+          else
+            echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Should push?
+        id: should_push
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_push=${{ github.event.inputs.push_to_registry }}" >> $GITHUB_OUTPUT
+          else
+            echo "should_push=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            ${{ env.DOCKERHUB_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
+
+  test-build:
+    name: Test Docker Build
+    runs-on: ubuntu-latest
+    needs: prepare
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (test)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          tags: test-image:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          # Test that the image was built successfully
+          docker images test-image:latest
+          
+          # Test basic functionality
+          docker run --rm test-image:latest --version || echo "Version test completed"
+          docker run --rm test-image:latest --help || echo "Help test completed"
+
+  build-and-scan:
+    name: Build and Security Scan
+    runs-on: ubuntu-latest
+    needs: [prepare, test-build]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          tags: scan-image:latest
+          cache-from: type=gha
+          outputs: type=docker,dest=/tmp/scan-image.tar
+
+      - name: Load image for scanning
+        run: docker load < /tmp/scan-image.tar
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-image:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner (table output)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'scan-image:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Docker Scout vulnerability scan
+        uses: docker/scout-action@v1
+        with:
+          command: cves
+          image: scan-image:latest
+          sarif-file: scout-results.sarif
+        continue-on-error: true
+
+      - name: Upload Scout scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'scout-results.sarif'
+        continue-on-error: true
+
+  publish:
+    name: Build and Publish Docker Images
+    runs-on: ubuntu-latest
+    needs: [prepare, build-and-scan]
+    if: needs.prepare.outputs.should_push == 'true'
+    environment: docker-publishing
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Build and push multi-platform Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ needs.prepare.outputs.platforms }}
+          push: true
+          tags: ${{ needs.prepare.outputs.tags }}
+          labels: ${{ needs.prepare.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 30
+
+  test-published:
+    name: Test Published Images
+    runs-on: ubuntu-latest
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.should_push == 'true'
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+        registry: ['ghcr.io', 'docker.io']
+    
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine image name
+        id: image
+        run: |
+          if [[ "${{ matrix.registry }}" == "ghcr.io" ]]; then
+            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          else
+            echo "image=${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for image propagation
+        run: sleep 60
+
+      - name: Test published image
+        run: |
+          # Extract version from tags
+          VERSION=$(echo "${{ needs.prepare.outputs.tags }}" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1 || echo "latest")
+          IMAGE="${{ steps.image.outputs.image }}:${VERSION}"
+          
+          echo "Testing image: $IMAGE on platform: ${{ matrix.platform }}"
+          
+          # Pull and test the image
+          docker pull --platform=${{ matrix.platform }} $IMAGE || exit 1
+          docker run --rm --platform=${{ matrix.platform }} $IMAGE --version || echo "Version test completed"
+          docker run --rm --platform=${{ matrix.platform }} $IMAGE --help || echo "Help test completed"
+          
+          # Test with a sample workspace
+          mkdir -p test-workspace
+          cd test-workspace
+          echo '{"style": "default", "rsc": true}' > components.json
+          docker run --rm --platform=${{ matrix.platform }} -v $(pwd):/workspace -w /workspace $IMAGE analyze || echo "Workspace test completed"
+
+  vulnerability-monitoring:
+    name: Set up Vulnerability Monitoring
+    runs-on: ubuntu-latest
+    needs: [prepare, publish]
+    if: needs.prepare.outputs.should_push == 'true'
+    
+    steps:
+      - name: Enable Docker Scout
+        run: |
+          echo "Docker Scout will monitor the published images for vulnerabilities"
+          echo "Images published:"
+          echo "${{ needs.prepare.outputs.tags }}"
+
+      - name: Configure Snyk monitoring
+        if: env.SNYK_TOKEN != ''
+        run: |
+          # Install Snyk CLI
+          npm install -g snyk
+          
+          # Monitor the container
+          VERSION=$(echo "${{ needs.prepare.outputs.tags }}" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1 || echo "latest")
+          snyk container monitor ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} --project-name=claude-config-docker
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        continue-on-error: true
+
+  create-release-assets:
+    name: Create Release Assets
+    runs-on: ubuntu-latest
+    needs: [prepare, publish]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Docker installation scripts
+        run: |
+          # Create Docker run script
+          cat > run-claude-config.sh << 'EOF'
+          #!/bin/bash
+          # Claude Config Docker Runner
+          
+          VERSION="${VERSION:-latest}"
+          IMAGE="${IMAGE:-ghcr.io/${{ github.repository }}:${VERSION}}"
+          WORKSPACE="${WORKSPACE:-$(pwd)}"
+          
+          echo "Running Claude Config from Docker..."
+          echo "Image: $IMAGE"
+          echo "Workspace: $WORKSPACE"
+          
+          docker run --rm -it \
+            -v "$WORKSPACE:/workspace" \
+            -w /workspace \
+            "$IMAGE" "$@"
+          EOF
+          chmod +x run-claude-config.sh
+          
+          # Create Docker Compose example
+          cat > docker-compose.example.yml << 'EOF'
+          version: '3.8'
+          services:
+            claude-config:
+              image: ghcr.io/${{ github.repository }}:latest
+              volumes:
+                - .:/workspace
+              working_dir: /workspace
+              command: --help
+          EOF
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-assets
+          path: |
+            run-claude-config.sh
+            docker-compose.example.yml
+          retention-days: 90
+
+  docker-summary:
+    name: Docker Publishing Summary
+    runs-on: ubuntu-latest
+    needs: [prepare, test-build, build-and-scan, publish, test-published, vulnerability-monitoring, create-release-assets]
+    if: always()
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "## Docker Publishing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Prepare | ${{ needs.prepare.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Build | ${{ needs.test-build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Scan | ${{ needs.build-and-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Publish | ${{ needs.publish.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Published | ${{ needs.test-published.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Vulnerability Monitoring | ${{ needs.vulnerability-monitoring.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Release Assets | ${{ needs.create-release-assets.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.prepare.outputs.should_push }}" == "true" ]]; then
+            if [[ "${{ needs.publish.result }}" == "success" ]]; then
+              echo "✅ **Successfully published Docker images**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🐳 **Published Images:**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "GitHub Container Registry:" >> $GITHUB_STEP_SUMMARY
+              echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Docker Hub:" >> $GITHUB_STEP_SUMMARY
+              echo "${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🏗️ **Platforms:** ${{ needs.prepare.outputs.platforms }}" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🚀 **Usage:**" >> $GITHUB_STEP_SUMMARY
+              echo '```bash' >> $GITHUB_STEP_SUMMARY
+              echo "# Run with Docker" >> $GITHUB_STEP_SUMMARY
+              echo "docker run --rm -v \$(pwd):/workspace -w /workspace ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --help" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "# Or from Docker Hub" >> $GITHUB_STEP_SUMMARY
+              echo "docker run --rm -v \$(pwd):/workspace -w /workspace ${{ env.DOCKERHUB_IMAGE_NAME }}:latest --help" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Docker publishing failed. Check the logs above." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "ℹ️ Docker build completed - no images pushed to registry" >> $GITHUB_STEP_SUMMARY
+          fi

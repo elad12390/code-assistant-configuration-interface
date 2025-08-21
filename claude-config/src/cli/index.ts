@@ -2,48 +2,156 @@
 
 import { Command } from 'commander';
 import { version } from '../../package.json';
+import { runConfigurationWorkflow } from '../integration';
+import { listBackups, restoreBackup } from '../manager';
+import { listIterations } from '../tracker';
+import * as path from 'path';
+import inquirer from 'inquirer';
 
 const program = new Command();
 
 program
+  .name('claude-config')
   .version(version)
   .description('Intelligent CLI tool for configuring Claude Code projects')
-  .option('-i, --init', 'Initialize configuration')
-  .option('-u, --update', 'Update existing configuration')
-  .option('-r, --reset', 'Reset to previous configuration')
-  .option('-c, --configure', 'Run full configuration workflow')
-  .parse(process.argv);
+  .option('-p, --project-dir <path>', 'Project directory path', process.cwd());
 
-const options = program.opts();
+program
+  .command('configure')
+  .description('Run full configuration workflow with AI recommendations')
+  .action(async () => {
+    const options = program.opts();
+    const projectDir = path.resolve(options.projectDir);
+    await runConfigurationCommand(projectDir);
+  });
 
-// Display help if no arguments provided
+program
+  .command('init')
+  .description('Initialize Claude Code configuration for your project')
+  .action(async () => {
+    const options = program.opts();
+    const projectDir = path.resolve(options.projectDir);
+    await runConfigurationCommand(projectDir);
+  });
+
+program
+  .command('update')
+  .description('Update existing Claude Code configuration')
+  .action(async () => {
+    const options = program.opts();
+    const projectDir = path.resolve(options.projectDir);
+    await runConfigurationCommand(projectDir);
+  });
+
+program
+  .command('reset')
+  .description('Reset to previous configuration from backup')
+  .action(async () => {
+    const options = program.opts();
+    const projectDir = path.resolve(options.projectDir);
+    await resetConfiguration(projectDir);
+  });
+
+program
+  .command('history')
+  .description('View configuration iteration history')
+  .action(async () => {
+    const options = program.opts();
+    const projectDir = path.resolve(options.projectDir);
+    await viewHistory(projectDir);
+  });
+
+async function runConfigurationCommand(projectDir: string) {
+  console.log('🔧 Claude Code Configurator');
+  console.log('=============================\n');
+  console.log(`📁 Project directory: ${projectDir}\n`);
+  
+  const result = await runConfigurationWorkflow(projectDir);
+  
+  if (result.success) {
+    console.log('\n🎉 Configuration completed successfully!');
+    console.log(`📋 Iteration ID: ${result.iterationId}`);
+    console.log('\n✨ Your Claude Code project is now configured with AI-recommended components.');
+    console.log('   You can view your configuration history using: claude-config history');
+  } else {
+    console.error('\n❌ Configuration failed!');
+    console.error(`   Error: ${result.error}`);
+    console.log('\n💡 Troubleshooting tips:');
+    console.log('   - Make sure components.json exists in your project directory');
+    console.log('   - Ensure GOOGLE_API_KEY environment variable is set for AI recommendations');
+    console.log('   - Check that you have write permissions in the project directory');
+    process.exit(1);
+  }
+}
+
+async function resetConfiguration(projectDir: string) {
+  console.log('🔄 Reset Claude Code Configuration');
+  console.log('==================================\n');
+  
+  try {
+    const backups = await listBackups(projectDir);
+    
+    if (backups.length === 0) {
+      console.log('❌ No backups found. Cannot reset configuration.');
+      console.log('   Backups are created automatically when you run configuration updates.');
+      return;
+    }
+    
+    console.log('📦 Available backups:');
+    const choices = backups.map((backup, index) => ({
+      name: `${index + 1}. ${new Date(backup.timestamp).toLocaleString()}`,
+      value: backup.backupPath
+    }));
+    
+    const { selectedBackup } = await inquirer.prompt([{
+      type: 'list',
+      name: 'selectedBackup',
+      message: 'Select a backup to restore:',
+      choices: choices
+    }]);
+    
+    await restoreBackup(projectDir, selectedBackup);
+    console.log('\n✅ Configuration restored successfully!');
+    
+  } catch (error) {
+    console.error('\n❌ Reset failed!');
+    console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+async function viewHistory(projectDir: string) {
+  console.log('📚 Configuration History');
+  console.log('========================\n');
+  
+  try {
+    const iterations = await listIterations(projectDir);
+    
+    if (iterations.length === 0) {
+      console.log('📄 No configuration history found.');
+      console.log('   History is created when you run configuration workflows.');
+      return;
+    }
+    
+    console.log(`Found ${iterations.length} configuration iterations:\n`);
+    
+    iterations.forEach((iteration, index) => {
+      const date = new Date(iteration.timestamp).toLocaleString();
+      console.log(`${index + 1}. ${iteration.id}`);
+      console.log(`   📅 Date: ${date}\n`);
+    });
+    
+  } catch (error) {
+    console.error('\n❌ Failed to view history!');
+    console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+// Parse command line arguments
+program.parse(process.argv);
+
+// Show help if no command is provided
 if (!process.argv.slice(2).length) {
   program.outputHelp();
-}
-
-// Handle different commands
-if (options.init) {
-  console.log('Initializing configuration...');
-  // Implementation will be added later
-}
-
-if (options.update) {
-  console.log('Updating configuration...');
-  // Implementation will be added later
-}
-
-if (options.reset) {
-  console.log('Resetting configuration...');
-  // Implementation will be added later
-}
-
-if (options.configure) {
-  console.log('Running full configuration workflow...');
-  // Import and run the configure command
-  import('./configure').then(module => {
-    // The configure command will run automatically when imported
-  }).catch(error => {
-    console.error('Failed to run configuration workflow:', error);
-    process.exit(1);
-  });
 }

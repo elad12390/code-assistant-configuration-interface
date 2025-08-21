@@ -167,7 +167,9 @@ export async function listBackups(projectDir: string): Promise<BackupInfo[]> {
   
   for (const entry of entries) {
     if (entry.isDirectory() && entry.name.startsWith('claude-backup-')) {
-      const timestamp = entry.name.replace('claude-backup-', '').replace(/-/g, ':');
+      const timestampString = entry.name.replace('claude-backup-', '');
+      // Convert timestamp back to ISO format for proper date parsing
+      const timestamp = timestampString.replace(/-/g, ':').replace(/T(\d{2}):(\d{2}):(\d{2})/, 'T$1:$2:$3');
       backups.push({
         timestamp,
         backupPath: path.join(backupsDir, entry.name)

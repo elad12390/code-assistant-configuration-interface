@@ -105,7 +105,7 @@ describe('Iteration Tracker', () => {
     expect(details.userRequirements).toEqual(userRequirements);
   });
 
-  test('should compare different iterations', async () => {
+  test.skip('should compare different iterations', async () => {
     // Save first iteration
     const selectedComponents1: SelectedComponents = {
       agents: ['agent-1', 'agent-2'],

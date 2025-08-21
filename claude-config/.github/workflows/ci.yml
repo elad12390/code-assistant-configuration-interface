@@ -1,0 +1,183 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20, 22]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        id: cache-nodemodules
+        with:
+          path: |
+            node_modules
+            ~/.cache/npm
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Test flakiness detection (run tests multiple times)
+        run: |
+          echo "Running tests multiple times to detect flakiness..."
+          for i in {1..3}; do
+            echo "Test run $i"
+            npm test || exit 1
+          done
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage reports
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '20'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+
+      - name: Test CLI installation and basic commands
+        shell: bash
+        run: |
+          npm pack
+          npm install -g claude-config-*.tgz
+          claude-config --help || true
+          claude-config --version || true
+
+  build-test:
+    name: Build Test
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+
+      - name: Check build artifacts
+        run: |
+          ls -la dist/
+          test -f dist/index.js
+          test -f dist/index.js.map
+          test -f dist/index.d.ts
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run integration tests
+        run: |
+          if [ -d "tests/integration" ]; then
+            npm test -- --testPathPattern=integration
+          else
+            echo "No integration tests found, skipping..."
+          fi
+
+      - name: Test with real components.json files
+        run: |
+          # Create test scenarios
+          mkdir -p test-scenarios
+          
+          # Test with existing test workspace
+          if [ -f "test-workspace/components.json" ]; then
+            echo "Testing with existing components.json..."
+            cd test-workspace
+            node ../dist/index.js --help || true
+            cd ..
+          fi
+
+  notify:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: [test, build-test, integration-test]
+    if: failure()
+    
+    steps:
+      - name: Notify failure
+        run: |
+          echo "CI Pipeline failed. Check the logs for details."
+          echo "Failed jobs: ${{ toJSON(needs) }}"

@@ -23,6 +23,7 @@
   "author": "Elad Benhaim",
   "license": "MIT",
   "devDependencies": {
+    "@types/inquirer": "^9.0.9",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.0",
     "jest": "^29.5.0",
@@ -31,8 +32,12 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/core": "^0.3.72",
+    "@langchain/google-genai": "^0.2.16",
     "commander": "^14.0.0",
-    "inquirer": "^8.2.0"
+    "inquirer": "^8.2.0",
+    "zod": "^4.0.17"
   },
   "files": [
     "dist/",

@@ -43,7 +43,8 @@ jobs:
 
       - name: Run ESLint with stylish output (allow warnings)
         working-directory: caci
-        run: npx eslint src/ --ext .ts,.tsx,.js,.jsx --max-warnings 100 || echo "ESLint found issues but continuing..."
+        run: npx eslint src/ tests/ --ext .ts,.tsx,.js,.jsx --max-warnings 200 || echo "ESLint found issues but continuing..."
+        continue-on-error: true
 
       - name: Upload ESLint report
         if: always()
@@ -184,7 +185,7 @@ jobs:
 
       - name: Check licenses
         working-directory: caci
-        run: license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense' --production
+        run: license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense;0BSD' --production
 
       - name: Generate license report
         working-directory: caci
@@ -241,6 +242,9 @@ jobs:
             -Dsonar.typescript.lcov.reportPaths=caci/coverage/lcov.info
             -Dsonar.coverage.exclusions=**/*.test.ts,**/*.spec.ts
         continue-on-error: true
+
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz
 
       - name: Code complexity analysis
         working-directory: caci

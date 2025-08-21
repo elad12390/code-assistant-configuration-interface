@@ -1,6 +1,7 @@
 # Docker Usage Guide for CACI
 
-This guide explains how to build and use the CACI (Code Assistant Configuration Interface) CLI tool in a Docker container.
+This guide explains how to build and use the CACI (Code Assistant Configuration
+Interface) CLI tool in a Docker container.
 
 ## Prerequisites
 
@@ -59,10 +60,10 @@ docker run -it --rm \
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_API_KEY` | Yes | Your Google API key for AI functionality |
-| `NODE_ENV` | No | Set to 'development' or 'production' (default: production) |
+| Variable         | Required | Description                                                |
+| ---------------- | -------- | ---------------------------------------------------------- |
+| `GOOGLE_API_KEY` | Yes      | Your Google API key for AI functionality                   |
+| `NODE_ENV`       | No       | Set to 'development' or 'production' (default: production) |
 
 ### Volume Mounts
 
@@ -204,6 +205,7 @@ docker-compose exec caci sh
 ## Image Optimization
 
 The Docker image is optimized for:
+
 - **Size**: Uses Alpine Linux base image
 - **Security**: Non-root user, minimal packages
 - **Performance**: Multi-stage build, layer caching
@@ -243,7 +245,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Configure with CACI
         run: |
           docker run --rm \
@@ -261,15 +263,14 @@ configure:
     - docker:dind
   script:
     - docker build -t caci .
-    - docker run --rm 
-        -v $(pwd):/workspace 
-        -e GOOGLE_API_KEY=$GOOGLE_API_KEY 
-        caci configure --auto
+    - docker run --rm -v $(pwd):/workspace -e GOOGLE_API_KEY=$GOOGLE_API_KEY
+      caci configure --auto
 ```
 
 ## Support
 
 For issues related to the Docker setup:
+
 1. Check the container logs: `docker logs <container-id>`
 2. Verify environment variables are set correctly
 3. Ensure proper volume mount permissions

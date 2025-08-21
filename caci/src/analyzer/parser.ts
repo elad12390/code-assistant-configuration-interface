@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ComponentsData, Component } from './index';
+import type { ComponentsData, Component } from './index';
 
 /**
  * Converts array format to object format for components
@@ -30,25 +30,25 @@ export function parseComponentsFile(filePath: string): ComponentsData {
     // Read and parse the JSON file
     const rawData = fs.readFileSync(filePath, 'utf-8');
     const rawComponentsData = JSON.parse(rawData);
-    
+
     // Convert array format to object format if needed
     const componentsData: ComponentsData = {
-      agents: Array.isArray(rawComponentsData.agents) 
-        ? arrayToObject(rawComponentsData.agents) 
+      agents: Array.isArray(rawComponentsData.agents)
+        ? arrayToObject(rawComponentsData.agents)
         : rawComponentsData.agents || {},
-      commands: Array.isArray(rawComponentsData.commands) 
-        ? arrayToObject(rawComponentsData.commands) 
+      commands: Array.isArray(rawComponentsData.commands)
+        ? arrayToObject(rawComponentsData.commands)
         : rawComponentsData.commands || {},
-      hooks: Array.isArray(rawComponentsData.hooks) 
-        ? arrayToObject(rawComponentsData.hooks) 
+      hooks: Array.isArray(rawComponentsData.hooks)
+        ? arrayToObject(rawComponentsData.hooks)
         : rawComponentsData.hooks || {},
-      mcps: Array.isArray(rawComponentsData.mcps) 
-        ? arrayToObject(rawComponentsData.mcps) 
+      mcps: Array.isArray(rawComponentsData.mcps)
+        ? arrayToObject(rawComponentsData.mcps)
         : rawComponentsData.mcps || {},
       settings: rawComponentsData.settings || {},
-      templates: rawComponentsData.templates || {}
+      templates: rawComponentsData.templates || {},
     };
-    
+
     return componentsData;
   } catch (error: any) {
     if (error.code === 'ENOENT') {
@@ -68,7 +68,11 @@ export function parseComponentsFile(filePath: string): ComponentsData {
  * @param type Type of the component (agent, command, hook, mcp)
  * @returns The component or undefined if not found
  */
-export function getComponent(componentsData: ComponentsData, name: string, type: string): Component | undefined {
+export function getComponent(
+  componentsData: ComponentsData,
+  name: string,
+  type: string
+): Component | undefined {
   switch (type.toLowerCase()) {
     case 'agent':
       return componentsData.agents[name];

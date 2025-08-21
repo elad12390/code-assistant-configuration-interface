@@ -1,5 +1,5 @@
 import { displayComponents, displayRecommendations } from '../../src/analyzer/display';
-import { ComponentsData } from '../../src/analyzer';
+import type { ComponentsData } from '../../src/analyzer';
 
 describe('Display Module', () => {
   const mockComponentsData: ComponentsData = {
@@ -10,8 +10,8 @@ describe('Display Module', () => {
         category: 'test',
         type: 'agent',
         content: 'Test agent content',
-        description: 'Test agent description'
-      }
+        description: 'Test agent description',
+      },
     },
     commands: {
       'test-command': {
@@ -20,8 +20,8 @@ describe('Display Module', () => {
         category: 'test',
         type: 'command',
         content: 'Test command content',
-        description: 'Test command description'
-      }
+        description: 'Test command description',
+      },
     },
     hooks: {
       'test-hook': {
@@ -30,8 +30,8 @@ describe('Display Module', () => {
         category: 'test',
         type: 'hook',
         content: 'Test hook content',
-        description: 'Test hook description'
-      }
+        description: 'Test hook description',
+      },
     },
     mcps: {
       'test-mcp': {
@@ -40,11 +40,11 @@ describe('Display Module', () => {
         category: 'test',
         type: 'mcp',
         content: 'Test mcp content',
-        description: 'Test mcp description'
-      }
+        description: 'Test mcp description',
+      },
     },
     settings: {},
-    templates: {}
+    templates: {},
   };
 
   // Mock console.log to capture output
@@ -58,32 +58,32 @@ describe('Display Module', () => {
     mockConsoleLog.mockRestore();
   });
 
-  test('should display components with descriptions', () => {
+  it('should display components with descriptions', () => {
     const components = ['test-agent'];
-    
+
     displayComponents(components, 'Agents', mockComponentsData);
-    
+
     expect(mockConsoleLog).toHaveBeenCalled();
   });
 
-  test('should display message when no components are provided', () => {
+  it('should display message when no components are provided', () => {
     const components: string[] = [];
-    
+
     displayComponents(components, 'Agents', mockComponentsData);
-    
+
     expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('Agents: None'));
   });
 
-  test('should display recommendations for all categories', () => {
+  it('should display recommendations for all categories', () => {
     const recommendations = {
       agents: ['test-agent'],
       commands: ['test-command'],
       hooks: ['test-hook'],
-      mcps: ['test-mcp']
+      mcps: ['test-mcp'],
     };
-    
+
     displayRecommendations(recommendations, mockComponentsData);
-    
+
     expect(mockConsoleLog).toHaveBeenCalled();
   });
 });

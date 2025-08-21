@@ -5,7 +5,7 @@ FROM node:20-alpine
 LABEL maintainer="Elad Benhaim"
 LABEL description="CACI - Code Assistant Configuration Interface for intelligent project setup"
 LABEL version="1.0.0"
-LABEL org.opencontainers.image.source="https://github.com/eladbenhaim/claude-code-configurator"
+LABEL org.opencontainers.image.source="https://github.com/elad12390/claude-code-configurator"
 
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -18,8 +18,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install all dependencies (including dev dependencies for building)
-RUN npm ci && npm cache clean --force
+# Install dependencies only (skip prepare script to avoid build attempt without source)
+RUN npm ci --ignore-scripts && npm cache clean --force
 
 # Copy source code and build configuration
 COPY src/ ./src/
@@ -28,13 +28,13 @@ COPY bin/ ./bin/
 # Build the TypeScript project
 RUN npm run build
 
-# Remove dev dependencies and source files to reduce image size
-RUN npm prune --production && \
-    rm -rf src/ tsconfig.json node_modules/@types
-
 # Make the CLI globally accessible and ensure it's executable
 RUN npm link && \
     chmod +x /app/bin/caci
+
+# Remove dev dependencies and source files to reduce image size
+RUN npm prune --production && \
+    rm -rf src/ tsconfig.json node_modules/@types
 
 # Set up workspace directory for mounted projects
 RUN mkdir -p /workspace && \

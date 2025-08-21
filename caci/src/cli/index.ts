@@ -13,7 +13,9 @@ const program = new Command();
 program
   .name('caci')
   .version(version)
-  .description('CACI (Code Assistant Configuration Interface) - Intelligent CLI tool for project configuration')
+  .description(
+    'CACI (Code Assistant Configuration Interface) - Intelligent CLI tool for project configuration'
+  )
   .option('-p, --project-dir <path>', 'Project directory path', process.cwd());
 
 program
@@ -65,9 +67,9 @@ async function runConfigurationCommand(projectDir: string) {
   console.log('🔧 CACI (Code Assistant Configuration Interface)');
   console.log('===============================================\n');
   console.log(`📁 Project directory: ${projectDir}\n`);
-  
+
   const result = await runConfigurationWorkflow(projectDir);
-  
+
   if (result.success) {
     console.log('\n🎉 Configuration completed successfully!');
     console.log(`📋 Iteration ID: ${result.iterationId}`);
@@ -87,32 +89,33 @@ async function runConfigurationCommand(projectDir: string) {
 async function resetConfiguration(projectDir: string) {
   console.log('🔄 Reset CACI Configuration');
   console.log('============================\n');
-  
+
   try {
     const backups = await listBackups(projectDir);
-    
+
     if (backups.length === 0) {
       console.log('❌ No backups found. Cannot reset configuration.');
       console.log('   Backups are created automatically when you run configuration updates.');
       return;
     }
-    
+
     console.log('📦 Available backups:');
     const choices = backups.map((backup, index) => ({
       name: `${index + 1}. ${new Date(backup.timestamp).toLocaleString()}`,
-      value: backup.backupPath
+      value: backup.backupPath,
     }));
-    
-    const { selectedBackup } = await inquirer.prompt([{
-      type: 'list',
-      name: 'selectedBackup',
-      message: 'Select a backup to restore:',
-      choices: choices
-    }]);
-    
+
+    const { selectedBackup } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'selectedBackup',
+        message: 'Select a backup to restore:',
+        choices,
+      },
+    ]);
+
     await restoreBackup(projectDir, selectedBackup);
     console.log('\n✅ Configuration restored successfully!');
-    
   } catch (error) {
     console.error('\n❌ Reset failed!');
     console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
@@ -123,24 +126,23 @@ async function resetConfiguration(projectDir: string) {
 async function viewHistory(projectDir: string) {
   console.log('📚 CACI Configuration History');
   console.log('===========================\n');
-  
+
   try {
     const iterations = await listIterations(projectDir);
-    
+
     if (iterations.length === 0) {
       console.log('📄 No configuration history found.');
       console.log('   History is created when you run configuration workflows.');
       return;
     }
-    
+
     console.log(`Found ${iterations.length} configuration iterations:\n`);
-    
+
     iterations.forEach((iteration, index) => {
       const date = new Date(iteration.timestamp).toLocaleString();
       console.log(`${index + 1}. ${iteration.id}`);
       console.log(`   📅 Date: ${date}\n`);
     });
-    
   } catch (error) {
     console.error('\n❌ Failed to view history!');
     console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);

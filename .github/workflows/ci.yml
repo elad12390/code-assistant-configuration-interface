@@ -127,9 +127,9 @@ jobs:
         working-directory: caci
         run: |
           ls -la dist/
-          test -f dist/index.js
-          test -f dist/index.js.map
-          test -f dist/index.d.ts
+          test -f dist/cli/index.js
+          test -f dist/cli/index.js.map
+          test -f dist/cli/index.d.ts
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -181,7 +181,7 @@ jobs:
           if [ -f "test-workspace/components.json" ]; then
             echo "Testing with existing components.json..."
             cd test-workspace
-            node ../dist/index.js --help || true
+            node ../dist/cli/index.js --help || true
             cd ..
           fi
 

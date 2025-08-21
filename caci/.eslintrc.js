@@ -7,8 +7,8 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    '@typescript-eslint/recommended',
-    '@typescript-eslint/recommended-requiring-type-checking',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:node/recommended',
     'plugin:jest/recommended',
     'prettier', // Must be last to override other configs
@@ -17,7 +17,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: './tsconfig.lint.json',
   },
   plugins: [
     '@typescript-eslint',
@@ -28,6 +28,7 @@ module.exports = {
     node: {
       tryExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
       resolvePaths: ['node_modules/@types'],
+      version: '>=18.0.0',
     },
   },
   rules: {
@@ -75,6 +76,7 @@ module.exports = {
     // Node.js specific rules
     'node/no-missing-import': 'off', // TypeScript handles this better
     'node/no-unsupported-features/es-syntax': 'off', // We use TypeScript
+    'node/no-unsupported-features/node-builtins': 'off', // We target Node.js 18+
     'node/no-unpublished-import': 'off', // Allow dev dependencies in tests
     'node/shebang': 'off', // Handled by build process
     'node/prefer-global/buffer': 'error',
@@ -156,5 +158,10 @@ module.exports = {
     '*.yml',
     '*.yaml',
     '.github/',
+    '**/*.d.ts',
+    '**/*.js.map',
+    '**/*.d.ts.map',
+    'tests/**/*.js',
+    'tests/**/*.d.ts',
   ],
 };

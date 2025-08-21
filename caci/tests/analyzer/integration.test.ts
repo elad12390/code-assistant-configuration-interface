@@ -7,8 +7,8 @@ import { recommendComponents } from '../../src/analyzer/ai-recommender';
 jest.mock('inquirer', () => ({
   __esModule: true,
   default: {
-    prompt: jest.fn().mockResolvedValue({ value: 'test-response' })
-  }
+    prompt: jest.fn().mockResolvedValue({ value: 'test-response' }),
+  },
 }));
 
 // Mock the LangChain modules
@@ -21,11 +21,11 @@ jest.mock('@langchain/google-genai', () => {
             agents: ['hackathon-ai-strategist'],
             commands: ['project-init'],
             hooks: ['pre-commit-hook'],
-            mcps: ['github-mcp']
-          })
-        })
+            mcps: ['github-mcp'],
+          }),
+        }),
       };
-    })
+    }),
   };
 });
 
@@ -43,24 +43,24 @@ describe('Analyzer Integration', () => {
     jest.clearAllMocks();
   });
 
-  test('should parse components file and recommend components', async () => {
+  it('should parse components file and recommend components', async () => {
     // Parse components
     const componentsData = parseComponentsFile(componentsFilePath);
-    
+
     expect(componentsData).toBeDefined();
     expect(componentsData.agents).toBeDefined();
     expect(componentsData.commands).toBeDefined();
     expect(componentsData.hooks).toBeDefined();
     expect(componentsData.mcps).toBeDefined();
-    
+
     // Collect user requirements (mocked)
     const userRequirements = await collectUserRequirements();
-    
+
     expect(userRequirements).toBeDefined();
-    
+
     // Recommend components (mocked)
     const recommendations = await recommendComponents(userRequirements, componentsData);
-    
+
     expect(recommendations).toBeDefined();
     expect(Array.isArray(recommendations.agents)).toBe(true);
     expect(Array.isArray(recommendations.commands)).toBe(true);

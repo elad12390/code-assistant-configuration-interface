@@ -24,7 +24,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: caci
   DOCKERHUB_IMAGE_NAME: caci
 
 jobs:
@@ -278,7 +278,7 @@ jobs:
           mkdir -p test-workspace
           cd test-workspace
           echo '{"style": "default", "rsc": true}' > components.json
-          docker run --rm --platform=${{ matrix.platform }} -v $(pwd):/workspace -w /workspace $IMAGE analyze || echo "Workspace test completed"
+          docker run --rm --platform=${{ matrix.platform }} -v $(pwd):/workspace -w /workspace $IMAGE configure --help || echo "Workspace test completed"
 
   vulnerability-monitoring:
     name: CACI Set up Vulnerability Monitoring
@@ -324,7 +324,7 @@ jobs:
           # CACI Docker Runner
           
           VERSION="${VERSION:-latest}"
-          IMAGE="${IMAGE:-ghcr.io/${{ github.repository }}:${VERSION}}"
+          IMAGE="${IMAGE:-ghcr.io/caci:${VERSION}}"
           WORKSPACE="${WORKSPACE:-$(pwd)}"
           
           echo "Running CACI from Docker..."
@@ -343,7 +343,7 @@ jobs:
           version: '3.8'
           services:
             caci:
-              image: ghcr.io/${{ github.repository }}:latest
+              image: ghcr.io/caci:latest
               volumes:
                 - .:/workspace
               working_dir: /workspace

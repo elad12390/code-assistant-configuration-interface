@@ -1,5 +1,5 @@
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
-import { ComponentsData, UserRequirements } from '../../src/analyzer';
+import type { ComponentsData, UserRequirements } from '../../src/analyzer';
 
 // Mock the LangChain modules
 jest.mock('@langchain/google-genai', () => {
@@ -11,11 +11,11 @@ jest.mock('@langchain/google-genai', () => {
             agents: ['test-agent'],
             commands: ['test-command'],
             hooks: ['test-hook'],
-            mcps: ['test-mcp']
-          })
-        })
+            mcps: ['test-mcp'],
+          }),
+        }),
       };
-    })
+    }),
   };
 });
 
@@ -28,8 +28,8 @@ describe('AI Recommender', () => {
         category: 'test',
         type: 'agent',
         content: 'Test agent content',
-        description: 'Test agent description'
-      }
+        description: 'Test agent description',
+      },
     },
     commands: {
       'test-command': {
@@ -38,8 +38,8 @@ describe('AI Recommender', () => {
         category: 'test',
         type: 'command',
         content: 'Test command content',
-        description: 'Test command description'
-      }
+        description: 'Test command description',
+      },
     },
     hooks: {
       'test-hook': {
@@ -48,8 +48,8 @@ describe('AI Recommender', () => {
         category: 'test',
         type: 'hook',
         content: 'Test hook content',
-        description: 'Test hook description'
-      }
+        description: 'Test hook description',
+      },
     },
     mcps: {
       'test-mcp': {
@@ -58,18 +58,18 @@ describe('AI Recommender', () => {
         category: 'test',
         type: 'mcp',
         content: 'Test mcp content',
-        description: 'Test mcp description'
-      }
+        description: 'Test mcp description',
+      },
     },
     settings: {},
-    templates: {}
+    templates: {},
   };
 
   const mockUserRequirements: UserRequirements = {
     projectType: 'Web Application',
     programmingLanguages: ['JavaScript/TypeScript'],
     frameworks: ['React'],
-    experienceLevel: 'intermediate'
+    experienceLevel: 'intermediate',
   };
 
   beforeEach(() => {
@@ -83,17 +83,17 @@ describe('AI Recommender', () => {
     jest.clearAllMocks();
   });
 
-  test('should throw error when GOOGLE_API_KEY is not set', async () => {
+  it('should throw error when GOOGLE_API_KEY is not set', async () => {
     delete process.env.GOOGLE_API_KEY;
-    
-    await expect(recommendComponents(mockUserRequirements, mockComponentsData))
-      .rejects
-      .toThrow('GOOGLE_API_KEY environment variable is not set');
+
+    await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
+      'GOOGLE_API_KEY environment variable is not set'
+    );
   });
 
-  test('should recommend components based on user requirements', async () => {
+  it('should recommend components based on user requirements', async () => {
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
-    
+
     expect(recommendation).toBeDefined();
     expect(Array.isArray(recommendation.agents)).toBe(true);
     expect(Array.isArray(recommendation.commands)).toBe(true);
@@ -101,7 +101,7 @@ describe('AI Recommender', () => {
     expect(Array.isArray(recommendation.mcps)).toBe(true);
   });
 
-  test('should filter out non-existent components', async () => {
+  it('should filter out non-existent components', async () => {
     // Mock the LangChain modules with non-existent components
     jest.mock('@langchain/google-genai', () => {
       return {
@@ -112,16 +112,16 @@ describe('AI Recommender', () => {
                 agents: ['test-agent', 'non-existent-agent'],
                 commands: ['test-command', 'non-existent-command'],
                 hooks: ['test-hook', 'non-existent-hook'],
-                mcps: ['test-mcp', 'non-existent-mcp']
-              })
-            })
+                mcps: ['test-mcp', 'non-existent-mcp'],
+              }),
+            }),
           };
-        })
+        }),
       };
     });
-    
+
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
-    
+
     // Should only include existing components
     expect(recommendation.agents).toContain('test-agent');
     expect(recommendation.agents).not.toContain('non-existent-agent');

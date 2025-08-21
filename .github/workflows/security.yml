@@ -58,6 +58,7 @@ jobs:
           npm audit --audit-level=low --json > npm-audit-results.json || true
           
       - name: Parse npm audit results
+        working-directory: caci
         run: |
           echo "## NPM Audit Results" >> $GITHUB_STEP_SUMMARY
           
@@ -117,13 +118,15 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --json-file-output=snyk-results.json
+          args: --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
+          command: test
+          working-directory: caci
 
       - name: Upload Snyk results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: snyk.sarif
+          sarif_file: caci/snyk.sarif
         continue-on-error: true
 
       - name: Upload Snyk results
@@ -145,7 +148,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ]
+        language: [ 'typescript' ]
 
     steps:
       - name: Checkout code
@@ -156,6 +159,7 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
+          source-root: caci/src
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -194,6 +198,7 @@ jobs:
             p/ci
             p/nodejs
             p/typescript
+          scanDirPath: caci/src
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true
@@ -247,6 +252,7 @@ jobs:
         run: npm install -g license-checker
 
       - name: Check licenses
+        working-directory: caci
         run: |
           # Check for problematic licenses
           license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense;0BSD' --production --json > license-check.json || true
@@ -366,9 +372,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Security Best Practices Check:**" >> $GITHUB_STEP_SUMMARY
           
-          # Check for hardcoded secrets patterns
-          if grep -r "password\|secret\|key\|token" --include="*.ts" --include="*.js" caci/src/ | grep -v "// " | wc -l > 0; then
+          # Check for hardcoded secrets patterns (excluding legitimate uses)
+          POTENTIAL_SECRETS=$(grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" | wc -l)
+          if [ "$POTENTIAL_SECRETS" -gt 0 ]; then
             echo "⚠️ Potential hardcoded secrets found in source code" >> $GITHUB_STEP_SUMMARY
+            grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" >> $GITHUB_STEP_SUMMARY || true
           else
             echo "✅ No obvious hardcoded secrets in source code" >> $GITHUB_STEP_SUMMARY
           fi

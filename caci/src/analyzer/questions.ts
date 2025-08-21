@@ -19,9 +19,9 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'Library/Package',
       'Data Analysis/ML Project',
       'DevOps/Infrastructure',
-      'Other'
+      'Other',
     ],
-    required: true
+    required: true,
   },
   {
     id: 'programming-languages',
@@ -37,8 +37,8 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'C++',
       'PHP',
       'Ruby',
-      'Other'
-    ]
+      'Other',
+    ],
   },
   {
     id: 'web-frameworks',
@@ -58,8 +58,8 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'Spring Boot',
       'ASP.NET Core',
       'Other',
-      'Not Applicable'
-    ]
+      'Not Applicable',
+    ],
   },
   {
     id: 'experience-level',
@@ -68,12 +68,12 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
     options: [
       'Beginner - New to AI-assisted development',
       'Intermediate - Some experience',
-      'Advanced - Extensive experience'
-    ]
+      'Advanced - Extensive experience',
+    ],
   },
   {
     id: 'project-description',
     text: 'Please provide a brief description of your project (what problem does it solve, who is it for, etc.):',
-    type: 'text'
-  }
+    type: 'text',
+  },
 ];

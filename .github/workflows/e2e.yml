@@ -49,23 +49,33 @@ jobs:
           mkdir -p e2e-test-workspace
           cd e2e-test-workspace
           
-          # Create a basic components.json for testing
+          # Create a basic CACI components.json for testing
           cat > components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": false,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.js",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true
+            "agents": {
+              "test-agent": {
+                "name": "test-agent",
+                "path": "agents/test-agent.md",
+                "category": "development",
+                "type": "agent",
+                "content": "A test development agent for CI/CD testing",
+                "description": "Simple test agent for E2E workflow testing"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils"
-            }
+            "commands": {
+              "test-command": {
+                "name": "test-command",
+                "path": "commands/test.md",
+                "category": "testing",
+                "type": "command",
+                "content": "Test command for CI/CD",
+                "description": "Basic test command for E2E validation"
+              }
+            },
+            "hooks": {},
+            "mcps": {},
+            "settings": {},
+            "templates": {}
           }
           EOF
 
@@ -73,24 +83,27 @@ jobs:
         shell: bash
         run: |
           cd e2e-test-workspace
-          node ../caci/dist/index.js --help || echo "Help command test completed"
+          node ../caci/dist/cli/index.js --help || echo "Help command test completed"
 
       - name: Test CLI version command
         shell: bash
         run: |
           cd e2e-test-workspace
-          node ../caci/dist/index.js --version || echo "Version command test completed"
+          node ../caci/dist/cli/index.js --version || echo "Version command test completed"
 
       - name: Test CLI with components.json
         shell: bash
         run: |
           cd e2e-test-workspace
           
-          # Test analyze command if it exists
-          node ../caci/dist/index.js analyze || echo "Analyze command test completed"
+          # Test configure command (this will prompt but should handle gracefully)
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "Configure command test completed"
           
-          # Test configure command if it exists
-          node ../caci/dist/index.js configure --dry-run || echo "Configure command test completed"
+          # Test init command
+          node ../caci/dist/cli/index.js init --help || echo "Init command test completed"
+          
+          # Test history command
+          node ../caci/dist/cli/index.js history || echo "History command test completed"
 
       - name: Test CLI without components.json
         shell: bash
@@ -99,7 +112,7 @@ jobs:
           cd e2e-test-empty
           
           # Test behavior when no components.json exists
-          node ../caci/dist/index.js analyze || echo "No components.json test completed"
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "No components.json test completed"
 
       - name: Test CLI with invalid components.json
         shell: bash
@@ -111,7 +124,7 @@ jobs:
           echo "{ invalid json }" > components.json
           
           # Test error handling
-          node ../caci/dist/index.js analyze || echo "Invalid JSON test completed"
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "Invalid JSON test completed"
 
       - name: Test CLI with minimal components.json
         shell: bash
@@ -123,7 +136,7 @@ jobs:
           echo "{}" > components.json
           
           # Test with minimal config
-          node ../caci/dist/index.js analyze || echo "Minimal config test completed"
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "Minimal config test completed"
 
   e2e-real-world:
     name: CACI Real World E2E Testing
@@ -149,67 +162,121 @@ jobs:
         run: npm run build
 
       - name: Install CLI globally
+        working-directory: caci
         run: |
-          cd caci
           npm pack
           npm install -g caci-*.tgz
 
-      - name: Test with real shadcn/ui project structure
+      - name: Test with real world project structure
         run: |
-          mkdir -p e2e-shadcn-test
-          cd e2e-shadcn-test
+          mkdir -p e2e-realworld-test
+          cd e2e-realworld-test
           
-          # Initialize a mock Next.js project structure
-          mkdir -p {app,components,lib,pages,styles}
-          mkdir -p components/ui
-          
-          # Create a realistic components.json
+          # Create a realistic CACI components.json
           cat > components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.ts",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true,
-              "prefix": ""
+            "agents": {
+              "fullstack-dev": {
+                "name": "fullstack-dev",
+                "path": "agents/fullstack-developer.md",
+                "category": "development",
+                "type": "agent",
+                "content": "Full-stack development agent with React and Node.js expertise",
+                "description": "Comprehensive development agent for modern web applications"
+              },
+              "ui-expert": {
+                "name": "ui-expert",
+                "path": "agents/ui-expert.md",
+                "category": "design",
+                "type": "agent",
+                "content": "UI/UX expert specializing in React components and design systems",
+                "description": "Expert in creating beautiful and functional user interfaces"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils",
-              "ui": "@/components/ui"
-            }
+            "commands": {
+              "build": {
+                "name": "build",
+                "path": "commands/build.md",
+                "category": "build",
+                "type": "command",
+                "content": "Build and bundle the application for production",
+                "description": "Production build command with optimization"
+              },
+              "test": {
+                "name": "test",
+                "path": "commands/test.md",
+                "category": "testing",
+                "type": "command",
+                "content": "Run comprehensive test suite",
+                "description": "Execute unit, integration, and E2E tests"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "path": "hooks/pre-commit.md",
+                "category": "git",
+                "type": "hook",
+                "content": "Run linting and formatting before commit",
+                "description": "Ensure code quality before committing changes"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "path": "mcps/filesystem.md",
+                "category": "system",
+                "type": "mcp",
+                "content": "File system operations and management",
+                "description": "Provides file system access and manipulation capabilities"
+              }
+            },
+            "settings": {},
+            "templates": {}
           }
           EOF
           
-          # Create some mock component files
-          mkdir -p components/ui
-          echo 'export const Button = () => <button>Test</button>' > components/ui/button.tsx
-          echo 'export const Card = () => <div>Card</div>' > components/ui/card.tsx
           
           # Test CLI with this setup
           caci --help
-          caci analyze || echo "Real world test completed"
+          echo "q" | caci configure || echo "Real world test completed"
+          caci init --help || echo "Init help test completed"
+          caci history || echo "History test completed"
 
       - name: Test with API key scenarios
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           mkdir -p e2e-api-test
           cd e2e-api-test
           
-          # Create components.json
-          cp ../e2e-shadcn-test/components.json .
+          # Create components.json  
+          cat > components.json << 'EOF'
+          {
+            "agents": {
+              "api-test-agent": {
+                "name": "api-test-agent",
+                "path": "agents/api-test.md",
+                "category": "testing",
+                "type": "agent",
+                "content": "API testing specialist agent",
+                "description": "Expert in API testing and validation with authentication"
+              }
+            },
+            "commands": {},
+            "hooks": {},
+            "mcps": {},
+            "settings": {},
+            "templates": {}
+          }
+          EOF
           
-          if [ -n "$GEMINI_API_KEY" ]; then
+          if [ -n "$GOOGLE_API_KEY" ]; then
             echo "Testing with API key..."
-            caci analyze || echo "API key test completed"
+            echo "q" | caci configure || echo "API key test completed"
           else
             echo "Testing without API key..."
-            caci analyze || echo "No API key test completed"
+            echo "q" | caci configure || echo "No API key test completed"
           fi
 
       - name: Test edge cases
@@ -218,38 +285,143 @@ jobs:
           mkdir -p e2e-large-config
           cd e2e-large-config
           
-          # Generate a large configuration
+          # Generate a large CACI configuration
           cat > components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.ts",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true,
-              "prefix": "tw-"
+            "agents": {
+              "architect": {
+                "name": "architect",
+                "path": "agents/architect.md",
+                "category": "architecture",
+                "type": "agent",
+                "content": "System architecture and design expert",
+                "description": "Designs scalable and maintainable system architectures"
+              },
+              "backend-dev": {
+                "name": "backend-dev",
+                "path": "agents/backend-developer.md",
+                "category": "development",
+                "type": "agent",
+                "content": "Backend development specialist",
+                "description": "Expert in server-side development and APIs"
+              },
+              "frontend-dev": {
+                "name": "frontend-dev",
+                "path": "agents/frontend-developer.md",
+                "category": "development",
+                "type": "agent",
+                "content": "Frontend development specialist",
+                "description": "Expert in modern frontend frameworks and UI development"
+              },
+              "devops": {
+                "name": "devops",
+                "path": "agents/devops.md",
+                "category": "operations",
+                "type": "agent",
+                "content": "DevOps and infrastructure specialist",
+                "description": "Expert in CI/CD, containerization, and cloud deployment"
+              },
+              "qa": {
+                "name": "qa",
+                "path": "agents/qa.md",
+                "category": "quality",
+                "type": "agent",
+                "content": "Quality assurance and testing expert",
+                "description": "Comprehensive testing strategy and implementation"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils",
-              "ui": "@/components/ui",
-              "hooks": "@/hooks",
-              "lib": "@/lib",
-              "types": "@/types",
-              "api": "@/api",
-              "config": "@/config",
-              "constants": "@/constants",
-              "helpers": "@/helpers",
-              "contexts": "@/contexts",
-              "providers": "@/providers"
-            }
+            "commands": {
+              "build": {
+                "name": "build",
+                "path": "commands/build.md",
+                "category": "build",
+                "type": "command",
+                "content": "Production build with optimization",
+                "description": "Build application for production deployment"
+              },
+              "dev": {
+                "name": "dev",
+                "path": "commands/dev.md",
+                "category": "development",
+                "type": "command",
+                "content": "Development server with hot reload",
+                "description": "Start development environment"
+              },
+              "test": {
+                "name": "test",
+                "path": "commands/test.md",
+                "category": "testing",
+                "type": "command",
+                "content": "Run full test suite",
+                "description": "Execute all tests with coverage"
+              },
+              "lint": {
+                "name": "lint",
+                "path": "commands/lint.md",
+                "category": "quality",
+                "type": "command",
+                "content": "Code linting and formatting",
+                "description": "Analyze and fix code quality issues"
+              },
+              "deploy": {
+                "name": "deploy",
+                "path": "commands/deploy.md",
+                "category": "deployment",
+                "type": "command",
+                "content": "Deploy to production environment",
+                "description": "Automated deployment pipeline"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "path": "hooks/pre-commit.md",
+                "category": "git",
+                "type": "hook",
+                "content": "Pre-commit quality checks",
+                "description": "Run linting, formatting, and tests before commit"
+              },
+              "pre-push": {
+                "name": "pre-push",
+                "path": "hooks/pre-push.md",
+                "category": "git",
+                "type": "hook",
+                "content": "Pre-push validation",
+                "description": "Comprehensive checks before pushing code"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "path": "mcps/filesystem.md",
+                "category": "system",
+                "type": "mcp",
+                "content": "File system operations",
+                "description": "Comprehensive file system access and management"
+              },
+              "database": {
+                "name": "database",
+                "path": "mcps/database.md",
+                "category": "data",
+                "type": "mcp",
+                "content": "Database operations and queries",
+                "description": "Database connection and query execution"
+              },
+              "api": {
+                "name": "api",
+                "path": "mcps/api.md",
+                "category": "network",
+                "type": "mcp",
+                "content": "HTTP API client",
+                "description": "RESTful API communication and integration"
+              }
+            },
+            "settings": {},
+            "templates": {}
           }
           EOF
           
-          caci analyze || echo "Large config test completed"
+          echo "q" | caci configure || echo "Large config test completed"
 
   e2e-file-operations:
     name: CACI E2E File Operations
@@ -282,28 +454,38 @@ jobs:
           # Create a project structure
           mkdir -p {src,lib,components,pages,app}
           
-          # Create components.json
+          # Create CACI components.json
           cat > components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": false,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.js",
-              "css": "src/styles/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true
+            "agents": {
+              "dev-agent": {
+                "name": "dev-agent",
+                "path": "agents/developer.md",
+                "category": "development",
+                "type": "agent",
+                "content": "General development agent",
+                "description": "Versatile development assistant"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils"
-            }
+            "commands": {
+              "build": {
+                "name": "build",
+                "path": "commands/build.md",
+                "category": "build",
+                "type": "command",
+                "content": "Build the project",
+                "description": "Production build process"
+              }
+            },
+            "hooks": {},
+            "mcps": {},
+            "settings": {},
+            "templates": {}
           }
           EOF
           
           # Test reading configuration
-          node ../caci/dist/index.js analyze || echo "File operations test completed"
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "File operations test completed"
           
           # Check if any backup files were created
           ls -la || true
@@ -317,7 +499,7 @@ jobs:
           echo '{"original": true}' > components.json
           
           # Run CLI command that might create backups
-          node ../caci/dist/index.js configure --dry-run || echo "Backup test completed"
+          echo "q" | node ../caci/dist/cli/index.js configure || echo "Backup test completed"
           
           # Check for backup files
           find . -name "*.backup*" -o -name "*backup*" || echo "No backup files found"
@@ -350,36 +532,46 @@ jobs:
           mkdir -p e2e-perf-test
           cd e2e-perf-test
           
-          # Create components.json
+          # Create CACI components.json
           cat > components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.ts",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true
+            "agents": {
+              "performance-agent": {
+                "name": "performance-agent",
+                "path": "agents/performance.md",
+                "category": "optimization",
+                "type": "agent",
+                "content": "Performance optimization specialist",
+                "description": "Expert in application performance tuning"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils"
-            }
+            "commands": {
+              "benchmark": {
+                "name": "benchmark",
+                "path": "commands/benchmark.md",
+                "category": "performance",
+                "type": "command",
+                "content": "Performance benchmarking",
+                "description": "Measure and analyze performance metrics"
+              }
+            },
+            "hooks": {},
+            "mcps": {},
+            "settings": {},
+            "templates": {}
           }
           EOF
           
           # Measure execution time
           echo "Testing CLI performance..."
-          time node ../dist/index.js analyze || echo "Performance test completed"
+          time echo "q" | node ../caci/dist/cli/index.js configure || echo "Performance test completed"
 
       - name: Memory usage test
         run: |
           cd e2e-perf-test
           
           # Monitor memory usage during execution
-          /usr/bin/time -v node ../dist/index.js analyze || echo "Memory test completed"
+          /usr/bin/time -v echo "q" | node ../caci/dist/cli/index.js configure || echo "Memory test completed"
 
   e2e-summary:
     name: CACI E2E Test Summary

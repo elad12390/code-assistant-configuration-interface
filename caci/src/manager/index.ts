@@ -31,18 +31,23 @@ export async function claudeFolderExists(projectDir: string): Promise<boolean> {
 export async function backupClaudeFolder(projectDir: string): Promise<BackupInfo> {
   const claudePath = path.join(projectDir, '.claude');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupPath = path.join(projectDir, '.configurator', 'backups', `claude-backup-${timestamp}`);
-  
+  const backupPath = path.join(
+    projectDir,
+    '.configurator',
+    'backups',
+    `claude-backup-${timestamp}`
+  );
+
   // Create the backup directory if it doesn't exist
   const backupDir = path.dirname(backupPath);
   await fsPromises.mkdir(backupDir, { recursive: true });
-  
+
   // Copy the .claude folder to the backup location
   await copyFolder(claudePath, backupPath);
-  
+
   return {
     timestamp,
-    backupPath
+    backupPath,
   };
 }
 
@@ -55,15 +60,15 @@ async function copyFolder(source: string, destination: string): Promise<void> {
   try {
     // Create destination folder
     await fsPromises.mkdir(destination, { recursive: true });
-    
+
     // Read source folder contents
     const entries = await fsPromises.readdir(source, { withFileTypes: true });
-    
+
     // Copy each entry
     for (const entry of entries) {
       const srcPath = path.join(source, entry.name);
       const destPath = path.join(destination, entry.name);
-      
+
       if (entry.isDirectory()) {
         await copyFolder(srcPath, destPath);
       } else {
@@ -71,7 +76,9 @@ async function copyFolder(source: string, destination: string): Promise<void> {
       }
     }
   } catch (error) {
-    throw new Error(`Failed to copy folder from ${source} to ${destination}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to copy folder from ${source} to ${destination}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -87,15 +94,15 @@ export async function applyConfiguration(
   componentsData: any
 ): Promise<void> {
   const claudePath = path.join(projectDir, '.claude');
-  
+
   // Create .claude folder if it doesn't exist
   await fsPromises.mkdir(claudePath, { recursive: true });
-  
+
   // Apply agents
   if (selectedComponents.agents.length > 0) {
     const agentsPath = path.join(claudePath, 'agents');
     await fsPromises.mkdir(agentsPath, { recursive: true });
-    
+
     for (const agentName of selectedComponents.agents) {
       const agent = componentsData.agents[agentName];
       if (agent) {
@@ -104,12 +111,12 @@ export async function applyConfiguration(
       }
     }
   }
-  
+
   // Apply commands
   if (selectedComponents.commands.length > 0) {
     const commandsPath = path.join(claudePath, 'commands');
     await fsPromises.mkdir(commandsPath, { recursive: true });
-    
+
     for (const commandName of selectedComponents.commands) {
       const command = componentsData.commands[commandName];
       if (command) {
@@ -118,12 +125,12 @@ export async function applyConfiguration(
       }
     }
   }
-  
+
   // Apply hooks
   if (selectedComponents.hooks.length > 0) {
     const hooksPath = path.join(claudePath, 'hooks');
     await fsPromises.mkdir(hooksPath, { recursive: true });
-    
+
     for (const hookName of selectedComponents.hooks) {
       const hook = componentsData.hooks[hookName];
       if (hook) {
@@ -132,12 +139,12 @@ export async function applyConfiguration(
       }
     }
   }
-  
+
   // Apply MCPs
   if (selectedComponents.mcps.length > 0) {
     const mcpsPath = path.join(claudePath, 'mcps');
     await fsPromises.mkdir(mcpsPath, { recursive: true });
-    
+
     for (const mcpName of selectedComponents.mcps) {
       const mcp = componentsData.mcps[mcpName];
       if (mcp) {
@@ -155,31 +162,33 @@ export async function applyConfiguration(
  */
 export async function listBackups(projectDir: string): Promise<BackupInfo[]> {
   const backupsDir = path.join(projectDir, '.configurator', 'backups');
-  
+
   try {
     await fsPromises.access(backupsDir, fs.constants.F_OK);
   } catch {
     return []; // No backups directory exists
   }
-  
+
   const entries = await fsPromises.readdir(backupsDir, { withFileTypes: true });
   const backups: BackupInfo[] = [];
-  
+
   for (const entry of entries) {
     if (entry.isDirectory() && entry.name.startsWith('claude-backup-')) {
       const timestampString = entry.name.replace('claude-backup-', '');
       // Convert timestamp back to ISO format for proper date parsing
-      const timestamp = timestampString.replace(/-/g, ':').replace(/T(\d{2}):(\d{2}):(\d{2})/, 'T$1:$2:$3');
+      const timestamp = timestampString
+        .replace(/-/g, ':')
+        .replace(/T(\d{2}):(\d{2}):(\d{2})/, 'T$1:$2:$3');
       backups.push({
         timestamp,
-        backupPath: path.join(backupsDir, entry.name)
+        backupPath: path.join(backupsDir, entry.name),
       });
     }
   }
-  
+
   // Sort backups by timestamp (newest first)
   backups.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  
+
   return backups;
 }
 
@@ -190,12 +199,12 @@ export async function listBackups(projectDir: string): Promise<BackupInfo[]> {
  */
 export async function restoreBackup(projectDir: string, backupPath: string): Promise<void> {
   const claudePath = path.join(projectDir, '.claude');
-  
+
   // Remove existing .claude folder if it exists
   if (await claudeFolderExists(projectDir)) {
     await fsPromises.rm(claudePath, { recursive: true, force: true });
   }
-  
+
   // Copy backup to .claude folder
   await copyFolder(backupPath, claudePath);
 }

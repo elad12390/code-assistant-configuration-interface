@@ -80,108 +80,378 @@ jobs:
         run: |
           mkdir -p benchmark-workspace/{small,medium,large,complex}
           
-          # Small project
+          # Small project with basic CACI components
           cat > benchmark-workspace/small/components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": false,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.js",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true
+            "agents": {
+              "dev": {
+                "name": "dev",
+                "description": "Frontend developer",
+                "category": "development"
+              },
+              "qa": {
+                "name": "qa", 
+                "description": "QA tester",
+                "category": "testing"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils"
+            "commands": {
+              "build": {
+                "name": "build",
+                "description": "Build the project",
+                "category": "development"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "description": "Pre-commit hook",
+                "category": "git"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "description": "File system operations",
+                "category": "tools"
+              }
             }
           }
           EOF
           
-          # Medium project
+          # Medium project with more components
           cat > benchmark-workspace/medium/components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.ts",
-              "css": "app/globals.css",
-              "baseColor": "slate",
-              "cssVariables": true,
-              "prefix": ""
+            "agents": {
+              "dev": {
+                "name": "dev",
+                "description": "Frontend developer",
+                "category": "development"
+              },
+              "qa": {
+                "name": "qa",
+                "description": "QA tester", 
+                "category": "testing"
+              },
+              "pm": {
+                "name": "pm",
+                "description": "Project manager",
+                "category": "management"
+              },
+              "architect": {
+                "name": "architect",
+                "description": "System architect",
+                "category": "architecture"
+              },
+              "ux-expert": {
+                "name": "ux-expert", 
+                "description": "UX specialist",
+                "category": "design"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils",
-              "ui": "@/components/ui",
-              "hooks": "@/hooks",
-              "lib": "@/lib"
+            "commands": {
+              "build": {
+                "name": "build",
+                "description": "Build the project",
+                "category": "development"
+              },
+              "test": {
+                "name": "test",
+                "description": "Run tests",
+                "category": "testing"
+              },
+              "deploy": {
+                "name": "deploy",
+                "description": "Deploy application",
+                "category": "deployment"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "description": "Pre-commit hook",
+                "category": "git"
+              },
+              "pre-push": {
+                "name": "pre-push", 
+                "description": "Pre-push hook",
+                "category": "git"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "description": "File system operations",
+                "category": "tools"
+              },
+              "database": {
+                "name": "database",
+                "description": "Database operations",
+                "category": "data"
+              }
             }
           }
           EOF
           
-          # Large project
+          # Large project with comprehensive component set
           cat > benchmark-workspace/large/components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "default",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "tailwind.config.ts",
-              "css": "app/globals.css",
-              "baseColor": "zinc",
-              "cssVariables": true,
-              "prefix": "ui-"
+            "agents": {
+              "dev": {
+                "name": "dev",
+                "description": "Frontend developer",
+                "category": "development"
+              },
+              "qa": {
+                "name": "qa",
+                "description": "QA tester",
+                "category": "testing"
+              },
+              "pm": {
+                "name": "pm",
+                "description": "Project manager", 
+                "category": "management"
+              },
+              "architect": {
+                "name": "architect",
+                "description": "System architect",
+                "category": "architecture"
+              },
+              "ux-expert": {
+                "name": "ux-expert",
+                "description": "UX specialist",
+                "category": "design"
+              },
+              "analyst": {
+                "name": "analyst",
+                "description": "Business analyst",
+                "category": "analysis"
+              },
+              "po": {
+                "name": "po",
+                "description": "Product owner",
+                "category": "product"
+              },
+              "sm": {
+                "name": "sm",
+                "description": "Scrum master",
+                "category": "agile"
+              }
             },
-            "aliases": {
-              "components": "@/components",
-              "utils": "@/lib/utils",
-              "ui": "@/components/ui",
-              "hooks": "@/hooks",
-              "lib": "@/lib",
-              "types": "@/types",
-              "contexts": "@/contexts",
-              "providers": "@/providers",
-              "services": "@/services",
-              "api": "@/api"
+            "commands": {
+              "build": {
+                "name": "build",
+                "description": "Build the project",
+                "category": "development"
+              },
+              "test": {
+                "name": "test",
+                "description": "Run tests",
+                "category": "testing"
+              },
+              "deploy": {
+                "name": "deploy",
+                "description": "Deploy application",
+                "category": "deployment"
+              },
+              "lint": {
+                "name": "lint",
+                "description": "Lint code",
+                "category": "quality"
+              },
+              "format": {
+                "name": "format",
+                "description": "Format code",
+                "category": "quality"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "description": "Pre-commit hook",
+                "category": "git"
+              },
+              "pre-push": {
+                "name": "pre-push",
+                "description": "Pre-push hook",
+                "category": "git"
+              },
+              "post-merge": {
+                "name": "post-merge",
+                "description": "Post-merge hook",
+                "category": "git"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "description": "File system operations",
+                "category": "tools"
+              },
+              "database": {
+                "name": "database",
+                "description": "Database operations",
+                "category": "data"
+              },
+              "api": {
+                "name": "api",
+                "description": "API operations",
+                "category": "integration"
+              },
+              "monitoring": {
+                "name": "monitoring",
+                "description": "Monitoring and metrics",
+                "category": "observability"
+              }
             }
           }
           EOF
           
-          # Complex project with edge cases
+          # Complex project with extensive components
           cat > benchmark-workspace/complex/components.json << 'EOF'
           {
-            "$schema": "https://ui.shadcn.com/schema.json",
-            "style": "new-york",
-            "rsc": true,
-            "tsx": true,
-            "tailwind": {
-              "config": "./config/tailwind.config.ts",
-              "css": "./src/styles/globals.css",
-              "baseColor": "rose",
-              "cssVariables": false,
-              "prefix": "tw-"
+            "agents": {
+              "dev": {
+                "name": "dev",
+                "description": "Frontend developer",
+                "category": "development"
+              },
+              "qa": {
+                "name": "qa",
+                "description": "QA tester",
+                "category": "testing"
+              },
+              "pm": {
+                "name": "pm",
+                "description": "Project manager",
+                "category": "management"
+              },
+              "architect": {
+                "name": "architect",
+                "description": "System architect",
+                "category": "architecture"
+              },
+              "ux-expert": {
+                "name": "ux-expert",
+                "description": "UX specialist",
+                "category": "design"
+              },
+              "analyst": {
+                "name": "analyst",
+                "description": "Business analyst",
+                "category": "analysis"
+              },
+              "po": {
+                "name": "po",
+                "description": "Product owner",
+                "category": "product"
+              },
+              "sm": {
+                "name": "sm",
+                "description": "Scrum master",
+                "category": "agile"
+              },
+              "prompt-engineer": {
+                "name": "prompt-engineer",
+                "description": "AI prompt optimization specialist",
+                "category": "ai-specialists"
+              },
+              "search-specialist": {
+                "name": "search-specialist",
+                "description": "Web research and information synthesis expert",
+                "category": "ai-specialists"
+              }
             },
-            "aliases": {
-              "components": "~/components",
-              "utils": "~/lib/utils",
-              "ui": "~/components/ui",
-              "hooks": "~/hooks",
-              "lib": "~/lib",
-              "types": "~/types",
-              "contexts": "~/contexts",
-              "providers": "~/providers",
-              "services": "~/services",
-              "api": "~/api",
-              "config": "~/config",
-              "constants": "~/constants",
-              "helpers": "~/helpers",
-              "stores": "~/stores"
+            "commands": {
+              "build": {
+                "name": "build",
+                "description": "Build the project",
+                "category": "development"
+              },
+              "test": {
+                "name": "test",
+                "description": "Run tests",
+                "category": "testing"
+              },
+              "deploy": {
+                "name": "deploy",
+                "description": "Deploy application",
+                "category": "deployment"
+              },
+              "lint": {
+                "name": "lint",
+                "description": "Lint code",
+                "category": "quality"
+              },
+              "format": {
+                "name": "format",
+                "description": "Format code",
+                "category": "quality"
+              },
+              "migrate": {
+                "name": "migrate",
+                "description": "Run database migrations",
+                "category": "database"
+              },
+              "backup": {
+                "name": "backup",
+                "description": "Create backups",
+                "category": "maintenance"
+              }
+            },
+            "hooks": {
+              "pre-commit": {
+                "name": "pre-commit",
+                "description": "Pre-commit hook",
+                "category": "git"
+              },
+              "pre-push": {
+                "name": "pre-push",
+                "description": "Pre-push hook",
+                "category": "git"
+              },
+              "post-merge": {
+                "name": "post-merge",
+                "description": "Post-merge hook",
+                "category": "git"
+              },
+              "post-deploy": {
+                "name": "post-deploy",
+                "description": "Post-deployment hook",
+                "category": "deployment"
+              }
+            },
+            "mcps": {
+              "filesystem": {
+                "name": "filesystem",
+                "description": "File system operations",
+                "category": "tools"
+              },
+              "database": {
+                "name": "database",
+                "description": "Database operations",
+                "category": "data"
+              },
+              "api": {
+                "name": "api",
+                "description": "API operations",
+                "category": "integration"
+              },
+              "monitoring": {
+                "name": "monitoring",
+                "description": "Monitoring and metrics",
+                "category": "observability"
+              },
+              "chromadb": {
+                "name": "chromadb",
+                "description": "Vector database operations",
+                "category": "ai"
+              },
+              "kubernetes": {
+                "name": "kubernetes",
+                "description": "K8s cluster management",
+                "category": "infrastructure"
+              }
             }
           }
           EOF
@@ -232,6 +502,10 @@ jobs:
           echo "Starting CLI performance benchmarks..."
           mkdir -p benchmark-results
           
+          # Store the absolute path to the CLI
+          CACI_CLI="$(pwd)/caci/bin/caci"
+          echo "Using CACI CLI at: $CACI_CLI"
+          
           for project in small medium large complex; do
             echo "Benchmarking CLI performance on $project project..."
             cd benchmark-workspace/$project
@@ -243,17 +517,20 @@ jobs:
               echo "Iteration $i for $project project"
               
               # Measure help command
-              HELP_TIME=$(/usr/bin/time -f "%e" node ../../caci/dist/index.js --help 2>&1 >/dev/null | tail -1)
+              HELP_TIME=$(/usr/bin/time -f "%e" node "$CACI_CLI" --help 2>&1 >/dev/null | tail -1)
               
-              # Measure analyze command
-              ANALYZE_TIME=$(/usr/bin/time -f "%e" node ../../caci/dist/index.js analyze 2>&1 >/dev/null | tail -1 || echo "0")
+              # Measure configure help command
+              CONFIGURE_HELP_TIME=$(/usr/bin/time -f "%e" node "$CACI_CLI" configure --help 2>&1 >/dev/null | tail -1 || echo "0")
               
-              # Measure configure command
-              CONFIGURE_TIME=$(/usr/bin/time -f "%e" node ../../caci/dist/index.js configure --dry-run 2>&1 >/dev/null | tail -1 || echo "0")
+              # Measure init help command
+              INIT_TIME=$(/usr/bin/time -f "%e" node "$CACI_CLI" init --help 2>&1 >/dev/null | tail -1 || echo "0")
+              
+              # Measure history help command
+              HISTORY_TIME=$(/usr/bin/time -f "%e" node "$CACI_CLI" history --help 2>&1 >/dev/null | tail -1 || echo "0")
               
               # Store results
-              jq --arg help "$HELP_TIME" --arg analyze "$ANALYZE_TIME" --arg configure "$CONFIGURE_TIME" --arg iteration "$i" \
-                '. += [{"iteration": ($iteration | tonumber), "help_time": ($help | tonumber), "analyze_time": ($analyze | tonumber), "configure_time": ($configure | tonumber)}]' \
+              jq --arg help "$HELP_TIME" --arg configure_help "$CONFIGURE_HELP_TIME" --arg init "$INIT_TIME" --arg history "$HISTORY_TIME" --arg iteration "$i" \
+                '. += [{"iteration": ($iteration | tonumber), "help_time": ($help | tonumber), "configure_help_time": ($configure_help | tonumber), "init_time": ($init | tonumber), "history_time": ($history | tonumber)}]' \
                 ../../benchmark-results/cli-performance-$project.json > tmp.json && mv tmp.json ../../benchmark-results/cli-performance-$project.json
             done
             
@@ -261,13 +538,15 @@ jobs:
             
             # Calculate statistics
             HELP_AVG=$(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-$project.json)
-            ANALYZE_AVG=$(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-$project.json)
-            CONFIGURE_AVG=$(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-$project.json)
+            CONFIGURE_HELP_AVG=$(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-$project.json)
+            INIT_AVG=$(jq '[.[].init_time] | add / length' benchmark-results/cli-performance-$project.json)
+            HISTORY_AVG=$(jq '[.[].history_time] | add / length' benchmark-results/cli-performance-$project.json)
             
             echo "Project: $project" >> benchmark-results/cli-performance-summary.txt
             echo "  Help command average: ${HELP_AVG}s" >> benchmark-results/cli-performance-summary.txt
-            echo "  Analyze command average: ${ANALYZE_AVG}s" >> benchmark-results/cli-performance-summary.txt
-            echo "  Configure command average: ${CONFIGURE_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "  Configure help command average: ${CONFIGURE_HELP_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "  Init help command average: ${INIT_AVG}s" >> benchmark-results/cli-performance-summary.txt
+            echo "  History help command average: ${HISTORY_AVG}s" >> benchmark-results/cli-performance-summary.txt
             echo "" >> benchmark-results/cli-performance-summary.txt
           done
 
@@ -314,6 +593,10 @@ jobs:
           echo "Starting memory usage benchmarks..."
           mkdir -p benchmark-results
           
+          # Store the absolute path to the CLI
+          CACI_CLI="$(pwd)/caci/bin/caci"
+          echo "Using CACI CLI at: $CACI_CLI"
+          
           for project in small medium large complex; do
             echo "Benchmarking memory usage on $project project..."
             cd benchmark-workspace/$project
@@ -324,7 +607,7 @@ jobs:
               echo "Memory iteration $i for $project project"
               
               # Measure memory usage using /usr/bin/time
-              MEMORY_OUTPUT=$(/usr/bin/time -v node ../../caci/dist/index.js analyze 2>&1 >/dev/null || true)
+              MEMORY_OUTPUT=$(/usr/bin/time -v node "$CACI_CLI" --help 2>&1 >/dev/null || true)
               
               # Extract memory metrics
               MAX_RSS=$(echo "$MEMORY_OUTPUT" | grep "Maximum resident set size" | awk '{print $6}' || echo "0")
@@ -357,7 +640,7 @@ jobs:
           retention-days: 30
 
   analysis-speed:
-    name: CACI Analysis Speed Benchmarks
+    name: CACI Startup Speed Benchmarks
     runs-on: ubuntu-latest
     needs: setup
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'analysis-speed' || github.event.inputs.benchmark_type == ''
@@ -422,49 +705,64 @@ jobs:
             done
           done
 
-      - name: Analysis Speed Benchmark
+      - name: Startup Speed Benchmark
         run: |
-          echo "Starting analysis speed benchmarks..."
+          echo "Starting startup speed benchmarks..."
           mkdir -p benchmark-results
           
+          # Store the absolute path to the CLI
+          CACI_CLI="$(pwd)/caci/bin/caci"
+          echo "Using CACI CLI at: $CACI_CLI"
+          
           for project in small medium large complex; do
-            echo "Benchmarking analysis speed on $project project..."
+            echo "Benchmarking startup speed on $project project..."
             cd benchmark-workspace/$project
             
             echo "[]" > ../../benchmark-results/analysis-speed-$project.json
             
             for i in $(seq 1 $BENCHMARK_ITERATIONS); do
-              echo "Analysis iteration $i for $project project"
+              echo "Startup iteration $i for $project project"
               
-              # Measure analysis time with detailed breakdown
+              # Measure startup time with detailed breakdown
               START_TIME=$(date +%s.%N)
-              node ../../caci/dist/index.js analyze > analysis-output.txt 2>&1 || true
+              node "$CACI_CLI" --help > analysis-output.txt 2>&1 || true
               END_TIME=$(date +%s.%N)
               
-              ANALYSIS_TIME=$(echo "$END_TIME - $START_TIME" | bc)
-              COMPONENT_COUNT=$(find components -name "*.tsx" -o -name "*.jsx" | wc -l)
+              STARTUP_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+              COMPONENT_COUNT=$(find components -name "*.tsx" -o -name "*.jsx" 2>/dev/null | wc -l || echo "0")
               OUTPUT_SIZE=$(wc -l < analysis-output.txt)
               
+              # Count CACI components from components.json
+              CACI_AGENT_COUNT=$(jq '.agents | length' components.json 2>/dev/null || echo "0")
+              CACI_COMMAND_COUNT=$(jq '.commands | length' components.json 2>/dev/null || echo "0")
+              CACI_HOOK_COUNT=$(jq '.hooks | length' components.json 2>/dev/null || echo "0")
+              CACI_MCP_COUNT=$(jq '.mcps | length' components.json 2>/dev/null || echo "0")
+              CACI_TOTAL_COUNT=$(echo "$CACI_AGENT_COUNT + $CACI_COMMAND_COUNT + $CACI_HOOK_COUNT + $CACI_MCP_COUNT" | bc)
+              
               # Store results
-              jq --arg time "$ANALYSIS_TIME" --arg components "$COMPONENT_COUNT" --arg output "$OUTPUT_SIZE" --arg iteration "$i" \
-                '. += [{"iteration": ($iteration | tonumber), "analysis_time": ($time | tonumber), "component_count": ($components | tonumber), "output_lines": ($output | tonumber)}]' \
+              jq --arg time "$STARTUP_TIME" --arg components "$COMPONENT_COUNT" --arg output "$OUTPUT_SIZE" --arg iteration "$i" --arg caci_agents "$CACI_AGENT_COUNT" --arg caci_commands "$CACI_COMMAND_COUNT" --arg caci_hooks "$CACI_HOOK_COUNT" --arg caci_mcps "$CACI_MCP_COUNT" --arg caci_total "$CACI_TOTAL_COUNT" \
+                '. += [{"iteration": ($iteration | tonumber), "startup_time": ($time | tonumber), "component_count": ($components | tonumber), "output_lines": ($output | tonumber), "caci_agents": ($caci_agents | tonumber), "caci_commands": ($caci_commands | tonumber), "caci_hooks": ($caci_hooks | tonumber), "caci_mcps": ($caci_mcps | tonumber), "caci_total": ($caci_total | tonumber)}]' \
                 ../../benchmark-results/analysis-speed-$project.json > tmp.json && mv tmp.json ../../benchmark-results/analysis-speed-$project.json
             done
             
             cd ../..
             
             # Calculate statistics
-            TIME_AVG=$(jq '[.[].analysis_time] | add / length' benchmark-results/analysis-speed-$project.json)
+            TIME_AVG=$(jq '[.[].startup_time] | add / length' benchmark-results/analysis-speed-$project.json)
             COMPONENTS=$(jq '.[0].component_count' benchmark-results/analysis-speed-$project.json)
+            CACI_TOTAL=$(jq '.[0].caci_total' benchmark-results/analysis-speed-$project.json)
             
             echo "Project: $project" >> benchmark-results/analysis-speed-summary.txt
-            echo "  Components analyzed: $COMPONENTS" >> benchmark-results/analysis-speed-summary.txt
-            echo "  Average analysis time: ${TIME_AVG}s" >> benchmark-results/analysis-speed-summary.txt
-            echo "  Time per component: $(echo "$TIME_AVG / $COMPONENTS" | bc -l)s" >> benchmark-results/analysis-speed-summary.txt
+            echo "  React components found: $COMPONENTS" >> benchmark-results/analysis-speed-summary.txt
+            echo "  CACI components total: $CACI_TOTAL" >> benchmark-results/analysis-speed-summary.txt
+            echo "  Average startup time: ${TIME_AVG}s" >> benchmark-results/analysis-speed-summary.txt
+            if [ "$CACI_TOTAL" -gt 0 ]; then
+              echo "  Time per CACI component: $(echo "$TIME_AVG / $CACI_TOTAL" | bc -l)s" >> benchmark-results/analysis-speed-summary.txt
+            fi
             echo "" >> benchmark-results/analysis-speed-summary.txt
           done
 
-      - name: Upload analysis speed results
+      - name: Upload startup speed results
         uses: actions/upload-artifact@v4
         with:
           name: analysis-speed-results
@@ -592,9 +890,9 @@ jobs:
             
             # Compare CLI performance for medium project
             if [[ -f "benchmark-results/cli-performance-medium.json" ]]; then
-              CURRENT_ANALYZE=$(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-medium.json)
-              BASELINE_ANALYZE=$(jq '.cli_performance.medium.analyze_time // 1' .github/benchmark-baseline.json)
-              CHANGE_PERCENT=$(echo "scale=2; (($CURRENT_ANALYZE - $BASELINE_ANALYZE) / $BASELINE_ANALYZE) * 100" | bc || echo "0")
+              CURRENT_CONFIGURE_HELP=$(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-medium.json)
+              BASELINE_CONFIGURE_HELP=$(jq '.cli_performance.medium.configure_help_time // 1' .github/benchmark-baseline.json)
+              CHANGE_PERCENT=$(echo "scale=2; (($CURRENT_CONFIGURE_HELP - $BASELINE_CONFIGURE_HELP) / $BASELINE_CONFIGURE_HELP) * 100" | bc || echo "0")
               
               if (( $(echo "$CHANGE_PERCENT > 20" | bc -l) )); then
                 CHANGE_ICON="🔴"
@@ -604,7 +902,7 @@ jobs:
                 CHANGE_ICON="🟢"
               fi
               
-              echo "| CLI Analyze Time | ${BASELINE_ANALYZE}s | ${CURRENT_ANALYZE}s | ${CHANGE_ICON} ${CHANGE_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
+              echo "| CLI Configure Help Time | ${BASELINE_CONFIGURE_HELP}s | ${CURRENT_CONFIGURE_HELP}s | ${CHANGE_ICON} ${CHANGE_PERCENT}% |" >> $GITHUB_STEP_SUMMARY
             fi
             
             # Compare memory usage for medium project
@@ -656,18 +954,27 @@ jobs:
             "cli_performance": {
               "small": {
                 "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
-                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
-                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-small.json || echo "0")
+                "configure_help_time": $(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
+                "init_time": $(jq '[.[].init_time] | add / length' benchmark-results/cli-performance-small.json || echo "0"),
+                "history_time": $(jq '[.[].history_time] | add / length' benchmark-results/cli-performance-small.json || echo "0")
               },
               "medium": {
                 "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
-                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
-                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0")
+                "configure_help_time": $(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
+                "init_time": $(jq '[.[].init_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0"),
+                "history_time": $(jq '[.[].history_time] | add / length' benchmark-results/cli-performance-medium.json || echo "0")
               },
               "large": {
                 "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
-                "analyze_time": $(jq '[.[].analyze_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
-                "configure_time": $(jq '[.[].configure_time] | add / length' benchmark-results/cli-performance-large.json || echo "0")
+                "configure_help_time": $(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
+                "init_time": $(jq '[.[].init_time] | add / length' benchmark-results/cli-performance-large.json || echo "0"),
+                "history_time": $(jq '[.[].history_time] | add / length' benchmark-results/cli-performance-large.json || echo "0")
+              },
+              "complex": {
+                "help_time": $(jq '[.[].help_time] | add / length' benchmark-results/cli-performance-complex.json || echo "0"),
+                "configure_help_time": $(jq '[.[].configure_help_time] | add / length' benchmark-results/cli-performance-complex.json || echo "0"),
+                "init_time": $(jq '[.[].init_time] | add / length' benchmark-results/cli-performance-complex.json || echo "0"),
+                "history_time": $(jq '[.[].history_time] | add / length' benchmark-results/cli-performance-complex.json || echo "0")
               }
             },
             "memory_usage": {
@@ -679,6 +986,9 @@ jobs:
               },
               "large": {
                 "max_rss_mb": $(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-large.json || echo "0")
+              },
+              "complex": {
+                "max_rss_mb": $(jq '[.[].max_rss_mb] | add / length' benchmark-results/memory-usage-complex.json || echo "0")
               }
             }
           }
@@ -729,7 +1039,7 @@ jobs:
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
           
-          echo "### Analysis Speed Results" >> $GITHUB_STEP_SUMMARY
+          echo "### Startup Speed Results" >> $GITHUB_STEP_SUMMARY
           if [[ -f results/analysis-speed-summary.txt ]]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat results/analysis-speed-summary.txt >> $GITHUB_STEP_SUMMARY

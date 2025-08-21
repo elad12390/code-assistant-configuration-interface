@@ -67,6 +67,7 @@ jobs:
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             CURRENT_VERSION=$(node -p "require('./caci/package.json').version")
             echo "Current version: $CURRENT_VERSION"
+            cd caci
             if [[ "${{ github.event.inputs.version }}" == "prerelease" ]]; then
               NEW_VERSION=$(npm version prerelease --no-git-tag-version --preid=alpha)
             else
@@ -74,6 +75,7 @@ jobs:
             fi
             NEW_VERSION=${NEW_VERSION#v}
             echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            cd ..
             # Reset package.json to avoid committing version changes
             git checkout -- caci/package.json
           fi
@@ -325,26 +327,27 @@ jobs:
           ```
           EOF
 
+      - name: Create tag for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a v${{ needs.pre-publish-checks.outputs.version }} -m "Release v${{ needs.pre-publish-checks.outputs.version }}"
+          git push origin v${{ needs.pre-publish-checks.outputs.version }}
+
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        id: create_release
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ needs.pre-publish-checks.outputs.version }}
-          release_name: CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
+          name: CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
           body_path: release_notes.md
           draft: false
           prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
-
-      - name: Upload NPM package to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
-          asset_name: caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
-          asset_content_type: application/gzip
+          files: |
+            caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
 
   post-publish:
     name: CACI Post-publish Tasks

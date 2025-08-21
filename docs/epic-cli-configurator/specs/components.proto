@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package claude.components;
+
+// Component types supported by the Claude Code Configurator
+enum ComponentType {
+  COMPONENT_TYPE_UNSPECIFIED = 0;
+  COMPONENT_TYPE_AGENT = 1;
+  COMPONENT_TYPE_COMMAND = 2;
+  COMPONENT_TYPE_MCP = 3;
+  COMPONENT_TYPE_HOOK = 4;
+}
+
+// Base component structure
+message Component {
+  string name = 1;
+  string path = 2;
+  string category = 3;
+  ComponentType type = 4;
+  string content = 5;
+  string description = 6;
+}
+
+// Agent component - AI agents with specific capabilities
+message Agent {
+  string name = 1;
+  string path = 2;
+  string category = 3;
+  string content = 4;
+  string description = 5;
+}
+
+// Command component - CLI commands and tools
+message Command {
+  string name = 1;
+  string path = 2;
+  string category = 3;
+  string content = 4;
+  string description = 5;
+}
+
+// MCP component - Model Context Protocol servers
+message MCP {
+  string name = 1;
+  string path = 2;
+  string category = 3;
+  string content = 4;
+  string description = 5;
+}
+
+// Hook component - Automation hooks and triggers
+message Hook {
+  string name = 1;
+  string path = 2;
+  string category = 3;
+  string content = 4;
+  string description = 5;
+}

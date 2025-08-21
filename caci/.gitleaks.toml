@@ -1,0 +1,195 @@
+# Gitleaks configuration for secret detection
+title = "CACI Gitleaks Configuration"
+
+# Rules for detecting secrets
+[[rules]]
+id = "aws-access-key-id"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+keywords = [
+    "aws",
+    "access",
+    "key",
+]
+
+[[rules]]
+id = "aws-secret-access-key"
+description = "AWS Secret Access Key"
+regex = '''[A-Za-z0-9/+=]{40}'''
+keywords = [
+    "aws",
+    "secret",
+]
+
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[A-Za-z0-9_]{36}'''
+keywords = [
+    "github",
+    "token",
+    "ghp_",
+]
+
+[[rules]]
+id = "github-app-token"
+description = "GitHub App Token"
+regex = '''(gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36}'''
+keywords = [
+    "github",
+    "token",
+]
+
+[[rules]]
+id = "npm-token"
+description = "NPM Token"
+regex = '''npm_[A-Za-z0-9]{36}'''
+keywords = [
+    "npm",
+    "token",
+]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''[aA][pP][iI][_]?[kK][eE][yY].*['|\"][0-9a-zA-Z]{32,45}['|\"]'''
+keywords = [
+    "api",
+    "key",
+    "apikey",
+    "api_key",
+]
+
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+keywords = [
+    "google",
+    "api",
+    "key",
+    "AIza",
+]
+
+[[rules]]
+id = "gemini-api-key"
+description = "Gemini API Key"
+regex = '''[gG][eE][mM][iI][nN][iI].*['|\"][A-Za-z0-9_-]{30,}['|\"]'''
+keywords = [
+    "gemini",
+    "api",
+    "key",
+    "GEMINI_API_KEY",
+]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key"
+regex = '''sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}'''
+keywords = [
+    "openai",
+    "api",
+    "key",
+    "sk-",
+]
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API Key"
+regex = '''sk-ant-[A-Za-z0-9\-_]{95}'''
+keywords = [
+    "anthropic",
+    "claude",
+    "api",
+    "key",
+    "sk-ant-",
+]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA|OPENSSH|DSA|EC|PGP) PRIVATE KEY-----'''
+keywords = [
+    "private",
+    "key",
+    "BEGIN",
+    "PRIVATE KEY",
+]
+
+[[rules]]
+id = "jwt-token"
+description = "JSON Web Token"
+regex = '''eyJ[A-Za-z0-9_/+-]*\.eyJ[A-Za-z0-9_/+-]*\.[A-Za-z0-9._/+-]*'''
+keywords = [
+    "jwt",
+    "token",
+    "eyJ",
+]
+
+[[rules]]
+id = "password-in-url"
+description = "Password in URL"
+regex = '''[a-zA-Z]{3,10}://[^/\\s:@]{3,20}:[^/\\s:@]{3,20}@.{1,100}'''
+keywords = [
+    "password",
+    "://",
+]
+
+[[rules]]
+id = "connection-string"
+description = "Database Connection String"
+regex = '''(mongodb|mysql|postgresql)://[^\\s]*:[^\\s]*@[^\\s]*'''
+keywords = [
+    "mongodb",
+    "mysql",
+    "postgresql",
+    "connection",
+    "string",
+]
+
+# Global allowlist
+[allowlist]
+description = "Global allowlist"
+regexes = [
+    '''219-09-9999''',  # Fake SSN
+    '''078-05-1120''',  # Fake SSN
+    '''(example\.com|localhost)''',  # Example domains
+    '''(test|mock|fake|dummy|placeholder)''',  # Test values
+]
+
+paths = [
+    '''gitleaks.toml''',
+    '''(.*?)(jpg|gif|doc|pdf|bin)$''',
+    '''.github/workflows/.*\.yml$''',  # GitHub Actions workflows
+    '''.github/dependabot.yml$''',
+    '''package-lock.json$''',
+    '''yarn.lock$''',
+    '''go.sum$''',
+]
+
+commits = [
+    '''initial commit''',
+    '''test commit''',
+]
+
+# Specific rules for this project
+[[rules]]
+id = "caci-test-key"
+description = "Test API keys for CACI"
+regex = '''test[_-]?api[_-]?key[_-]?[a-zA-Z0-9]{20,}'''
+keywords = [
+    "test",
+    "api",
+    "key",
+]
+
+# Rule to ignore test files and mock data
+[allowlist.files]
+paths = [
+    '''tests/.*\.test\.(ts|js)$''',
+    '''tests/.*\.spec\.(ts|js)$''',
+    '''.*mock.*\.(ts|js|json)$''',
+    '''.*fixture.*\.(ts|js|json)$''',
+    '''test-workspace/.*$''',
+    '''benchmark-workspace/.*$''',
+]

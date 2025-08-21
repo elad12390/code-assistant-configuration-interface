@@ -1,7 +1,7 @@
-# Claude Code Configurator - Development Progress
+# CACI - Development Progress
 
 ## Overview
-This document tracks the development progress of the Claude Code Configurator CLI tool, which automates the configuration of Claude Code projects by intelligently selecting and configuring agents, commands, MCPs, and hooks based on project requirements.
+This document tracks the development progress of CACI (Code Assistant Configuration Interface), which automates the configuration of Claude Code projects by intelligently selecting and configuring agents, commands, MCPs, and hooks based on project requirements.
 
 ## Completed Stories
 
@@ -15,7 +15,7 @@ This document tracks the development progress of the Claude Code Configurator CL
   - Error handling for missing files and permissions
 - **Files**:
   - `claude-config/src/cli/index.ts`
-  - `claude-config/bin/claude-config`
+  - `claude-config/bin/caci`
   - `claude-config/tests/cli/index.test.ts`
 
 ### ✅ Story 1.2: Implement Component Analysis

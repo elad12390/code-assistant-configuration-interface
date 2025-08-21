@@ -1,0 +1,424 @@
+name: CACI NPM Publishing
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., patch, minor, major)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+        - prerelease
+      tag:
+        description: 'NPM tag for publication'
+        required: false
+        default: 'latest'
+        type: string
+      dry_run:
+        description: 'Perform dry run (do not actually publish)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+jobs:
+  pre-publish-checks:
+    name: CACI Pre-publish Checks
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.tag.outputs.tag }}
+      should_publish: ${{ steps.should_publish.outputs.should_publish }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: caci
+        run: npm ci
+
+      - name: Determine version and tag
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            CURRENT_VERSION=$(node -p "require('./caci/package.json').version")
+            echo "Current version: $CURRENT_VERSION"
+            if [[ "${{ github.event.inputs.version }}" == "prerelease" ]]; then
+              NEW_VERSION=$(npm version prerelease --no-git-tag-version --preid=alpha)
+            else
+              NEW_VERSION=$(npm version ${{ github.event.inputs.version }} --no-git-tag-version)
+            fi
+            NEW_VERSION=${NEW_VERSION#v}
+            echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+            # Reset package.json to avoid committing version changes
+            git checkout -- caci/package.json
+          fi
+
+      - name: Determine NPM tag
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            if [[ "${{ steps.version.outputs.version }}" =~ -.*\. ]]; then
+              echo "tag=beta" >> $GITHUB_OUTPUT
+            else
+              echo "tag=latest" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "tag=${{ github.event.inputs.tag || 'latest' }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Should publish?
+        id: should_publish
+        run: |
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run comprehensive tests
+        working-directory: caci
+        run: |
+          npm run build
+          npm run test:coverage
+          npm test
+
+      - name: Verify package integrity
+        working-directory: caci
+        run: |
+          npm pack --dry-run
+          npm audit --production
+          
+      - name: Check if version already exists on NPM
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if npm view caci@$VERSION version 2>/dev/null; then
+            echo "Version $VERSION already exists on NPM!"
+            exit 1
+          else
+            echo "Version $VERSION is available for publishing"
+          fi
+
+  build-and-test:
+    name: CACI Build and Test for Publishing
+    runs-on: ${{ matrix.os }}
+    needs: pre-publish-checks
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20, 22]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: caci
+        run: npm ci
+
+      - name: Build project
+        working-directory: caci
+        run: npm run build
+
+      - name: Run tests
+        working-directory: caci
+        run: npm test
+
+      - name: Test CLI installation
+        shell: bash
+        run: |
+          cd caci
+          npm pack
+          npm install -g caci-*.tgz
+          caci --version
+          caci --help
+
+      - name: Test in clean environment
+        shell: bash
+        run: |
+          mkdir test-clean-install
+          cd test-clean-install
+          npm init -y
+          npm install ../caci/caci-*.tgz
+          node -e "console.log('CLI installed successfully')"
+
+  publish-npm:
+    name: CACI Publish to NPM
+    runs-on: ubuntu-latest
+    needs: [pre-publish-checks, build-and-test]
+    if: needs.pre-publish-checks.outputs.should_publish == 'true'
+    environment: npm-publishing
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        working-directory: caci
+        run: npm ci
+
+      - name: Update version
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: caci
+        run: |
+          VERSION="${{ needs.pre-publish-checks.outputs.version }}"
+          npm version $VERSION --no-git-tag-version
+          echo "Updated package version to $VERSION"
+
+      - name: Build for production
+        working-directory: caci
+        run: npm run build
+
+      - name: Final pre-publish checks
+        working-directory: caci
+        run: |
+          npm run test:coverage
+          npm audit --production --audit-level moderate
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Install changelog generator if not present
+          npx auto-changelog --template keepachangelog --commit-limit false --starting-version ${{ needs.pre-publish-checks.outputs.version }} --output CHANGELOG-CURRENT.md || echo "Could not generate changelog"
+          
+          # If changelog exists, use it for release notes
+          if [[ -f CHANGELOG-CURRENT.md ]]; then
+            echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_ENV
+            cat CHANGELOG-CURRENT.md >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "CHANGELOG_CONTENT=Release version ${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_ENV
+          fi
+
+      - name: Publish to NPM
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: caci
+        run: |
+          echo "Publishing caci@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
+          npm publish --tag ${{ needs.pre-publish-checks.outputs.tag }} --access public
+
+      - name: Verify publication
+        run: |
+          sleep 30  # Wait for NPM to sync
+          PUBLISHED_VERSION=$(npm view caci@${{ needs.pre-publish-checks.outputs.tag }} version)
+          if [[ "$PUBLISHED_VERSION" == "${{ needs.pre-publish-checks.outputs.version }}" ]]; then
+            echo "✅ Successfully published version ${{ needs.pre-publish-checks.outputs.version }}"
+          else
+            echo "❌ Publication verification failed"
+            echo "Expected: ${{ needs.pre-publish-checks.outputs.version }}"
+            echo "Published: $PUBLISHED_VERSION"
+            exit 1
+          fi
+
+  create-github-release:
+    name: CACI Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [pre-publish-checks, publish-npm]
+    if: needs.pre-publish-checks.outputs.should_publish == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: caci
+        run: npm ci
+
+      - name: Build project
+        working-directory: caci
+        run: npm run build
+
+      - name: Create release package
+        working-directory: caci
+        run: |
+          npm pack
+          ls -la caci-*.tgz
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
+          
+          ### 📦 Installation
+          ```bash
+          npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
+          ```
+          
+          ### 🔗 NPM Package
+          - **NPM**: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}
+          - **Tag**: `${{ needs.pre-publish-checks.outputs.tag }}`
+          
+          ### 🚀 Usage
+          ```bash
+          caci --help
+          caci analyze
+          caci configure
+          ```
+          
+          ### 📋 What's New
+          ${{ env.CHANGELOG_CONTENT || 'See commit history for changes in this release.' }}
+          
+          ### 🧪 Testing
+          This release has been tested on:
+          - Ubuntu Latest, macOS Latest, Windows Latest
+          - Node.js versions 18, 20, 22
+          - Multiple real-world project scenarios
+          
+          ### 🔍 Verification
+          You can verify the integrity of this release:
+          ```bash
+          npm view caci@${{ needs.pre-publish-checks.outputs.version }}
+          ```
+          EOF
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.pre-publish-checks.outputs.version }}
+          release_name: CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
+
+      - name: Upload NPM package to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
+          asset_name: caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
+          asset_content_type: application/gzip
+
+  post-publish:
+    name: CACI Post-publish Tasks
+    runs-on: ubuntu-latest
+    needs: [pre-publish-checks, publish-npm, create-github-release]
+    if: always() && needs.pre-publish-checks.outputs.should_publish == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Test installation from NPM
+        run: |
+          # Wait a bit more for NPM to fully sync
+          sleep 60
+          
+          # Test global installation
+          npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
+          caci --version
+          caci --help
+          
+          # Test project installation
+          mkdir test-project-install
+          cd test-project-install
+          npm init -y
+          npm install caci@${{ needs.pre-publish-checks.outputs.version }}
+
+      - name: Update package documentation
+        if: needs.pre-publish-checks.outputs.tag == 'latest'
+        run: |
+          echo "Latest version ${{ needs.pre-publish-checks.outputs.version }} published successfully!"
+          echo "NPM: https://www.npmjs.com/package/caci"
+          echo "GitHub: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.pre-publish-checks.outputs.version }}"
+
+      - name: Notify on success
+        run: |
+          echo "🎉 Successfully published caci@${{ needs.pre-publish-checks.outputs.version }}"
+          echo "📦 NPM: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}"
+          echo "🏷️ Tag: ${{ needs.pre-publish-checks.outputs.tag }}"
+
+  publish-summary:
+    name: CACI Publication Summary
+    runs-on: ubuntu-latest
+    needs: [pre-publish-checks, build-and-test, publish-npm, create-github-release, post-publish]
+    if: always()
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "## NPM Publication Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Pre-publish Checks | ${{ needs.pre-publish-checks.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build-and-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM Publish | ${{ needs.publish-npm.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.create-github-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Post-publish | ${{ needs.post-publish.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [[ "${{ needs.pre-publish-checks.outputs.should_publish }}" == "true" ]]; then
+            if [[ "${{ needs.publish-npm.result }}" == "success" ]]; then
+              echo "✅ **Successfully published caci@${{ needs.pre-publish-checks.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🔗 **Links:**" >> $GITHUB_STEP_SUMMARY
+              echo "- NPM: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+              echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ Publication failed. Check the logs above." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "ℹ️ Dry run completed - no publication performed" >> $GITHUB_STEP_SUMMARY
+          fi

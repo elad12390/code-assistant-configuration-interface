@@ -1,4 +1,4 @@
-# PRD: Claude Code Configurator MVP
+# PRD: CACI (Code Assistant Configuration Interface) MVP
 
 ## 1. Product Vision
 A simple, intelligent CLI tool that automates the configuration of Claude Code projects by analyzing project requirements and intelligently selecting the most relevant agents, commands, MCPs, and hooks from a large pool of available components.
@@ -7,7 +7,7 @@ A simple, intelligent CLI tool that automates the configuration of Claude Code p
 Configuring Claude Code for projects is currently a manual, time-consuming process. With 102 available agents, developers face decision paralysis and often miss important components. The process lacks standardization and version control, making it difficult to reproduce configurations or track changes over time.
 
 ## 3. Solution Overview
-An npm package (`claude-config`) that provides an interactive CLI interface to:
+An npm package (`caci`) that provides an interactive CLI interface to:
 1. Analyze project requirements through guided questions
 2. Intelligently recommend the best components from a large pool
 3. Backup existing configurations before applying changes
@@ -46,7 +46,7 @@ As a user, I want to easily modify my configuration in the future, so that I can
 ## 6. Functional Requirements
 
 ### 6.1 CLI Interface
-- Command: `npx claude-config`
+- Command: `npx caci`
 - Interactive question-based interface
 - Progress indicators
 - Clear error messages

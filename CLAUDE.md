@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-The Claude Code Configurator is an intelligent CLI tool that automates Claude Code project configuration by analyzing requirements and using AI to recommend relevant agents, commands, MCPs, and hooks from a large component pool. The tool manages the entire lifecycle including backup, application, and iteration tracking.
+CACI (Code Assistant Configuration Interface) is an intelligent CLI tool that automates Claude Code project configuration by analyzing requirements and using AI to recommend relevant agents, commands, MCPs, and hooks from a large component pool. The tool manages the entire lifecycle including backup, application, and iteration tracking.
 
 ## Development Commands
 
@@ -31,8 +31,11 @@ npm test -- analyzer/parser.test.ts
 # Run the CLI locally during development
 npm run dev
 
-# Test the built CLI
-node bin/claude-config --configure
+# Test the built CLI globally
+npx caci configure
+
+# Test the local CLI during development
+node bin/caci configure
 ```
 
 **Environment setup for AI features:**
@@ -120,7 +123,7 @@ interface UserRequirements {
 
 - **Source code**: `claude-config/src/` with TypeScript compilation to `dist/`
 - **Tests**: Mirror source structure in `claude-config/tests/` using Jest
-- **Binary**: `claude-config/bin/claude-config` points to compiled CLI
+- **Binary**: `claude-config/bin/caci` points to compiled CLI (published as `caci` package)
 - **Configuration output**: Creates `.claude/` (configuration) and `.configurator/` (history) in target project
 - **Components definition**: Expects `components.json` in target project root
 
@@ -141,7 +144,7 @@ The project uses Google's Generative AI through LangChain for intelligent compon
 
 ## Development Status
 
-The project is currently at **83% completion** with **all core functionality fully implemented and working**. The system is **production-ready** and fulfills its primary mission of making Claude Code configuration easy for new developers.
+CACI is currently at **83% completion** with **all core functionality fully implemented and working**. The system is **production-ready** and fulfills its primary mission of making Claude Code configuration easy for new developers.
 
 **✅ FULLY FUNCTIONAL FEATURES:**
 - Complete CLI interface with all commands working (configure, init, update, reset, history)

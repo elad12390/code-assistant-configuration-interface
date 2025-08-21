@@ -7,7 +7,7 @@ Completed
 As a Claude Code user, I want to run a simple command to start the configuration process, so that I can quickly begin setting up my project.
 
 ## Acceptance Criteria
-1. User can run `npx claude-config` to start the CLI
+1. User can run `npx caci` to start the CLI
 2. CLI displays a welcome message
 3. CLI shows available options (init, update, reset, help)
 4. CLI handles invalid commands gracefully
@@ -15,7 +15,7 @@ As a Claude Code user, I want to run a simple command to start the configuration
 
 ## Tasks / Subtasks
 - [x] Create CLI entry point script
-  - [x] Create executable script in bin/claude-config
+  - [x] Create executable script in bin/caci
   - [x] Set proper permissions for the script
   - [x] Implement basic command parsing
   - [x] Add help option
@@ -47,7 +47,7 @@ The CLI interface has been implemented using Commander.js for parsing command li
 Tests have been written using Jest to verify all functionality, and all tests are passing.
 
 ### Key Implementation Details
-1. Created a CLI entry point script in bin/claude-config that references the compiled JavaScript file
+1. Created a CLI entry point script in bin/caci that references the compiled JavaScript file
 2. Implemented command parsing using Commander.js
 3. Added proper error handling for missing files and permission errors
 4. Wrote comprehensive tests to verify all functionality
@@ -74,7 +74,7 @@ CLI implementation completed successfully with all tests passing.
 6. Project builds successfully
 
 ### File List
-- claude-config/bin/claude-config
+- claude-config/bin/caci
 - claude-config/src/cli/index.ts
 - claude-config/dist/cli/index.js
 - claude-config/tests/cli/index.test.ts

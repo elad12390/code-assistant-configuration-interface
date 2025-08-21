@@ -1,12 +1,12 @@
-# Architecture: Claude Code Configurator MVP
+# Architecture: CACI (Code Assistant Configuration Interface) MVP
 
 ## 1. System Overview
-The Claude Code Configurator is a Node.js CLI application that provides intelligent configuration management for Claude Code projects. It analyzes project requirements, recommends relevant components, and applies configurations while maintaining backups and iteration history.
+CACI (Code Assistant Configuration Interface) is a Node.js CLI application that provides intelligent configuration management for Claude Code projects. It analyzes project requirements, recommends relevant components, and applies configurations while maintaining backups and iteration history.
 
 ## 2. Key Components
 
 ### 2.1 CLI Interface
-- Entry point: `npx claude-config`
+- Entry point: `npx caci`
 - Interactive prompts for requirement gathering
 - Progress feedback and error handling
 
@@ -45,7 +45,7 @@ src/
 ```
 
 ### 3.3 Data Flow
-1. User runs `npx claude-config`
+1. User runs `npx caci`
 2. CLI prompts for project requirements
 3. Analyzer processes components.json
 4. Analyzer ranks components based on requirements
@@ -58,7 +58,7 @@ src/
 ```
 claude-config/
 ├── bin/
-│   └── claude-config    # Executable script
+│   └── caci    # Executable script
 ├── src/
 │   ├── cli/
 │   ├── analyzer/
@@ -78,7 +78,7 @@ claude-config/
 
 ### 5.1 CLI Interface
 ```
-npx claude-config [options]
+npx caci [options]
 Options:
   -i, --init      Initialize configuration
   -u, --update    Update existing configuration

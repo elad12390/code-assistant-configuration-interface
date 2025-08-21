@@ -1,10 +1,10 @@
-# Claude Code Configurator
+# CACI
 
-An interactive CLI tool for configuring Claude Code projects.
+CACI (Code Assistant Configuration Interface) - An intelligent CLI tool for configuring Claude Code projects with AI-powered recommendations
 
 ## Overview
 
-The Claude Code Configurator is a command-line interface tool that simplifies the process of setting up and managing Claude Code configurations in your projects. It provides an intuitive way to analyze your project components, recommend relevant agents and commands, and safely apply configurations.
+CACI (Code Assistant Configuration Interface) is a command-line interface tool that simplifies the process of setting up and managing Claude Code configurations in your projects. It provides an intuitive way to analyze your project components, recommend relevant agents and commands, and safely apply configurations.
 
 ## Features
 
@@ -16,7 +16,7 @@ The Claude Code Configurator is a command-line interface tool that simplifies th
 
 ## Quick Start
 
-**✅ FULLY FUNCTIONAL SYSTEM** - The Claude Code Configurator makes setting up Claude Code effortless for new developers. Get your Claude Code environment configured with AI-powered recommendations in minutes, not hours.
+**✅ FULLY FUNCTIONAL SYSTEM** - CACI makes setting up Claude Code effortless for new developers. Get your Claude Code environment configured with AI-powered recommendations in minutes, not hours.
 
 **Current Status**: Production-ready with all core features working (5/6 stories complete, 83% done)
 
@@ -33,36 +33,36 @@ The Claude Code Configurator is a command-line interface tool that simplifies th
 
 **For Local Development** (current setup):
 ```bash
-# Clone and setup
-git clone [repository-url]
-cd claude-code-configurator/claude-config
-npm install
-npm run build
+# Install globally
+npm install -g caci
+
+# Or use directly
+npx caci configure
 
 # Configure your Claude Code project
-node bin/claude-config configure --project-dir /path/to/your/project
+caci configure --project-dir /path/to/your/project
 
 # Or use from your project directory
 cd /path/to/your/project
-/path/to/claude-config/claude-config/bin/claude-config configure
+caci configure
 ```
 
 **Available Commands (ALL WORKING ✅):**
 ```bash
 # Initialize or update configuration with AI recommendations
-claude-config configure  ✅ WORKING
+caci configure  ✅ WORKING
 
 # Alternative commands (all run the same workflow)
-claude-config init       ✅ WORKING - Initialize configuration
-claude-config update     ✅ WORKING - Update existing configuration
+caci init       ✅ WORKING - Initialize configuration
+caci update     ✅ WORKING - Update existing configuration
 
 # Backup and restore
-claude-config reset      ✅ WORKING - Restore from previous backup
-claude-config history    ✅ WORKING - View configuration history
+caci reset      ✅ WORKING - Restore from previous backup
+caci history    ✅ WORKING - View configuration history
 
 # Help
-claude-config --help     ✅ WORKING - Show all commands
-claude-config --version  ✅ WORKING
+caci --help     ✅ WORKING - Show all commands
+caci --version  ✅ WORKING
 ```
 
 ### How It Works
@@ -77,9 +77,9 @@ claude-config --version  ✅ WORKING
 ## Example Workflow
 
 ```bash
-$ claude-config configure
+$ caci configure
 
-🔧 Claude Code Configurator
+🔧 CACI (Code Assistant Configuration Interface)
 =============================
 
 📁 Project directory: /path/to/your/project
@@ -112,7 +112,7 @@ $ claude-config configure
 📋 Iteration ID: 2025-08-21T20-52-36-897Z
 
 ✨ Your Claude Code project is now configured with AI-recommended components.
-   You can view your configuration history using: claude-config history
+   You can view your configuration history using: caci history
 ```
 
 ## Project Structure
@@ -144,7 +144,7 @@ To work on this project:
    ```
 4. Run the CLI locally:
    ```bash
-   node bin/claude-config configure
+   npx caci configure
    ```
 
 ## Contributing

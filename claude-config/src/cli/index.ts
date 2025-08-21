@@ -11,6 +11,7 @@ program
   .option('-i, --init', 'Initialize configuration')
   .option('-u, --update', 'Update existing configuration')
   .option('-r, --reset', 'Reset to previous configuration')
+  .option('-c, --configure', 'Run full configuration workflow')
   .parse(process.argv);
 
 const options = program.opts();
@@ -34,4 +35,15 @@ if (options.update) {
 if (options.reset) {
   console.log('Resetting configuration...');
   // Implementation will be added later
+}
+
+if (options.configure) {
+  console.log('Running full configuration workflow...');
+  // Import and run the configure command
+  import('./configure').then(module => {
+    // The configure command will run automatically when imported
+  }).catch(error => {
+    console.error('Failed to run configuration workflow:', error);
+    process.exit(1);
+  });
 }

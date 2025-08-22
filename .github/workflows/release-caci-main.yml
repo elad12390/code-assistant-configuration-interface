@@ -339,7 +339,7 @@ jobs:
 
           #### NPM (Recommended)
           \`\`\`bash
-          npm install -g caci@${VERSION}
+          npm install -g @claude-code/caci@${VERSION}
           \`\`\`
 
           #### Docker
@@ -474,7 +474,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Installation Commands:**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📦 **NPM**: \`npm install -g caci@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **NPM**: \`npm install -g @claude-code/caci@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
             echo "🐳 **Docker**: \`docker run --rm caci:${{ needs.prepare-release.outputs.version }} --help\`" >> $GITHUB_STEP_SUMMARY
             echo "🔧 **APT**: \`curl -fsSL .../install-caci-apt.sh | sudo bash\`" >> $GITHUB_STEP_SUMMARY
             echo "🍺 **Homebrew**: \`brew install caci\`" >> $GITHUB_STEP_SUMMARY

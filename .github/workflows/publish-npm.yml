@@ -149,7 +149,7 @@ jobs:
       - name: Check if version already exists on NPM
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          if npm view caci@$VERSION version 2>/dev/null; then
+          if npm view @claude-code/caci@$VERSION version 2>/dev/null; then
             echo "Version $VERSION already exists on NPM!"
             exit 1
           else
@@ -263,13 +263,13 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "Publishing caci@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
+          echo "Publishing @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
           npm publish --tag ${{ needs.pre-publish-checks.outputs.tag }} --access public
 
       - name: Verify publication
         run: |
           sleep 30  # Wait for NPM to sync
-          PUBLISHED_VERSION=$(npm view caci@${{ needs.pre-publish-checks.outputs.tag }} version)
+          PUBLISHED_VERSION=$(npm view @claude-code/caci@${{ needs.pre-publish-checks.outputs.tag }} version)
           if [[ "$PUBLISHED_VERSION" == "${{ needs.pre-publish-checks.outputs.version }}" ]]; then
             echo "✅ Successfully published version ${{ needs.pre-publish-checks.outputs.version }}"
           else
@@ -317,11 +317,11 @@ jobs:
 
           ### 📦 Installation
           ```bash
-          npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
+          npm install -g @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}
           ```
 
           ### 🔗 NPM Package
-          - **NPM**: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}
+          - **NPM**: https://www.npmjs.com/package/@claude-code/caci/v/${{ needs.pre-publish-checks.outputs.version }}
           - **Tag**: `${{ needs.pre-publish-checks.outputs.tag }}`
 
           ### 🚀 Usage
@@ -343,7 +343,7 @@ jobs:
           ### 🔍 Verification
           You can verify the integrity of this release:
           ```bash
-          npm view caci@${{ needs.pre-publish-checks.outputs.version }}
+          npm view @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}
           ```
           EOF
 
@@ -390,7 +390,7 @@ jobs:
           sleep 60
 
           # Test global installation
-          npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
+          npm install -g @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}
           caci --version
           caci --help
 
@@ -398,7 +398,7 @@ jobs:
           mkdir test-project-install
           cd test-project-install
           npm init -y
-          npm install caci@${{ needs.pre-publish-checks.outputs.version }}
+          npm install @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}
 
       - name: Update package documentation
         if: needs.pre-publish-checks.outputs.tag == 'latest'
@@ -409,8 +409,8 @@ jobs:
 
       - name: Notify on success
         run: |
-          echo "🎉 Successfully published caci@${{ needs.pre-publish-checks.outputs.version }}"
-          echo "📦 NPM: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}"
+          echo "🎉 Successfully published @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}"
+          echo "📦 NPM: https://www.npmjs.com/package/@claude-code/caci/v/${{ needs.pre-publish-checks.outputs.version }}"
           echo "🏷️ Tag: ${{ needs.pre-publish-checks.outputs.tag }}"
 
   publish-summary:
@@ -445,10 +445,10 @@ jobs:
 
           if [[ "${{ needs.pre-publish-checks.outputs.should_publish }}" == "true" ]]; then
             if [[ "${{ needs.publish-npm.result }}" == "success" ]]; then
-              echo "✅ **Successfully published caci@${{ needs.pre-publish-checks.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Successfully published @claude-code/caci@${{ needs.pre-publish-checks.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "🔗 **Links:**" >> $GITHUB_STEP_SUMMARY
-              echo "- NPM: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+              echo "- NPM: https://www.npmjs.com/package/@claude-code/caci/v/${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_STEP_SUMMARY
               echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.pre-publish-checks.outputs.version }}" >> $GITHUB_STEP_SUMMARY
             else
               echo "❌ Publication failed. Check the logs above." >> $GITHUB_STEP_SUMMARY

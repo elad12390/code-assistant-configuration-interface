@@ -1,4 +1,5 @@
 import * as path from 'path';
+import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { parseComponentsFile } from '../../src/analyzer/parser';
 import { collectUserRequirements } from '../../src/analyzer/requirementCollector';
@@ -54,7 +55,7 @@ describe('Analyzer Integration', () => {
       stderr: { on: jest.fn() },
     };
 
-    mockSpawn.mockReturnValue(mockTreeProcess as any);
+    mockSpawn.mockReturnValue(mockTreeProcess as ChildProcess);
   });
 
   it('should parse components file and recommend components', async () => {

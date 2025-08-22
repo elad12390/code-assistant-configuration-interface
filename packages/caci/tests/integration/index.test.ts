@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 import { runConfigurationWorkflow } from '../../src/integration';
 
@@ -66,7 +67,7 @@ describe('CACI CLI Integration', () => {
       stderr: { on: jest.fn() },
     };
 
-    mockSpawn.mockReturnValue(mockTreeProcess);
+    mockSpawn.mockReturnValue(mockTreeProcess as ChildProcess);
     
     // Create a temporary directory for testing
     tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'caci-test-'));
@@ -179,8 +180,8 @@ describe('CACI CLI Integration', () => {
     // Instead test that the workflow gracefully handles Claude CLI being unavailable
     
     // Mock AI recommender to throw Claude CLI error
-    const { recommendComponents } = require('../../src/analyzer/ai-recommender');
-    recommendComponents.mockRejectedValueOnce(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+    const aiRecommender = await import('../../src/analyzer/ai-recommender');
+    (aiRecommender.recommendComponents as jest.Mock).mockRejectedValueOnce(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
 
     // Run the configuration workflow
     const result = await runConfigurationWorkflow(projectDir);

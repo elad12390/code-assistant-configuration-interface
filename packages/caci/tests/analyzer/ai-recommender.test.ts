@@ -1,5 +1,6 @@
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
 import type { ComponentsData, UserRequirements } from '../../src/analyzer';
+import type { ChildProcess } from 'child_process';
 import { spawn } from 'child_process';
 
 // Mock the child_process spawn
@@ -74,15 +75,17 @@ describe('AI Recommender', () => {
 
   it('should throw error when Claude CLI is not available', async () => {
     // Mock claude --version command to fail
-    mockSpawn.mockReturnValueOnce({
+    const mockFailProcess: any = {
       ...mockEventEmitter,
-      on: jest.fn((event, callback) => {
+      on: jest.fn((event: string, callback: (code: number) => void) => {
         if (event === 'close') {
           setTimeout(() => callback(1), 0); // Exit with code 1 (failure)
         }
-        return mockEventEmitter;
+        return mockFailProcess;
       }),
-    });
+    };
+    
+    mockSpawn.mockReturnValueOnce(mockFailProcess as ChildProcess);
 
     await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
       'Claude CLI not found'
@@ -128,8 +131,8 @@ describe('AI Recommender', () => {
     };
 
     mockSpawn
-      .mockReturnValueOnce(mockVersionCheck)
-      .mockReturnValueOnce(mockClaudeCommand);
+      .mockReturnValueOnce(mockVersionCheck as ChildProcess)
+      .mockReturnValueOnce(mockClaudeCommand as ChildProcess);
 
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 
@@ -179,8 +182,8 @@ describe('AI Recommender', () => {
     };
 
     mockSpawn
-      .mockReturnValueOnce(mockVersionCheck)
-      .mockReturnValueOnce(mockClaudeCommand);
+      .mockReturnValueOnce(mockVersionCheck as ChildProcess)
+      .mockReturnValueOnce(mockClaudeCommand as ChildProcess);
 
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 

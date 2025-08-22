@@ -18,17 +18,25 @@ type Recommendation = z.infer<typeof RecommendationSchema>;
 async function checkClaudeAvailability(): Promise<void> {
   return new Promise((resolve, reject) => {
     const claude = spawn('claude', ['--version'], { stdio: ['ignore', 'pipe', 'pipe'] });
-    
-    claude.on('close', (code) => {
+
+    claude.on('close', code => {
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+        reject(
+          new Error(
+            'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
+          )
+        );
       }
     });
-    
+
     claude.on('error', () => {
-      reject(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+      reject(
+        new Error(
+          'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
+        )
+      );
     });
   });
 }
@@ -39,35 +47,41 @@ async function checkClaudeAvailability(): Promise<void> {
 async function callClaude(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const args = [
-      '-p', prompt,
-      '--output-format', 'json',
-      '--model', 'sonnet',
-      '--max-turns', '1',
-      '--permission-mode', 'plan',
-      '--append-system-prompt', 'Chat-only; no tools; Output strict JSON matching the exact schema provided.'
+      '-p',
+      prompt,
+      '--output-format',
+      'json',
+      '--model',
+      'sonnet',
+      '--max-turns',
+      '1',
+      '--permission-mode',
+      'plan',
+      '--append-system-prompt',
+      'Chat-only; no tools; Output strict JSON matching the exact schema provided.',
     ];
-    
+
     const claude = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
-    
-    claude.stdout.on('data', (data) => {
+
+    claude.stdout.on('data', (data: Buffer) => {
       stdout += data.toString();
     });
-    
-    claude.stderr.on('data', (data) => {
+
+    claude.stderr.on('data', (data: Buffer) => {
       stderr += data.toString();
     });
-    
-    claude.on('close', (code) => {
+
+    claude.on('close', code => {
       if (code === 0) {
         resolve(stdout.trim());
       } else {
         reject(new Error(stderr || `Claude CLI exited with code ${code}`));
       }
     });
-    
-    claude.on('error', (error) => {
+
+    claude.on('error', error => {
       reject(new Error(`Failed to execute Claude CLI: ${error.message}`));
     });
   });
@@ -83,9 +97,10 @@ function generatePrompt(
   userRequirements: UserRequirements,
   componentsData: ComponentsData
 ): string {
-  const projectStructure = userRequirements.projectStructure || 'No project structure available';
-  const projectDescription = userRequirements['project-description'] || 'No project description provided';
-  
+  const projectStructure = userRequirements.projectStructure ?? 'No project structure available';
+  const projectDescription =
+    userRequirements['project-description'] ?? 'No project description provided';
+
   return `You are an expert AI assistant that helps developers select the most appropriate Claude Code components for their projects.
 
 User Requirements:
@@ -165,7 +180,9 @@ export async function recommendComponents(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('Claude CLI not found')) {
-      throw new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.');
+      throw new Error(
+        'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
+      );
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }

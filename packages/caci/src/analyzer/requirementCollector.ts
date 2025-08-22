@@ -3,18 +3,54 @@ import { spawn } from 'child_process';
 import { PROJECT_REQUIREMENTS_QUESTIONS } from './questions';
 
 export interface UserResponse {
-  [key: string]: any;
+  [key: string]: unknown;
   projectStructure?: string;
+}
+
+/**
+ * Fallback function when tree command is not available
+ */
+function tryFindFallback(projectDir: string, resolve: (value: string) => void): void {
+  const ls = spawn(
+    'find',
+    [
+      projectDir,
+      '-maxdepth',
+      '2',
+      '-type',
+      'f',
+      '-not',
+      '-path',
+      '*/node_modules/*',
+      '-not',
+      '-path',
+      '*/.git/*',
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] }
+  );
+  let lsOutput = '';
+
+  ls.stdout.on('data', (data: Buffer) => {
+    lsOutput += data.toString();
+  });
+
+  ls.on('close', () => {
+    resolve(lsOutput || 'Unable to analyze project structure');
+  });
+
+  ls.on('error', () => {
+    resolve('Unable to analyze project structure');
+  });
 }
 
 /**
  * Generates project structure using tree command, excluding common dependency folders
  */
 async function generateProjectStructure(projectDir: string): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const excludePatterns = [
       'node_modules',
-      '.git', 
+      '.git',
       'dist',
       'build',
       '.next',
@@ -26,46 +62,34 @@ async function generateProjectStructure(projectDir: string): Promise<string> {
       '.env',
       'vendor',
       'coverage',
-      '.nyc_output'
+      '.nyc_output',
     ];
-    
+
     const args = [
       projectDir,
-      '-I', excludePatterns.join('|'),
-      '-L', '3', // Limit depth to 3 levels
+      '-I',
+      excludePatterns.join('|'),
+      '-L',
+      '3', // Limit depth to 3 levels
       '--dirsfirst',
-      '-a'
+      '-a',
     ];
-    
+
     const tree = spawn('tree', args, { stdio: ['ignore', 'pipe', 'pipe'] });
     let output = '';
     let hasTree = true;
-    
-    tree.stdout.on('data', (data) => {
+
+    tree.stdout.on('data', (data: Buffer) => {
       output += data.toString();
     });
-    
+
     tree.on('error', () => {
       hasTree = false;
     });
-    
-    tree.on('close', (code) => {
+
+    tree.on('close', code => {
       if (!hasTree || code !== 0) {
-        // Fallback to basic ls if tree is not available
-        const ls = spawn('find', [projectDir, '-maxdepth', '2', '-type', 'f', '-not', '-path', '*/node_modules/*', '-not', '-path', '*/.git/*'], { stdio: ['ignore', 'pipe', 'pipe'] });
-        let lsOutput = '';
-        
-        ls.stdout.on('data', (data) => {
-          lsOutput += data.toString();
-        });
-        
-        ls.on('close', () => {
-          resolve(lsOutput || 'Unable to analyze project structure');
-        });
-        
-        ls.on('error', () => {
-          resolve('Unable to analyze project structure');
-        });
+        tryFindFallback(projectDir, resolve);
       } else {
         resolve(output);
       }
@@ -83,7 +107,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
 
   // Process each question
   for (const question of PROJECT_REQUIREMENTS_QUESTIONS) {
-    let answer: any;
+    let answer: { value: unknown };
 
     switch (question.type) {
       case 'text':

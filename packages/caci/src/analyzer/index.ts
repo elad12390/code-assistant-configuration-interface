@@ -24,7 +24,7 @@ export interface SelectedComponents {
 }
 
 export interface UserRequirements {
-  [key: string]: any;
+  [key: string]: unknown;
   projectType?: string;
   programmingLanguages?: string[];
   frameworks?: string[];

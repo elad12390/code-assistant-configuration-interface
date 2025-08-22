@@ -315,7 +315,15 @@ jobs:
         publish-apt,
         publish-homebrew,
       ]
-    if: always() && needs.prepare-release.outputs.should_release == 'true' && !inputs.dry_run
+    if: |
+      needs.prepare-release.outputs.should_release == 'true' && 
+      !inputs.dry_run &&
+      needs.prepare-release.result == 'success' &&
+      (needs.publish-npm.result == 'success' || needs.publish-npm.result == 'skipped') &&
+      (needs.publish-docker.result == 'success' || needs.publish-docker.result == 'skipped') &&
+      (needs.publish-deb.result == 'success' || needs.publish-deb.result == 'skipped') &&
+      (needs.publish-apt.result == 'success' || needs.publish-apt.result == 'skipped') &&
+      (needs.publish-homebrew.result == 'success' || needs.publish-homebrew.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -453,28 +461,56 @@ jobs:
     steps:
       - name: Generate Release Summary
         run: |
+          # Determine overall release success
+          OVERALL_SUCCESS="true"
+          CORE_FAILED="false"
+          
+          # Check core components (NPM and Docker are essential)
+          if [ "${{ needs.prepare-release.result }}" != "success" ]; then
+            OVERALL_SUCCESS="false"
+          fi
+          if [ "${{ needs.publish-npm.result }}" = "failure" ]; then
+            OVERALL_SUCCESS="false"
+            CORE_FAILED="true"
+          fi
+          if [ "${{ needs.publish-docker.result }}" = "failure" ]; then
+            OVERALL_SUCCESS="false"
+            CORE_FAILED="true"
+          fi
+          
+          # Generate summary header based on success/failure
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "## 🔍 Multi-Platform Release DRY RUN SUMMARY" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**No actual release was created**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$OVERALL_SUCCESS" = "true" ] && [ "${{ needs.create-github-release.result }}" = "success" ]; then
+            echo "## ✅ Multi-Platform Release SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**🎉 Release ${{ needs.prepare-release.outputs.version }} completed successfully!**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$CORE_FAILED" = "true" ]; then
+            echo "## ❌ Multi-Platform Release FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**🚨 Core distribution channels failed! Release is incomplete.**" >> $GITHUB_STEP_SUMMARY
           else
-            echo "## 🚀 Multi-Platform Release Summary" >> $GITHUB_STEP_SUMMARY
+            echo "## ⚠️ Multi-Platform Release PARTIALLY FAILED" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**⚠️ Some components failed, but core distribution is available.**" >> $GITHUB_STEP_SUMMARY
           fi
-
-          echo "| Component | Status | Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Version Bump | ${{ needs.prepare-release.result == 'success' && '✅ Success' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.current_version }} → ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| NPM Publish | ${{ needs.publish-npm.result == 'success' && '✅ Published' || needs.publish-npm.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Hub | ${{ needs.publish-docker.result == 'success' && '✅ Published' || needs.publish-docker.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| DEB Package | ${{ needs.publish-deb.result == 'success' && '✅ Created' || needs.publish-deb.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| APT Repository | ${{ needs.publish-apt.result == 'success' && '✅ Published' || needs.publish-apt.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Homebrew | ${{ needs.publish-homebrew.result == 'success' && '✅ Updated' || needs.publish-homebrew.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| GitHub Release | ${{ needs.create-github-release.result == 'success' && '✅ Created' || needs.create-github-release.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.prepare-release.outputs.should_release }}" = "true" ] && [ "${{ inputs.dry_run }}" = "false" ]; then
+          echo "| Component | Status | Version | Priority |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|---------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Bump | ${{ needs.prepare-release.result == 'success' && '✅ Success' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.current_version }} → ${{ needs.prepare-release.outputs.version }} | 🔴 Critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM Publish | ${{ needs.publish-npm.result == 'success' && '✅ Published' || needs.publish-npm.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🔴 Critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Hub | ${{ needs.publish-docker.result == 'success' && '✅ Published' || needs.publish-docker.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🔴 Critical |" >> $GITHUB_STEP_SUMMARY
+          echo "| DEB Package | ${{ needs.publish-deb.result == 'success' && '✅ Created' || needs.publish-deb.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🟡 Optional |" >> $GITHUB_STEP_SUMMARY
+          echo "| APT Repository | ${{ needs.publish-apt.result == 'success' && '✅ Published' || needs.publish-apt.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🟡 Optional |" >> $GITHUB_STEP_SUMMARY
+          echo "| Homebrew | ${{ needs.publish-homebrew.result == 'success' && '✅ Updated' || needs.publish-homebrew.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🟡 Optional |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.create-github-release.result == 'success' && '✅ Created' || needs.create-github-release.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} | 🟢 Final Step |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Show success section only if release actually succeeded
+          if [ "$OVERALL_SUCCESS" = "true" ] && [ "${{ needs.create-github-release.result }}" = "success" ] && [ "${{ inputs.dry_run }}" = "false" ]; then
             echo "### 🎉 Release ${{ needs.prepare-release.outputs.version }} Complete!" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Installation Commands:**" >> $GITHUB_STEP_SUMMARY
@@ -486,13 +522,38 @@ jobs:
             echo "📥 **DEB**: Download from GitHub Releases" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quick Start**: \`caci configure\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "$CORE_FAILED" = "true" ] || [ "$OVERALL_SUCCESS" = "false" ]; then
+            echo "### ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🔧 Individual Release Workflows" >> $GITHUB_STEP_SUMMARY
+            echo "**The release cannot be used due to critical failures.**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Each package manager can now be released independently:" >> $GITHUB_STEP_SUMMARY
-            echo "- **NPM**: Run \`Publish to NPM\` workflow" >> $GITHUB_STEP_SUMMARY
-            echo "- **Docker**: Run \`CACI Package Docker Publishing\` workflow" >> $GITHUB_STEP_SUMMARY
-            echo "- **DEB**: Run \`Create DEB Package\` workflow" >> $GITHUB_STEP_SUMMARY
-            echo "- **APT**: Run \`Publish to APT Repository\` workflow" >> $GITHUB_STEP_SUMMARY
-            echo "- **Homebrew**: Run \`Update Homebrew Formula\` workflow" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Next Steps:**" >> $GITHUB_STEP_SUMMARY
+            echo "1. Check the failed job logs above" >> $GITHUB_STEP_SUMMARY
+            echo "2. Fix the underlying issues" >> $GITHUB_STEP_SUMMARY
+            echo "3. Re-run the release workflow" >> $GITHUB_STEP_SUMMARY
           fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Individual Release Workflows" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Each package manager can also be released independently:" >> $GITHUB_STEP_SUMMARY
+          echo "- **NPM**: Run \`Publish to NPM\` workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- **Docker**: Run \`CACI Package Docker Publishing\` workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- **DEB**: Run \`Create DEB Package\` workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- **APT**: Run \`Publish to APT Repository\` workflow" >> $GITHUB_STEP_SUMMARY
+          echo "- **Homebrew**: Run \`Update Homebrew Formula\` workflow" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail workflow if core components failed
+        run: |
+          if [ "${{ needs.prepare-release.result }}" != "success" ]; then
+            echo "❌ Version preparation failed"
+            exit 1
+          fi
+          if [ "${{ needs.publish-npm.result }}" = "failure" ]; then
+            echo "❌ NPM publishing failed (core distribution channel)"
+            exit 1
+          fi
+          if [ "${{ needs.publish-docker.result }}" = "failure" ]; then
+            echo "❌ Docker publishing failed (core distribution channel)"
+            exit 1
+          fi
+          echo "✅ Core components succeeded or were skipped"

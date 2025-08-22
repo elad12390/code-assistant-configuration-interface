@@ -1,0 +1,35 @@
+name: 'Test Super Minimal'
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  test-job:
+    name: 'Test Job'
+    runs-on: ubuntu-latest
+    outputs:
+      test_output: ${{ steps.test.outputs.value }}
+
+    steps:
+      - name: Test step
+        id: test
+        run: |
+          echo "value=test123" >> $GITHUB_OUTPUT
+          echo "Test successful"
+
+  summary:
+    name: 'Summary'
+    needs: test-job
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Show results
+        run: |
+          echo "Test output: ${{ needs.test-job.outputs.test_output }}"
+          echo "Job result: ${{ needs.test-job.result }}"

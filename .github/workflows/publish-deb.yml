@@ -1,0 +1,246 @@
+name: 'Create DEB Package'
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to package'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      package_created:
+        description: 'Whether the DEB package was created'
+        value: ${{ jobs.create-deb.outputs.package_created }}
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to package (e.g., v1.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (no actual package creation)'
+        required: false
+        default: false
+        type: boolean
+
+defaults:
+  run:
+    shell: bash
+    working-directory: packages/caci
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+permissions:
+  contents: read
+
+jobs:
+  create-deb:
+    name: 'DEB Package Creation'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      package_created: ${{ steps.package.outputs.package_created }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'packages/caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Install DEB packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev build-essential fakeroot
+
+      - name: Create DEB package
+        id: package
+        run: |
+          VERSION="${{ inputs.version }}"
+          # Remove 'v' prefix if present
+          DEB_VERSION=${VERSION#v}
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN - Would create DEB package for version $DEB_VERSION"
+            echo "package_created=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "📦 Creating DEB package for CACI v$DEB_VERSION..."
+
+          # Create package directory structure
+          mkdir -p caci_${DEB_VERSION}_all/DEBIAN
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/bin
+
+          # Copy application files
+          cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
+          chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
+
+          # Create control file
+          cat > caci_${DEB_VERSION}_all/DEBIAN/control << EOF
+          Package: caci
+          Version: ${DEB_VERSION}
+          Section: devel
+          Priority: optional
+          Architecture: all
+          Depends: nodejs (>= 18.0.0), npm
+          Installed-Size: $(du -sk caci_${DEB_VERSION}_all/usr | cut -f1)
+          Maintainer: CACI Development Team <noreply@github.com>
+          Description: Code Assistant Configuration Interface
+           CACI is an intelligent CLI tool that automates Claude Code project 
+           configuration by analyzing requirements and using AI to recommend 
+           relevant agents, commands, MCPs, and hooks from a large component pool.
+           .
+           This package provides the CACI command-line interface for easy
+           project setup and configuration management.
+          Homepage: https://github.com/elad12390/claude-code-configurator
+          EOF
+
+          # Create postinst script to create symlink
+          cat > caci_${DEB_VERSION}_all/DEBIAN/postinst << 'EOF'
+          #!/bin/bash
+          set -e
+
+          # Create symlink
+          ln -sf /usr/local/lib/nodejs/caci/bin/caci /usr/local/bin/caci
+
+          # Ensure correct permissions
+          chmod +x /usr/local/lib/nodejs/caci/bin/caci
+          chmod +x /usr/local/bin/caci
+
+          echo "CACI installed successfully!"
+          echo "Usage: caci configure"
+          echo "Help:  caci --help"
+          EOF
+          chmod 755 caci_${DEB_VERSION}_all/DEBIAN/postinst
+
+          # Create prerm script to remove symlink
+          cat > caci_${DEB_VERSION}_all/DEBIAN/prerm << 'EOF'
+          #!/bin/bash
+          set -e
+          rm -f /usr/local/bin/caci
+          EOF
+          chmod 755 caci_${DEB_VERSION}_all/DEBIAN/prerm
+
+          # Create postrm script for cleanup
+          cat > caci_${DEB_VERSION}_all/DEBIAN/postrm << 'EOF'
+          #!/bin/bash
+          set -e
+
+          case "$1" in
+              purge)
+                  # Remove configuration files if they exist
+                  rm -rf /etc/caci 2>/dev/null || true
+                  ;;
+          esac
+          EOF
+          chmod 755 caci_${DEB_VERSION}_all/DEBIAN/postrm
+
+          # Build the package
+          dpkg-deb --build caci_${DEB_VERSION}_all
+
+          echo "✅ DEB package created: caci_${DEB_VERSION}_all.deb"
+          ls -la caci_*.deb
+
+          # Verify package
+          echo "📋 Package verification:"
+          dpkg --info caci_${DEB_VERSION}_all.deb
+          dpkg --contents caci_${DEB_VERSION}_all.deb | head -20
+
+          echo "package_created=true" >> $GITHUB_OUTPUT
+
+      - name: Test DEB package installation
+        if: inputs.dry_run == false
+        run: |
+          VERSION="${{ inputs.version }}"
+          DEB_VERSION=${VERSION#v}
+          DEB_FILE="caci_${DEB_VERSION}_all.deb"
+
+          echo "🧪 Testing DEB package installation..."
+
+          # Test package installation (without actually installing)
+          sudo dpkg --dry-run -i "$DEB_FILE"
+
+          # Test package contents
+          dpkg-deb --extract "$DEB_FILE" test-extract/
+
+          # Verify extracted files
+          echo "📁 Extracted package contents:"
+          find test-extract/ -type f | head -20
+
+          # Verify the binary exists
+          if [ -f "test-extract/usr/local/lib/nodejs/caci/bin/caci" ]; then
+            echo "✅ CACI binary found in package"
+          else
+            echo "❌ CACI binary not found in package"
+            exit 1
+          fi
+
+          echo "✅ Package testing completed successfully"
+
+      - name: Upload DEB package
+        if: inputs.dry_run == false
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: caci-deb-package
+          path: packages/caci/caci_*.deb
+          retention-days: 90
+
+      - name: Create package summary
+        run: |
+          VERSION="${{ inputs.version }}"
+          DEB_VERSION=${VERSION#v}
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "## 🔍 DEB Package Dry Run Summary" >> $GITHUB_STEP_SUMMARY
+            echo "**Would create**: caci_${DEB_VERSION}_all.deb" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 📦 DEB Package Creation Complete" >> $GITHUB_STEP_SUMMARY
+            echo "**Created**: caci_${DEB_VERSION}_all.deb" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Installation Instructions" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "# Download the DEB package from GitHub Releases" >> $GITHUB_STEP_SUMMARY
+            echo "wget https://github.com/elad12390/claude-code-configurator/releases/download/${{ inputs.version }}/caci_${DEB_VERSION}_all.deb" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "# Install the package" >> $GITHUB_STEP_SUMMARY
+            echo "sudo dpkg -i caci_${DEB_VERSION}_all.deb" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "# Fix dependencies if needed" >> $GITHUB_STEP_SUMMARY
+            echo "sudo apt-get install -f" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Usage" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "caci configure" >> $GITHUB_STEP_SUMMARY
+            echo "caci --help" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Uninstall" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "sudo dpkg -r caci" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi

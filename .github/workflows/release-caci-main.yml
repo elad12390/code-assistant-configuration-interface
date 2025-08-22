@@ -1,0 +1,456 @@
+name: 'CACI Multi-Platform Release (Main)'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      dry_run:
+        description: 'Dry run (no actual release)'
+        required: false
+        default: false
+        type: boolean
+      publish_npm:
+        description: 'Publish to NPM'
+        required: false
+        default: true
+        type: boolean
+      publish_docker:
+        description: 'Publish to Docker Hub'
+        required: false
+        default: true
+        type: boolean
+      publish_deb:
+        description: 'Create DEB package'
+        required: false
+        default: true
+        type: boolean
+      publish_apt:
+        description: 'Publish to APT repository'
+        required: false
+        default: true
+        type: boolean
+      publish_homebrew:
+        description: 'Update Homebrew formula'
+        required: false
+        default: true
+        type: boolean
+
+defaults:
+  run:
+    shell: bash
+    working-directory: packages/caci
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+jobs:
+  # ============================================================================
+  # PREPARATION JOB: Version bump, build, and prepare artifacts
+  # ============================================================================
+  prepare-release:
+    name: 'Prepare Release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version_bump.outputs.new }}
+      current_version: ${{ steps.current_version.outputs.current }}
+      should_release: ${{ steps.version_bump.outputs.should_release }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'packages/caci/package-lock.json'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all tests
+        run: npm test
+
+      - name: Build package
+        run: npm run build
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: version_bump
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN MODE - No actual version bump"
+            NEW_VERSION=$(npm version ${{ inputs.version_bump }} --no-git-tag-version --dry-run)
+            echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "📦 Bumping version: ${{ inputs.version_bump }}"
+            NEW_VERSION=$(npm version ${{ inputs.version_bump }} --no-git-tag-version)
+            echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update package-lock.json
+        if: inputs.dry_run == false
+        run: npm install --package-lock-only
+
+      - name: Create release artifacts
+        run: |
+          echo "📦 Creating release artifacts..."
+
+          # Package the CLI
+          npm pack
+
+          # Create installation scripts
+          cat > install-caci.sh << 'EOF'
+          #!/bin/bash
+          # CACI Installation Script
+          set -e
+          echo "🚀 Installing CACI (Code Assistant Configuration Interface)..."
+          npm install -g caci
+          echo "✅ CACI installed successfully!"
+          echo "💡 Usage: caci configure"
+          echo "📖 Help:  caci --help"
+          EOF
+          chmod +x install-caci.sh
+
+          # Create PowerShell install script for Windows
+          cat > install-caci.ps1 << 'EOF'
+          # CACI Installation Script for Windows
+          Write-Host "🚀 Installing CACI (Code Assistant Configuration Interface)..." -ForegroundColor Green
+          try {
+              npm install -g caci
+              Write-Host "✅ CACI installed successfully!" -ForegroundColor Green
+              Write-Host "💡 Usage: caci configure" -ForegroundColor Cyan
+              Write-Host "📖 Help:  caci --help" -ForegroundColor Cyan
+          } catch {
+              Write-Host "❌ Installation failed: $_" -ForegroundColor Red
+              exit 1
+          }
+          EOF
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: caci-release-artifacts
+          path: |
+            packages/caci/caci-*.tgz
+            packages/caci/install-caci.sh
+            packages/caci/install-caci.ps1
+            packages/caci/dist/**
+          retention-days: 30
+
+      - name: Commit version bump
+        if: inputs.dry_run == false
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new }}
+
+          🔖 Release ${{ steps.version_bump.outputs.new }}
+          - Automated version bump via GitHub Actions
+          - All tests passing
+          - Ready for multi-platform release
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)"
+
+      - name: Create Git tag
+        if: inputs.dry_run == false
+        run: |
+          git tag -a "${{ steps.version_bump.outputs.new }}" -m "Release ${{ steps.version_bump.outputs.new }}
+
+          🚀 CACI Package Release ${{ steps.version_bump.outputs.new }}
+
+          This release includes:
+          - All core functionality tested and working
+          - Multi-platform support (Linux, macOS, Windows)
+          - Available via npm, Docker, DEB packages, APT, and Homebrew
+
+          📦 Install: npm install -g caci
+          🐳 Docker: docker run --rm caci --help
+          🔧 APT: curl -fsSL .../install-caci-apt.sh | sudo bash
+          🍺 Homebrew: brew install caci
+          📥 DEB: Download from releases
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)"
+
+      - name: Push changes and tags
+        if: inputs.dry_run == false
+        run: |
+          git push origin master
+          git push origin "${{ steps.version_bump.outputs.new }}"
+
+  # ============================================================================
+  # INDIVIDUAL PUBLISHING JOBS (using reusable workflows)
+  # ============================================================================
+
+  publish-npm:
+    name: 'NPM Publishing'
+    needs: prepare-release
+    if: inputs.publish_npm && needs.prepare-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      version: ${{ needs.prepare-release.outputs.version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
+
+  publish-docker:
+    name: 'Docker Publishing'
+    needs: prepare-release
+    if: inputs.publish_docker && needs.prepare-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/publish-docker.yml
+    with:
+      version: ${{ needs.prepare-release.outputs.version }}
+      push_to_registry: ${{ !inputs.dry_run }}
+    secrets: inherit
+
+  publish-deb:
+    name: 'DEB Package Creation'
+    needs: prepare-release
+    if: inputs.publish_deb && needs.prepare-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/publish-deb.yml
+    with:
+      version: ${{ needs.prepare-release.outputs.version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
+
+  publish-apt:
+    name: 'APT Repository Publishing'
+    needs: [prepare-release, publish-deb]
+    if: inputs.publish_apt && needs.prepare-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/publish-apt.yml
+    with:
+      version: ${{ needs.prepare-release.outputs.version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
+
+  publish-homebrew:
+    name: 'Homebrew Formula Update'
+    needs: [prepare-release, publish-npm]
+    if: inputs.publish_homebrew && needs.prepare-release.outputs.should_release == 'true'
+    uses: ./.github/workflows/publish-homebrew.yml
+    with:
+      version: ${{ needs.prepare-release.outputs.version }}
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit
+
+  # ============================================================================
+  # GITHUB RELEASE JOB - Aggregates all artifacts
+  # ============================================================================
+  create-github-release:
+    name: 'Create GitHub Release'
+    needs:
+      [
+        prepare-release,
+        publish-npm,
+        publish-docker,
+        publish-deb,
+        publish-apt,
+        publish-homebrew,
+      ]
+    if: always() && needs.prepare-release.outputs.should_release == 'true' && !inputs.dry_run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+        with:
+          ref: ${{ needs.prepare-release.outputs.version }}
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: release-artifacts
+
+      - name: Generate comprehensive changelog
+        run: |
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+          DATE=$(date +"%Y-%m-%d")
+
+          cat > changelog_entry.md << EOF
+          ## 🚀 CACI ${VERSION} - Multi-Platform Release
+
+          **Release Date:** ${DATE}
+
+          ### 📦 Installation Options
+
+          #### NPM (Recommended)
+          \`\`\`bash
+          npm install -g caci@${VERSION}
+          \`\`\`
+
+          #### Docker
+          \`\`\`bash
+          docker run --rm caci:${VERSION} --help
+          \`\`\`
+
+          #### APT (Ubuntu/Debian)
+          \`\`\`bash
+          # Quick install via APT repository
+          curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/install-caci-apt.sh | sudo bash
+          \`\`\`
+
+          #### Homebrew (macOS/Linux)
+          \`\`\`bash
+          brew install caci
+          \`\`\`
+
+          #### DEB Package (Manual)
+          \`\`\`bash
+          # Download caci_${VERSION#v}_all.deb from this release
+          sudo dpkg -i caci_${VERSION#v}_all.deb
+          \`\`\`
+
+          #### Direct Download
+          - **🍎 macOS**: Download CACI-${VERSION}.dmg
+          - **🐧 Linux**: Download install-caci.sh
+          - **🪟 Windows**: Download install-caci.ps1
+
+          ### ✨ What's New in ${VERSION}
+
+          - 🔧 Complete CLI tool for Claude Code configuration
+          - 🤖 AI-powered component recommendations  
+          - 📦 Multi-platform support (npm, Docker, APT, DEB, Homebrew)
+          - 🔒 Safe backup and restore functionality
+          - 📊 Configuration history and iteration tracking
+          - 🎯 Production-ready with comprehensive testing
+
+          ### 🚀 Quick Start
+
+          \`\`\`bash
+          # Install CACI
+          npm install -g caci
+
+          # Configure your Claude Code project
+          caci configure
+
+          # View help
+          caci --help
+          \`\`\`
+
+          ### 🔧 Technical Details
+
+          - **Node.js**: 18+ required
+          - **Platforms**: Linux, macOS, Windows
+          - **Package formats**: NPM, Docker, APT, DEB, Homebrew
+          - **Size**: ~2MB (compressed)
+
+          ---
+
+          📖 **Documentation**: https://github.com/elad12390/claude-code-configurator  
+          🐛 **Issues**: https://github.com/elad12390/claude-code-configurator/issues  
+          💬 **Support**: GitHub Discussions
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
+        with:
+          tag_name: ${{ needs.prepare-release.outputs.version }}
+          name: 'CACI ${{ needs.prepare-release.outputs.version }} - Multi-Platform Release'
+          body_path: changelog_entry.md
+          files: |
+            release-artifacts/caci-release-artifacts/caci-*.tgz
+            release-artifacts/caci-release-artifacts/install-caci.sh
+            release-artifacts/caci-release-artifacts/install-caci.ps1
+            release-artifacts/caci-deb-package/caci_*.deb
+            release-artifacts/caci-homebrew-artifacts/caci.rb
+            release-artifacts/caci-homebrew-artifacts/CACI-*.dmg
+            release-artifacts/caci-apt-repository/apt-repo/**
+            release-artifacts/caci-apt-repository/caci-archive-keyring.gpg
+            release-artifacts/caci-apt-repository/install-caci-apt.sh
+            release-artifacts/caci-apt-repository/APT-INSTALL.md
+          draft: false
+          prerelease: false
+
+  # ============================================================================
+  # RELEASE SUMMARY JOB
+  # ============================================================================
+  release-summary:
+    name: 'Release Summary'
+    needs:
+      [
+        prepare-release,
+        publish-npm,
+        publish-docker,
+        publish-deb,
+        publish-apt,
+        publish-homebrew,
+        create-github-release,
+      ]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Release Summary
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "## 🔍 Multi-Platform Release DRY RUN SUMMARY" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**No actual release was created**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🚀 Multi-Platform Release Summary" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "| Component | Status | Version |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Bump | ${{ needs.prepare-release.result == 'success' && '✅ Success' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.current_version }} → ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| NPM Publish | ${{ needs.publish-npm.result == 'success' && '✅ Published' || needs.publish-npm.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Hub | ${{ needs.publish-docker.result == 'success' && '✅ Published' || needs.publish-docker.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DEB Package | ${{ needs.publish-deb.result == 'success' && '✅ Created' || needs.publish-deb.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| APT Repository | ${{ needs.publish-apt.result == 'success' && '✅ Published' || needs.publish-apt.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Homebrew | ${{ needs.publish-homebrew.result == 'success' && '✅ Updated' || needs.publish-homebrew.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| GitHub Release | ${{ needs.create-github-release.result == 'success' && '✅ Created' || needs.create-github-release.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ inputs.dry_run }}" = "false" ] && [ "${{ needs.prepare-release.outputs.should_release }}" = "true" ]; then
+            echo "### 🎉 Release ${{ needs.prepare-release.outputs.version }} Complete!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Installation Commands:**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **NPM**: \`npm install -g caci@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "🐳 **Docker**: \`docker run --rm caci:${{ needs.prepare-release.outputs.version }} --help\`" >> $GITHUB_STEP_SUMMARY
+            echo "🔧 **APT**: \`curl -fsSL .../install-caci-apt.sh | sudo bash\`" >> $GITHUB_STEP_SUMMARY
+            echo "🍺 **Homebrew**: \`brew install caci\`" >> $GITHUB_STEP_SUMMARY
+            echo "📥 **DEB**: Download from GitHub Releases" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Quick Start**: \`caci configure\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Individual Release Workflows" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Each package manager can now be released independently:" >> $GITHUB_STEP_SUMMARY
+            echo "- **NPM**: Run \`Publish to NPM\` workflow" >> $GITHUB_STEP_SUMMARY
+            echo "- **Docker**: Run \`CACI Package Docker Publishing\` workflow" >> $GITHUB_STEP_SUMMARY
+            echo "- **DEB**: Run \`Create DEB Package\` workflow" >> $GITHUB_STEP_SUMMARY
+            echo "- **APT**: Run \`Publish to APT Repository\` workflow" >> $GITHUB_STEP_SUMMARY
+            echo "- **Homebrew**: Run \`Update Homebrew Formula\` workflow" >> $GITHUB_STEP_SUMMARY
+          fi

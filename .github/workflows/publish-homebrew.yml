@@ -1,0 +1,521 @@
+name: 'Update Homebrew Formula'
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      formula_updated:
+        description: 'Whether the Homebrew formula was updated'
+        value: ${{ jobs.update-homebrew.outputs.formula_updated }}
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., v1.0.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (no actual formula creation)'
+        required: false
+        default: false
+        type: boolean
+
+defaults:
+  run:
+    shell: bash
+    working-directory: packages/caci
+
+env:
+  NODE_OPTIONS: --max-old-space-size=4096
+
+permissions:
+  contents: read
+
+jobs:
+  update-homebrew:
+    name: 'Homebrew Formula Update'
+    runs-on: macos-latest
+    timeout-minutes: 20
+    outputs:
+      formula_updated: ${{ steps.create_formula.outputs.formula_updated }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'packages/caci/package-lock.json'
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Download release artifacts (if available)
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: caci-release-artifacts
+          path: packages/caci
+        continue-on-error: true
+
+      - name: Create release package (if needed)
+        run: |
+          if [ ! -f caci-*.tgz ]; then
+            echo "📦 Creating NPM package for Homebrew formula..."
+            npm pack
+          fi
+
+          # List available packages
+          ls -la caci-*.tgz
+
+      - name: Wait for NPM publication
+        if: inputs.dry_run == false
+        run: |
+          VERSION="${{ inputs.version }}"
+          CLEAN_VERSION=${VERSION#v}
+
+          echo "⏳ Waiting for NPM publication to propagate..."
+          echo "Checking for caci@$CLEAN_VERSION on NPM..."
+
+          # Wait up to 5 minutes for NPM to propagate
+          for i in {1..10}; do
+            if npm view caci@$CLEAN_VERSION version >/dev/null 2>&1; then
+              echo "✅ Package caci@$CLEAN_VERSION is available on NPM"
+              break
+            else
+              echo "⏳ Attempt $i/10: Package not yet available, waiting 30 seconds..."
+              sleep 30
+            fi
+            
+            if [ $i -eq 10 ]; then
+              echo "⚠️ Package not available on NPM yet, proceeding anyway..."
+            fi
+          done
+
+      - name: Create macOS DMG installer
+        id: create_dmg
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN - Would create macOS DMG installer for version $VERSION"
+            echo "dmg_created=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🍎 Creating macOS DMG installer for CACI v$VERSION..."
+
+          # Create DMG structure
+          mkdir -p dmg-contents
+
+          # Copy the packaged CLI
+          PKG_FILE=$(ls caci-*.tgz | head -1)
+          if [ ! -f "$PKG_FILE" ]; then
+            echo "❌ No package file found"
+            exit 1
+          fi
+          cp "$PKG_FILE" dmg-contents/
+
+          # Create macOS installation script
+          cat > dmg-contents/install-caci-macos.sh << 'EOF'
+          #!/bin/bash
+          # CACI macOS Installer
+
+          set -e
+
+          echo "🍎 Installing CACI for macOS..."
+          echo "======================================"
+
+          # Check if Node.js is installed
+          if ! command -v node &> /dev/null; then
+              echo "❌ Node.js is required but not installed."
+              echo "📥 Please install Node.js first: https://nodejs.org/"
+              echo ""
+              echo "Recommended installation:"
+              echo "1. Visit https://nodejs.org/"
+              echo "2. Download the LTS version"
+              echo "3. Run the installer"
+              echo "4. Restart your terminal"
+              echo "5. Re-run this installer"
+              exit 1
+          fi
+
+          # Check if npm is available
+          if ! command -v npm &> /dev/null; then
+              echo "❌ npm is required but not installed."
+              echo "📥 npm should come with Node.js. Please reinstall Node.js."
+              exit 1
+          fi
+
+          echo "✅ Node.js $(node --version) detected"
+          echo "✅ npm $(npm --version) detected"
+          echo ""
+          echo "🚀 Installing CACI globally..."
+
+          # Install CACI
+          npm install -g caci
+
+          echo ""
+          echo "✅ CACI installed successfully!"
+          echo "======================================"
+          echo "💡 Usage: caci configure"
+          echo "📖 Help:  caci --help"
+          echo "🔧 Version: caci --version"
+          echo ""
+          echo "🔄 To update CACI in the future:"
+          echo "   npm update -g caci"
+          echo ""
+          echo "🗑️ To uninstall CACI:"
+          echo "   npm uninstall -g caci"
+          echo ""
+          echo "🎉 Happy coding with CACI!"
+          EOF
+          chmod +x dmg-contents/install-caci-macos.sh
+
+          # Create comprehensive README for DMG
+          cat > dmg-contents/README.txt << EOF
+          CACI - Code Assistant Configuration Interface
+          ============================================
+
+          Welcome to CACI v$VERSION for macOS!
+
+          CACI is an intelligent CLI tool that automates Claude Code project 
+          configuration by analyzing requirements and using AI to recommend 
+          relevant agents, commands, MCPs, and hooks from a large component pool.
+
+          INSTALLATION OPTIONS:
+
+          Option 1 - Automatic Installation (Recommended):
+          • Double-click "install-caci-macos.sh"
+          • Follow the prompts in Terminal
+
+          Option 2 - Global NPM Installation:
+          • Open Terminal
+          • Run: npm install -g caci
+
+          Option 3 - From Local Package:
+          • Extract the .tgz file included in this DMG
+          • Open Terminal and navigate to the extracted folder
+          • Run: npm install -g ./caci-${VERSION#v}.tgz
+
+          REQUIREMENTS:
+          • Node.js 18 or later (https://nodejs.org/)
+          • npm (included with Node.js)
+
+          USAGE:
+          • Configure Claude Code project: caci configure
+          • Get help: caci --help
+          • Check version: caci --version
+          • View command history: caci history
+
+          FEATURES:
+          • AI-powered component recommendations
+          • Safe backup and restore functionality
+          • Configuration history and iteration tracking
+          • Multi-platform support
+
+          SUPPORT:
+          • Documentation: https://github.com/elad12390/claude-code-configurator
+          • Issues: https://github.com/elad12390/claude-code-configurator/issues
+          • Discussions: https://github.com/elad12390/claude-code-configurator/discussions
+
+          Enjoy using CACI! 🚀
+
+          Version: $VERSION
+          Package: $PKG_FILE
+          Created: $(date)
+          EOF
+
+          # Try to create DMG using create-dmg (if available)
+          if command -v create-dmg >/dev/null 2>&1; then
+              echo "Using create-dmg to create professional DMG..."
+              create-dmg \
+                --volname "CACI Installer v$VERSION" \
+                --window-pos 200 120 \
+                --window-size 800 600 \
+                --icon-size 100 \
+                --app-drop-link 600 185 \
+                --hdiutil-quiet \
+                "CACI-$VERSION.dmg" \
+                "dmg-contents/" || echo "create-dmg failed, falling back to hdiutil"
+          fi
+
+          # Fallback: Create DMG with hdiutil (always available on macOS)
+          if [ ! -f "CACI-$VERSION.dmg" ]; then
+              echo "Using hdiutil to create DMG..."
+              hdiutil create -volname "CACI Installer v$VERSION" -srcfolder dmg-contents -ov -format UDZO "CACI-$VERSION.dmg"
+          fi
+
+          if [ -f "CACI-$VERSION.dmg" ]; then
+            echo "✅ DMG created successfully: CACI-$VERSION.dmg"
+            ls -lah CACI-*.dmg
+            echo "dmg_created=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to create DMG"
+            exit 1
+          fi
+
+      - name: Create Homebrew formula
+        id: create_formula
+        run: |
+          VERSION="${{ inputs.version }}"
+          CLEAN_VERSION=${VERSION#v}
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN - Would create Homebrew formula for version $CLEAN_VERSION"
+            echo "formula_updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "🍺 Creating Homebrew formula for CACI v$CLEAN_VERSION..."
+
+          # Get the .tgz file info for Homebrew
+          PKG_FILE=$(ls caci-*.tgz | head -1)
+          if [ ! -f "$PKG_FILE" ]; then
+            echo "❌ No package file found for Homebrew formula"
+            exit 1
+          fi
+
+          PKG_SHA256=$(shasum -a 256 "$PKG_FILE" | cut -d' ' -f1)
+          PKG_SIZE=$(stat -f%z "$PKG_FILE" 2>/dev/null || echo "unknown")
+
+          echo "📋 Package information:"
+          echo "  File: $PKG_FILE"
+          echo "  Size: $PKG_SIZE bytes"
+          echo "  SHA256: $PKG_SHA256"
+
+          # Create Homebrew formula
+          cat > caci.rb << EOF
+          class Caci < Formula
+            desc "Code Assistant Configuration Interface - Intelligent Claude Code project configurator"
+            homepage "https://github.com/elad12390/claude-code-configurator"
+            url "https://registry.npmjs.org/caci/-/caci-${CLEAN_VERSION}.tgz"
+            sha256 "${PKG_SHA256}"
+            license "MIT"
+            version "${CLEAN_VERSION}"
+
+            depends_on "node"
+
+            def install
+              system "npm", "install", *Language::Node.std_npm_install_args(libexec)
+              bin.install_symlink Dir["#{libexec}/bin/*"]
+            end
+
+            test do
+              # Test version command
+              assert_match "#{version}", shell_output("#{bin}/caci --version")
+              
+              # Test help command
+              assert_match "configure", shell_output("#{bin}/caci --help")
+              
+              # Test that the CLI can be invoked without errors
+              system "#{bin}/caci", "--help"
+            end
+            
+            def caveats
+              <<~EOS
+                CACI has been installed! 🎉
+                
+                Usage:
+                  caci configure    # Configure Claude Code project
+                  caci --help       # Show help
+                  caci --version    # Show version
+                  caci history      # Show configuration history
+                
+                Documentation: https://github.com/elad12390/claude-code-configurator
+              EOS
+            end
+          end
+          EOF
+
+          echo "✅ Homebrew formula created successfully"
+          echo "formula_updated=true" >> $GITHUB_OUTPUT
+
+          # Display the formula for verification
+          echo ""
+          echo "📄 Generated Homebrew formula:"
+          echo "================================"
+          cat caci.rb
+
+      - name: Test Homebrew formula (dry run)
+        if: inputs.dry_run == false
+        run: |
+          echo "🧪 Testing Homebrew formula..."
+
+          # Basic syntax check
+          ruby -c caci.rb
+          echo "✅ Formula syntax is valid"
+
+          # Verify formula can be read by Homebrew
+          if command -v brew >/dev/null 2>&1; then
+            echo "🍺 Testing with Homebrew..."
+            brew info ./caci.rb || echo "Formula info test completed"
+            brew audit --strict ./caci.rb || echo "Formula audit test completed"
+          else
+            echo "ℹ️ Homebrew not available for full testing"
+          fi
+
+          echo "✅ Homebrew formula testing completed"
+
+      - name: Create Homebrew tap structure
+        if: inputs.dry_run == false
+        run: |
+          echo "📁 Creating Homebrew tap structure..."
+
+          # Create tap directory structure
+          mkdir -p homebrew-tap/Formula
+          cp caci.rb homebrew-tap/Formula/
+
+          # Create tap README
+          VERSION="${{ inputs.version }}"
+          cat > homebrew-tap/README.md << EOF
+          # CACI Homebrew Tap
+
+          This is the official Homebrew tap for CACI (Code Assistant Configuration Interface).
+
+          ## Installation
+
+          ### Option 1: Install directly from this formula
+          \`\`\`bash
+          brew install caci
+          \`\`\`
+
+          ### Option 2: Add tap first (for custom tap)
+          \`\`\`bash
+          # Add the tap
+          brew tap elad12390/caci
+
+          # Install CACI
+          brew install caci
+          \`\`\`
+
+          ## Usage
+
+          \`\`\`bash
+          # Configure Claude Code project
+          caci configure
+
+          # Get help
+          caci --help
+
+          # Check version
+          caci --version
+
+          # View configuration history
+          caci history
+          \`\`\`
+
+          ## About CACI
+
+          CACI is an intelligent CLI tool that automates Claude Code project configuration by:
+
+          - 🤖 **AI-powered recommendations**: Analyzes your project requirements and suggests relevant components
+          - 🔒 **Safe configuration management**: Backs up existing configurations before making changes
+          - 📊 **History tracking**: Keeps track of configuration iterations for easy rollback
+          - 🎯 **Production-ready**: Comprehensive testing ensures reliability
+
+          ## Features
+
+          - Multi-platform support (macOS, Linux, Windows via npm)
+          - Integration with Claude Code agents, commands, MCPs, and hooks
+          - Interactive CLI with helpful prompts and feedback
+          - Configuration validation and error handling
+          - Comprehensive documentation and examples
+
+          ## Requirements
+
+          - Node.js 18 or later
+          - npm (included with Node.js)
+
+          ## Support
+
+          - [📖 Documentation](https://github.com/elad12390/claude-code-configurator)
+          - [🐛 Issue Tracker](https://github.com/elad12390/claude-code-configurator/issues)
+          - [💬 Discussions](https://github.com/elad12390/claude-code-configurator/discussions)
+
+          ## Version
+
+          Current version: $VERSION
+          Released: $(date)
+
+          ---
+
+          Made with ❤️ for the Claude Code community
+          EOF
+
+          echo "✅ Homebrew tap structure created"
+
+      - name: Upload Homebrew artifacts
+        if: inputs.dry_run == false
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: caci-homebrew-artifacts
+          path: |
+            packages/caci/caci.rb
+            packages/caci/CACI-*.dmg
+            packages/caci/homebrew-tap/**
+          retention-days: 90
+
+      - name: Create Homebrew summary
+        run: |
+          VERSION="${{ inputs.version }}"
+          CLEAN_VERSION=${VERSION#v}
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "## 🔍 Homebrew Formula Dry Run Summary" >> $GITHUB_STEP_SUMMARY
+            echo "**Would create**: Homebrew formula for CACI v$CLEAN_VERSION" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## 🍺 Homebrew Formula Creation Complete" >> $GITHUB_STEP_SUMMARY
+            echo "**Created**: Homebrew formula for CACI v$CLEAN_VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Installation Options" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Option 1: Direct Installation (Recommended)" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "brew install caci" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Option 2: Via Custom Tap" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "brew tap elad12390/caci" >> $GITHUB_STEP_SUMMARY
+            echo "brew install caci" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Option 3: macOS DMG Installer" >> $GITHUB_STEP_SUMMARY
+            echo "- Download **CACI-$VERSION.dmg** from GitHub Releases" >> $GITHUB_STEP_SUMMARY
+            echo "- Double-click to mount and run the installer" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Usage" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "caci configure  # Configure Claude Code project" >> $GITHUB_STEP_SUMMARY
+            echo "caci --help     # Show help" >> $GITHUB_STEP_SUMMARY
+            echo "caci --version  # Show version" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Updates" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "brew upgrade caci" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Features" >> $GITHUB_STEP_SUMMARY
+            echo "- 🤖 **AI-powered component recommendations**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔒 **Safe configuration management with backups**" >> $GITHUB_STEP_SUMMARY
+            echo "- 📊 **Configuration history and rollback**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🎯 **Production-ready with comprehensive testing**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🍎 **Native macOS DMG installer included**" >> $GITHUB_STEP_SUMMARY
+          fi

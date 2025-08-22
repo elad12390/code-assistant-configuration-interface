@@ -54,7 +54,7 @@ describe('Analyzer Integration', () => {
       stderr: { on: jest.fn() },
     };
 
-    mockSpawn.mockReturnValue(mockTreeProcess);
+    mockSpawn.mockReturnValue(mockTreeProcess as any);
   });
 
   it('should parse components file and recommend components', async () => {

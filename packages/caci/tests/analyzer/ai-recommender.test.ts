@@ -82,7 +82,7 @@ describe('AI Recommender', () => {
         }
         return mockEventEmitter;
       }),
-    } as any);
+    });
 
     await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
       'Claude CLI not found'
@@ -128,8 +128,8 @@ describe('AI Recommender', () => {
     };
 
     mockSpawn
-      .mockReturnValueOnce(mockVersionCheck as any)
-      .mockReturnValueOnce(mockClaudeCommand as any);
+      .mockReturnValueOnce(mockVersionCheck)
+      .mockReturnValueOnce(mockClaudeCommand);
 
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 
@@ -179,8 +179,8 @@ describe('AI Recommender', () => {
     };
 
     mockSpawn
-      .mockReturnValueOnce(mockVersionCheck as any)
-      .mockReturnValueOnce(mockClaudeCommand as any);
+      .mockReturnValueOnce(mockVersionCheck)
+      .mockReturnValueOnce(mockClaudeCommand);
 
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 

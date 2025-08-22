@@ -171,32 +171,32 @@ jobs:
           git config --local user.name "GitHub Action"
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new }}
-
+          
           🔖 Release ${{ steps.version_bump.outputs.new }}
           - Automated version bump via GitHub Actions
           - All tests passing
           - Ready for multi-platform release
-
+          
           🤖 Generated with [Claude Code](https://claude.ai/code)"
 
       - name: Create Git tag
         if: inputs.dry_run == false
         run: |
           git tag -a "${{ steps.version_bump.outputs.new }}" -m "Release ${{ steps.version_bump.outputs.new }}
-
+          
           🚀 CACI Package Release ${{ steps.version_bump.outputs.new }}
-
+          
           This release includes:
           - All core functionality tested and working
           - Multi-platform support (Linux, macOS, Windows)
           - Available via npm, Docker, DEB packages, APT, and Homebrew
-
+          
           📦 Install: npm install -g caci
           🐳 Docker: docker run --rm caci --help
           🔧 APT: curl -fsSL .../install-caci-apt.sh | sudo bash
           🍺 Homebrew: brew install caci
           📥 DEB: Download from releases
-
+          
           🤖 Generated with [Claude Code](https://claude.ai/code)"
 
       - name: Push changes and tags
@@ -226,7 +226,7 @@ jobs:
     uses: ./.github/workflows/publish-docker.yml
     with:
       version: ${{ needs.prepare-release.outputs.version }}
-      push_to_registry: ${{ !inputs.dry_run }}
+      dry_run: ${{ inputs.dry_run }}
     secrets: inherit
 
   publish-deb:

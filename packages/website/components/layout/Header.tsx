@@ -28,8 +28,8 @@ export const Header: React.FC = () => {
   }, [])
 
   const creators = [
-    { name: 'Elad Harizy', github: 'https://github.com/elad12390' },
-    { name: 'Arik Liger', github: 'https://github.com/smartari1' }
+    { name: 'Ari Kliger', github: 'https://github.com/smartari1' },
+    { name: 'Elad Ben Haim', github: 'https://github.com/elad12390' }
   ]
 
   return (

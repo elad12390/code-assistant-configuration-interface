@@ -1,6 +1,6 @@
 {
   "name": "caci",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CACI (Code Assistant Configuration Interface) - Intelligent CLI tool for configuring Claude Code projects",
   "main": "dist/index.js",
   "bin": {

@@ -20,7 +20,7 @@
     "lint": "eslint src/ tests/ --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint src/ tests/ --ext .ts,.tsx,.js,.jsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"tests/**/*.{ts,tsx,js,jsx,json}\" \"*.{json,md,yml,yaml}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"tests/**/*.{ts,tsx,js,jsx,json}\" \"*.{json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\" \"tests/**/*.{ts,tsx,js,jsx,json}\" \"*.{json,yml,yaml}\" \"README.md\"",
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "validate": "npm run type-check && npm run lint && npm run format:check && npm run test",

@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} antialiased bg-grid bg-gradient-radial min-h-screen`}>
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-ZZ4E9TKZ9K"
+          src="https://www.googletagmanager.com/gtag/js?id=G-W483KLBWWS"
           strategy="afterInteractive"
         />
         <Script id="google-analytics" strategy="afterInteractive">
@@ -45,7 +45,7 @@ export default function RootLayout({
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-ZZ4E9TKZ9K');
+            gtag('config', 'G-W483KLBWWS');
           `}
         </Script>
         <div className="relative z-10">

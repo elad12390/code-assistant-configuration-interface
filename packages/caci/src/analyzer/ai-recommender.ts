@@ -166,13 +166,13 @@ export async function recommendComponents(
     try {
       // With --output-format text, Claude should return just the text response
       let jsonText = response.trim();
-      
+
       // Remove any markdown code blocks if present
       const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
       if (jsonMatch) {
         jsonText = jsonMatch[1];
       }
-      
+
       // Try to parse as JSON
       recommendation = JSON.parse(jsonText);
     } catch (error) {

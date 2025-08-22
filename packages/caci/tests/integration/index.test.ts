@@ -47,7 +47,7 @@ describe('CACI CLI Integration', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Mock tree/find commands for project structure analysis
     const mockTreeProcess: any = {
       on: jest.fn((event: string, callback: (code: number) => void) => {
@@ -68,7 +68,7 @@ describe('CACI CLI Integration', () => {
     };
 
     mockSpawn.mockReturnValue(mockTreeProcess as ChildProcess);
-    
+
     // Create a temporary directory for testing
     tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'caci-test-'));
     projectDir = tempDir;
@@ -153,9 +153,7 @@ describe('CACI CLI Integration', () => {
 
     // Verify .configurator folder was created
     const configuratorPath = path.join(projectDir, '.configurator');
-    await expect(
-      fs.promises.access(configuratorPath, fs.constants.F_OK)
-    ).resolves.toBeUndefined();
+    await expect(fs.promises.access(configuratorPath, fs.constants.F_OK)).resolves.toBeUndefined();
 
     // Verify iterations folder was created
     const iterationsPath = path.join(configuratorPath, 'iterations');
@@ -178,10 +176,14 @@ describe('CACI CLI Integration', () => {
   it('should handle Claude CLI unavailable', async () => {
     // This test is no longer about missing API key since we use Claude CLI
     // Instead test that the workflow gracefully handles Claude CLI being unavailable
-    
+
     // Mock AI recommender to throw Claude CLI error
     const aiRecommender = await import('../../src/analyzer/ai-recommender');
-    (aiRecommender.recommendComponents as jest.Mock).mockRejectedValueOnce(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+    (aiRecommender.recommendComponents as jest.Mock).mockRejectedValueOnce(
+      new Error(
+        'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
+      )
+    );
 
     // Run the configuration workflow
     const result = await runConfigurationWorkflow(projectDir);

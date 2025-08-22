@@ -223,8 +223,13 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           VERSION="${{ needs.pre-publish-checks.outputs.version }}"
-          npm version $VERSION --no-git-tag-version
-          echo "Updated package version to $VERSION"
+          if [[ "$VERSION" != "null" && -n "$VERSION" ]]; then
+            npm version $VERSION --no-git-tag-version
+            echo "Updated package version to $VERSION"
+          else
+            echo "Version already set in package.json, skipping version update"
+            echo "Current version: $(node -p 'require(\"./package.json\").version')"
+          fi
 
       - name: Build for production
         run: npm run build

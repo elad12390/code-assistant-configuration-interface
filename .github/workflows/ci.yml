@@ -180,10 +180,10 @@ jobs:
         with:
           name: build-artifacts-${{ github.run_number }}
           path: |
-            packages/caci/dist/
-            packages/caci/bin/
-            packages/caci/package.json
-            packages/caci/caci-*.tgz
+            dist/
+            bin/
+            package.json
+            caci-*.tgz
             caci-sbom.spdx.json
           retention-days: 7
 
@@ -216,12 +216,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies
@@ -264,12 +265,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies
@@ -324,12 +326,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies
@@ -380,8 +383,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          npm config set script-shell cmd.exe
-          npm config set cache %USERPROFILE%\.npm
+          npm config set script-shell "cmd.exe"
+          npm config set cache "%USERPROFILE%\.npm"
           npm config list
 
       - name: Download build artifacts
@@ -391,12 +394,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies
@@ -457,12 +461,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies
@@ -525,12 +530,13 @@ jobs:
           path: ./artifacts
 
       - name: Copy artifacts to working directory
+        shell: bash
         run: |
-          if [ -d "./artifacts/packages/caci/dist" ]; then
-            cp -r ./artifacts/packages/caci/dist ./
+          if [ -d "./artifacts/dist" ]; then
+            cp -r ./artifacts/dist ./
           fi
-          if [ -d "./artifacts/packages/caci/bin" ]; then
-            cp -r ./artifacts/packages/caci/bin ./
+          if [ -d "./artifacts/bin" ]; then
+            cp -r ./artifacts/bin ./
           fi
 
       - name: Install dependencies

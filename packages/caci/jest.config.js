@@ -16,7 +16,7 @@ module.exports = {
   ],
   // Fix module resolution for chalk 4.x CommonJS
   moduleNameMapper: {
-    '^chalk$': '<rootDir>/node_modules/chalk/source/index.js'
+    '^chalk$': 'chalk'
   },
   // Reduce timeout for faster CI feedback
   testTimeout: 30000,

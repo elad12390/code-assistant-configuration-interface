@@ -12,6 +12,9 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
+// Set up proper test environment
+jest.setTimeout(30000);
+
 // Override process exit to prevent hanging in CI
 const originalProcessExit = process.exit;
 process.exit = ((code?: number) => {

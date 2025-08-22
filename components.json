@@ -3028,10 +3028,7 @@
       "subtype": "language",
       "category": "languages",
       "description": "Go project template",
-      "files": [
-        ".mcp.json",
-        "README.md"
-      ],
+      "files": [".mcp.json", "README.md"],
       "installCommand": "npx claude-code-templates@latest --template=go --yes"
     },
     {
@@ -3097,10 +3094,7 @@
       "category": "frameworks",
       "language": "ruby",
       "description": "Rails-App with Ruby",
-      "files": [
-        ".claude/commands/authentication.md",
-        "CLAUDE.md"
-      ],
+      "files": [".claude/commands/authentication.md", "CLAUDE.md"],
       "installCommand": "npx claude-code-templates@latest --template=rails-app --yes"
     },
     {
@@ -3142,10 +3136,7 @@
       "subtype": "language",
       "category": "languages",
       "description": "Rust project template",
-      "files": [
-        ".mcp.json",
-        "README.md"
-      ],
+      "files": [".mcp.json", "README.md"],
       "installCommand": "npx claude-code-templates@latest --template=rust --yes"
     },
     {

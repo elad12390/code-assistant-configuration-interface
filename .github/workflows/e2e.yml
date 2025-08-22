@@ -2,9 +2,9 @@ name: CACI E2E Testing
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   workflow_dispatch:
   schedule:
     # Run E2E tests daily at 2 AM UTC
@@ -21,13 +21,13 @@ jobs:
   e2e-cli:
     name: CACI E2E CLI Testing
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [18, 20, 22]
-        
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
         run: |
           mkdir -p e2e-test-workspace
           cd e2e-test-workspace
-          
+
           # Create a basic CACI components.json for testing
           cat > components.json << 'EOF'
           {
@@ -118,13 +118,13 @@ jobs:
         shell: bash
         run: |
           cd e2e-test-workspace
-          
+
           # Test configure command (this will prompt but should handle gracefully)
           echo "q" | node ../caci/dist/cli/index.js configure || echo "Configure command test completed"
-          
+
           # Test init command
           node ../caci/dist/cli/index.js init --help || echo "Init command test completed"
-          
+
           # Test history command
           node ../caci/dist/cli/index.js history || echo "History command test completed"
 
@@ -133,7 +133,7 @@ jobs:
         run: |
           mkdir -p e2e-test-empty
           cd e2e-test-empty
-          
+
           # Test behavior when no components.json exists
           echo "q" | node ../caci/dist/cli/index.js configure || echo "No components.json test completed"
 
@@ -142,10 +142,10 @@ jobs:
         run: |
           mkdir -p e2e-test-invalid
           cd e2e-test-invalid
-          
+
           # Create invalid JSON
           echo "{ invalid json }" > components.json
-          
+
           # Test error handling
           echo "q" | node ../caci/dist/cli/index.js configure || echo "Invalid JSON test completed"
 
@@ -154,17 +154,17 @@ jobs:
         run: |
           mkdir -p e2e-test-minimal
           cd e2e-test-minimal
-          
+
           # Create minimal valid JSON
           echo "{}" > components.json
-          
+
           # Test with minimal config
           echo "q" | node ../caci/dist/cli/index.js configure || echo "Minimal config test completed"
 
   e2e-real-world:
     name: CACI Real World E2E Testing
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -194,7 +194,7 @@ jobs:
         run: |
           mkdir -p e2e-realworld-test
           cd e2e-realworld-test
-          
+
           # Create a realistic CACI components.json
           cat > components.json << 'EOF'
           {
@@ -258,8 +258,8 @@ jobs:
             "templates": {}
           }
           EOF
-          
-          
+
+
           # Test CLI with this setup
           caci --help
           echo "q" | caci configure || echo "Real world test completed"
@@ -272,7 +272,7 @@ jobs:
         run: |
           mkdir -p e2e-api-test
           cd e2e-api-test
-          
+
           # Create components.json  
           cat > components.json << 'EOF'
           {
@@ -293,7 +293,7 @@ jobs:
             "templates": {}
           }
           EOF
-          
+
           if [ -n "$GOOGLE_API_KEY" ]; then
             echo "Testing with API key..."
             echo "q" | caci configure || echo "API key test completed"
@@ -307,7 +307,7 @@ jobs:
           # Test with very large components.json
           mkdir -p e2e-large-config
           cd e2e-large-config
-          
+
           # Generate a large CACI configuration
           cat > components.json << 'EOF'
           {
@@ -443,13 +443,13 @@ jobs:
             "templates": {}
           }
           EOF
-          
+
           echo "q" | caci configure || echo "Large config test completed"
 
   e2e-file-operations:
     name: CACI E2E File Operations
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -473,10 +473,10 @@ jobs:
         run: |
           mkdir -p e2e-fs-test
           cd e2e-fs-test
-          
+
           # Create a project structure
           mkdir -p {src,lib,components,pages,app}
-          
+
           # Create CACI components.json
           cat > components.json << 'EOF'
           {
@@ -506,10 +506,10 @@ jobs:
             "templates": {}
           }
           EOF
-          
+
           # Test reading configuration
           echo "q" | node ../caci/dist/cli/index.js configure || echo "File operations test completed"
-          
+
           # Check if any backup files were created
           ls -la || true
 
@@ -517,20 +517,20 @@ jobs:
         run: |
           mkdir -p e2e-backup-test
           cd e2e-backup-test
-          
+
           # Create original components.json
           echo '{"original": true}' > components.json
-          
+
           # Run CLI command that might create backups
           echo "q" | node ../caci/dist/cli/index.js configure || echo "Backup test completed"
-          
+
           # Check for backup files
           find . -name "*.backup*" -o -name "*backup*" || echo "No backup files found"
 
   e2e-performance:
     name: CACI E2E Performance Testing
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -554,7 +554,7 @@ jobs:
         run: |
           mkdir -p e2e-perf-test
           cd e2e-perf-test
-          
+
           # Create CACI components.json
           cat > components.json << 'EOF'
           {
@@ -584,7 +584,7 @@ jobs:
             "templates": {}
           }
           EOF
-          
+
           # Measure execution time
           echo "Testing CLI performance..."
           time echo "q" | node ../caci/dist/cli/index.js configure || echo "Performance test completed"
@@ -592,7 +592,7 @@ jobs:
       - name: Memory usage test
         run: |
           cd e2e-perf-test
-          
+
           # Monitor memory usage during execution
           /usr/bin/time -v echo "q" | node ../caci/dist/cli/index.js configure || echo "Memory test completed"
 
@@ -601,7 +601,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [e2e-cli, e2e-real-world, e2e-file-operations, e2e-performance]
     if: always()
-    
+
     steps:
       - name: Summary
         run: |
@@ -612,7 +612,7 @@ jobs:
           echo "| Real World Testing | ${{ needs.e2e-real-world.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| File Operations | ${{ needs.e2e-file-operations.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Performance Testing | ${{ needs.e2e-performance.result }} |" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.e2e-cli.result }}" == "failure" || "${{ needs.e2e-real-world.result }}" == "failure" || "${{ needs.e2e-file-operations.result }}" == "failure" || "${{ needs.e2e-performance.result }}" == "failure" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ Some E2E tests failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY

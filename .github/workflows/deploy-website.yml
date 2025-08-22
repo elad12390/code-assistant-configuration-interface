@@ -3,12 +3,12 @@ name: Deploy Website to Vercel
 on:
   push:
     branches: [main, master]
-    paths: 
+    paths:
       - 'packages/website/**'
       - '.github/workflows/deploy-website.yml'
   pull_request:
     branches: [main, master]
-    paths: 
+    paths:
       - 'packages/website/**'
 
 concurrency:
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -48,23 +48,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-website-${{ hashFiles('packages/website/package-lock.json') }}-
             ${{ runner.os }}-website-
-      
+
       - name: Install Dependencies
         if: steps.cache-website.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: ./packages/website
-      
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-      
+
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website
-      
+
       - name: Build Project Artifacts
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website
-      
+
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website
@@ -74,29 +74,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: packages/website/package-lock.json
-      
+
       - name: Install Dependencies
         run: npm ci
         working-directory: ./packages/website
-      
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-      
+
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website
-      
+
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website
-      
+
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         working-directory: ./packages/website

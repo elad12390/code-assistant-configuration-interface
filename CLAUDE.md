@@ -9,6 +9,7 @@ CACI (Code Assistant Configuration Interface) is an intelligent CLI tool that au
 ## Development Commands
 
 **Core development workflow:**
+
 ```bash
 # Install dependencies
 cd claude-config && npm install
@@ -39,6 +40,7 @@ node bin/caci configure
 ```
 
 **Environment setup for AI features:**
+
 ```bash
 # Required for AI-powered component recommendations
 export GOOGLE_API_KEY="your_api_key_here"
@@ -51,23 +53,27 @@ The project follows a modular architecture with clear separation of concerns:
 ### Core Modules
 
 **Analyzer Module** (`src/analyzer/`): Handles component analysis and AI-powered recommendations
+
 - `parser.ts`: Parses components.json files into structured data
 - `requirementCollector.ts`: Interactive CLI prompts for gathering user requirements
 - `ai-recommender.ts`: Uses Google Generative AI (Gemini 2.5 Pro) via LangChain for intelligent component selection
 - `display.ts`: Colorful terminal output using chalk for recommendation display
 
 **Manager Module** (`src/manager/`): Manages Claude Code configuration lifecycle
+
 - Backup creation before any modifications
 - Configuration application to `.claude` folder structure
 - Restoration from previous backups
 - File operations with comprehensive error handling
 
 **Tracker Module** (`src/tracker/`): Iteration history and comparison
+
 - Saves configuration iterations to `.configurator/iterations`
 - Provides history viewing and iteration comparison
 - Enables configuration rollback and decision tracking
 
 **Integration Module** (`src/integration/`): Orchestrates the complete workflow
+
 - `runConfigurationWorkflow()`: End-to-end process from requirement collection to configuration application
 - Comprehensive error handling with user-friendly messages
 - Progress feedback throughout the workflow
@@ -75,11 +81,13 @@ The project follows a modular architecture with clear separation of concerns:
 ### CLI Interface
 
 **Primary CLI** (`src/cli/index.ts`): Main entry point with Commander.js
+
 - ✅ Complete command parsing and routing
 - ✅ Help and version information
 - ✅ All commands fully functional: configure, init, update, reset, history
 
 **Configuration CLI** (`src/cli/configure.ts`): Dedicated configuration workflow
+
 - ✅ Executes the complete integrated workflow successfully
 - ✅ Provides detailed progress feedback and troubleshooting guidance
 - ✅ Handles all error cases gracefully with user-friendly messages
@@ -137,6 +145,7 @@ interface UserRequirements {
 ## AI Integration Details
 
 The project uses Google's Generative AI through LangChain for intelligent component selection:
+
 - **Model**: Gemini 2.5 Pro for component analysis and recommendation
 - **Input**: User requirements and complete component metadata
 - **Output**: Ranked and selected components with reasoning
@@ -147,6 +156,7 @@ The project uses Google's Generative AI through LangChain for intelligent compon
 CACI is currently at **83% completion** with **all core functionality fully implemented and working**. The system is **production-ready** and fulfills its primary mission of making Claude Code configuration easy for new developers.
 
 **✅ FULLY FUNCTIONAL FEATURES:**
+
 - Complete CLI interface with all commands working (configure, init, update, reset, history)
 - AI-powered component recommendations using Google Gemini
 - Safe configuration management with backup/restore

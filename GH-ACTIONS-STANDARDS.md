@@ -176,6 +176,7 @@
 
 ---
 
-**Ownership & updates**  
-- This standard is owned by the DevEx/Security Engineering group. Proposed changes follow normal RFC review.  
+**Ownership & updates**
+
+- This standard is owned by the DevEx/Security Engineering group. Proposed changes follow normal RFC review.
 - Review at least quarterly or after major GitHub Actions platform changes.

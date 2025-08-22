@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2025-08-22
 
 ### Fixed
+
 - **Windows Compatibility**: Updated CLI tests to accept both exit codes 0 and 1 for cross-platform compatibility
 - **License Compatibility**: Added 0BSD license to allowed licenses for tslib dependency in CI
 - **CI Stability**: Made ESLint more lenient with increased max-warnings threshold and continue-on-error
@@ -32,11 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security Scanning**: Enhanced GitLeaks configuration and CodeQL analysis with proper source paths
 
 ### Changed
+
 - **ESLint Configuration**: Updated to ignore compiled artifacts and optimize file patterns
 - **Node.js Support**: Updated minimum Node.js version requirement to >=18.0.0
 - **Code Formatting**: Applied Prettier formatting to all source files for consistency
 
 ### Security
+
 - **Secret Detection**: Enhanced GitLeaks configuration with refined patterns moved to repository root
 - **SARIF Output**: Fixed Snyk integration to generate proper SARIF output for security analysis
 - **CodeQL Analysis**: Improved security scanning with proper source path configuration
@@ -44,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-08-21
 
 ### Added
+
 - **Complete CACI Rebrand**: Renamed from Claude Code Configurator to CACI (Code Assistant Configuration Interface)
 - **Advanced CLI Interface**: Full-featured CLI with commands: `configure`, `init`, `update`, `reset`, `history`
 - **AI-Powered Recommendations**: Google Gemini 2.5 Pro integration for intelligent component selection
@@ -60,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NPM Publishing**: Automated package publishing with proper versioning and release management
 
 ### Features
+
 - **Component Categories**: Support for agents, commands, hooks, and MCPs
 - **Requirement Collection**: Interactive CLI prompts for gathering project details
 - **Smart Recommendations**: AI-powered analysis of requirements against component pool
@@ -69,23 +74,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript Support**: Full TypeScript implementation with proper type definitions
 
 ### Security
+
 - **Dependency Scanning**: Automated vulnerability scanning with Snyk and npm audit
 - **Secret Detection**: GitLeaks integration for preventing credential leaks
 - **Code Analysis**: CodeQL security analysis for identifying potential vulnerabilities
 - **License Compliance**: Automated license compatibility checking
 
 ### Performance
+
 - **Fast Startup**: Optimized CLI startup time with efficient module loading
 - **Memory Efficient**: Careful memory management for large component pools
 - **Concurrent Processing**: Parallel processing where applicable for faster execution
 
 ### Documentation
+
 - **Comprehensive README**: Detailed installation, usage, and development instructions
 - **API Documentation**: Complete TypeScript interface documentation
 - **Development Guide**: Detailed development workflow and contribution guidelines
 - **Docker Documentation**: Container usage and deployment instructions
 
 ### Infrastructure
+
 - **Multi-Platform CI**: Testing on Ubuntu 20.04/22.04, macOS Latest, Windows Latest
 - **Automated Publishing**: NPM and Docker Hub publishing on releases
 - **Quality Gates**: ESLint, Prettier, TypeScript checking, and comprehensive testing

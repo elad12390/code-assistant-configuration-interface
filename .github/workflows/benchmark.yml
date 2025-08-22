@@ -2,17 +2,13 @@ name: CACI Performance Benchmarking
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   schedule:
     # Run benchmarks weekly on Sunday at 4 AM UTC
     - cron: '0 4 * * 0'
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
     inputs:
       benchmark_type:
         description: 'Type of benchmark to run'
@@ -20,16 +16,20 @@ concurrency:
         default: 'all'
         type: choice
         options:
-        - all
-        - cli-performance
-        - memory-usage
-        - analysis-speed
-        - file-operations
+          - all
+          - cli-performance
+          - memory-usage
+          - analysis-speed
+          - file-operations
       iterations:
         description: 'Number of benchmark iterations'
         required: false
         default: '10'
         type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
@@ -39,11 +39,11 @@ jobs:
   setup:
     name: CACI Setup Benchmark Environment
     runs-on: ubuntu-latest
-    
+
     outputs:
       benchmark-id: ${{ steps.id.outputs.benchmark-id }}
       baseline-exists: ${{ steps.baseline.outputs.exists }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,7 +101,7 @@ jobs:
       - name: Create benchmark workspace
         run: |
           mkdir -p benchmark-workspace/{small,medium,large,complex}
-          
+
           # Small project with basic CACI components
           cat > benchmark-workspace/small/components.json << 'EOF'
           {
@@ -140,7 +140,7 @@ jobs:
             }
           }
           EOF
-          
+
           # Medium project with more components
           cat > benchmark-workspace/medium/components.json << 'EOF'
           {
@@ -214,7 +214,7 @@ jobs:
             }
           }
           EOF
-          
+
           # Large project with comprehensive component set
           cat > benchmark-workspace/large/components.json << 'EOF'
           {
@@ -328,7 +328,7 @@ jobs:
             }
           }
           EOF
-          
+
           # Complex project with extensive components
           cat > benchmark-workspace/complex/components.json << 'EOF'
           {
@@ -490,7 +490,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'cli-performance' || github.event.inputs.benchmark_type == ''
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -523,11 +523,11 @@ jobs:
         run: |
           echo "Starting CLI performance benchmarks..."
           mkdir -p benchmark-results
-          
+
           # Store the absolute path to the CLI
           CACI_CLI="$(pwd)/caci/bin/caci"
           echo "Using CACI CLI at: $CACI_CLI"
-          
+
           for project in small medium large complex; do
             echo "Benchmarking CLI performance on $project project..."
             cd benchmark-workspace/$project
@@ -584,7 +584,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'memory-usage' || github.event.inputs.benchmark_type == ''
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -614,11 +614,11 @@ jobs:
         run: |
           echo "Starting memory usage benchmarks..."
           mkdir -p benchmark-results
-          
+
           # Store the absolute path to the CLI
           CACI_CLI="$(pwd)/caci/bin/caci"
           echo "Using CACI CLI at: $CACI_CLI"
-          
+
           for project in small medium large complex; do
             echo "Benchmarking memory usage on $project project..."
             cd benchmark-workspace/$project
@@ -666,7 +666,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'analysis-speed' || github.event.inputs.benchmark_type == ''
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -709,13 +709,13 @@ jobs:
               cat > benchmark-workspace/$project/components/ui/component$i.tsx << EOF
           import React from 'react'
           import { cn } from '@/lib/utils'
-          
+
           interface Component${i}Props {
             className?: string
             children?: React.ReactNode
             variant?: 'default' | 'secondary' | 'outline'
           }
-          
+
           export function Component$i({ className, children, variant = 'default' }: Component${i}Props) {
             return (
               <div className={cn('component-$i', className)}>
@@ -731,11 +731,11 @@ jobs:
         run: |
           echo "Starting startup speed benchmarks..."
           mkdir -p benchmark-results
-          
+
           # Store the absolute path to the CLI
           CACI_CLI="$(pwd)/caci/bin/caci"
           echo "Using CACI CLI at: $CACI_CLI"
-          
+
           for project in small medium large complex; do
             echo "Benchmarking startup speed on $project project..."
             cd benchmark-workspace/$project
@@ -796,7 +796,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'file-operations' || github.event.inputs.benchmark_type == ''
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -826,7 +826,7 @@ jobs:
         run: |
           echo "Starting file operations benchmarks..."
           mkdir -p benchmark-results
-          
+
           for project in small medium large complex; do
             echo "Benchmarking file operations on $project project..."
             cd benchmark-workspace/$project
@@ -887,9 +887,10 @@ jobs:
   compare-baseline:
     name: CACI Compare Against Baseline
     runs-on: ubuntu-latest
-    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations]
+    needs:
+      [setup, cli-performance, memory-usage, analysis-speed, file-operations]
     if: always() && needs.setup.outputs.baseline-exists == 'true'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -897,7 +898,7 @@ jobs:
       - name: Download all benchmark results
         uses: actions/download-artifact@v4
         with:
-          pattern: "*-results"
+          pattern: '*-results'
           merge-multiple: true
           path: benchmark-results/
 
@@ -905,7 +906,7 @@ jobs:
         run: |
           echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
           echo "Comparing current results with baseline..." >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ -f ".github/benchmark-baseline.json" ]]; then
             echo "| Metric | Baseline | Current | Change |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|----------|---------|--------|" >> $GITHUB_STEP_SUMMARY
@@ -950,9 +951,10 @@ jobs:
   update-baseline:
     name: CACI Update Baseline
     runs-on: ubuntu-latest
-    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations]
+    needs:
+      [setup, cli-performance, memory-usage, analysis-speed, file-operations]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -962,7 +964,7 @@ jobs:
       - name: Download all benchmark results
         uses: actions/download-artifact@v4
         with:
-          pattern: "*-results"
+          pattern: '*-results'
           merge-multiple: true
           path: benchmark-results/
 
@@ -1027,14 +1029,23 @@ jobs:
   benchmark-summary:
     name: CACI Benchmark Summary
     runs-on: ubuntu-latest
-    needs: [setup, cli-performance, memory-usage, analysis-speed, file-operations, compare-baseline, update-baseline]
+    needs:
+      [
+        setup,
+        cli-performance,
+        memory-usage,
+        analysis-speed,
+        file-operations,
+        compare-baseline,
+        update-baseline,
+      ]
     if: always()
-    
+
     steps:
       - name: Download all results
         uses: actions/download-artifact@v4
         with:
-          pattern: "*-results"
+          pattern: '*-results'
           merge-multiple: true
           path: results/
 
@@ -1046,34 +1057,34 @@ jobs:
           echo "**Iterations:** $BENCHMARK_ITERATIONS" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "### CLI Performance Results" >> $GITHUB_STEP_SUMMARY
           if [[ -f results/cli-performance-summary.txt ]]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat results/cli-performance-summary.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "### Memory Usage Results" >> $GITHUB_STEP_SUMMARY
           if [[ -f results/memory-usage-summary.txt ]]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat results/memory-usage-summary.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "### Startup Speed Results" >> $GITHUB_STEP_SUMMARY
           if [[ -f results/analysis-speed-summary.txt ]]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat results/analysis-speed-summary.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "### File Operations Results" >> $GITHUB_STEP_SUMMARY
           if [[ -f results/file-operations-summary.txt ]]; then
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat results/file-operations-summary.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "📊 **Full benchmark results are available in the workflow artifacts.**" >> $GITHUB_STEP_SUMMARY

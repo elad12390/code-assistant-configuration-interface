@@ -27,26 +27,30 @@ This project and everyone participating in it is governed by our [Code of Conduc
 Before creating bug reports, please check the existing issues to avoid duplicates. When creating a bug report, include:
 
 **Required Information:**
-* Clear and descriptive title
-* Steps to reproduce the problem (detailed)
-* Expected behavior vs. actual behavior
-* Environment details:
+
+- Clear and descriptive title
+- Steps to reproduce the problem (detailed)
+- Expected behavior vs. actual behavior
+- Environment details:
   - Operating system (Windows, macOS, Linux)
   - Node.js version
   - CACI version (`caci --version`)
   - Shell/terminal being used
-* Error messages or console output
-* Screenshots or terminal recordings if applicable
+- Error messages or console output
+- Screenshots or terminal recordings if applicable
 
 **Bug Report Template:**
+
 ```markdown
 **Environment:**
+
 - OS: [e.g., Ubuntu 22.04, macOS 13.2, Windows 11]
 - Node.js: [e.g., 18.17.0]
 - CACI: [e.g., 1.0.0]
 - Shell: [e.g., bash, zsh, PowerShell]
 
 **Steps to Reproduce:**
+
 1. Navigate to project directory
 2. Run `caci configure`
 3. Select specific options...
@@ -59,7 +63,9 @@ Before creating bug reports, please check the existing issues to avoid duplicate
 
 **Error Output:**
 ```
+
 [Paste any error messages or console output]
+
 ```
 
 **Additional Context:**
@@ -70,12 +76,12 @@ Before creating bug reports, please check the existing issues to avoid duplicate
 
 Enhancement suggestions help CACI evolve. When suggesting enhancements:
 
-* Use a clear, descriptive title
-* Provide step-by-step description of the proposed enhancement
-* Explain the current behavior and desired behavior
-* Describe why this enhancement would benefit CACI users
-* Consider backward compatibility implications
-* Include mockups or examples if applicable
+- Use a clear, descriptive title
+- Provide step-by-step description of the proposed enhancement
+- Explain the current behavior and desired behavior
+- Describe why this enhancement would benefit CACI users
+- Consider backward compatibility implications
+- Include mockups or examples if applicable
 
 ### Reporting Security Vulnerabilities
 
@@ -128,6 +134,7 @@ npm run dev configure
 ### Development Commands
 
 **Core Workflow:**
+
 ```bash
 # Development and testing
 npm run build          # Build TypeScript to JavaScript
@@ -176,6 +183,7 @@ export CI="true"  # Enable CI-specific behaviors
 CACI follows a modular architecture with clear separation of concerns:
 
 ### Directory Structure
+
 ```
 caci/
 ├── src/                 # Source code (TypeScript)
@@ -194,22 +202,26 @@ caci/
 ### Key Modules
 
 **Analyzer Module** (`src/analyzer/`):
+
 - `parser.ts`: Component data parsing
 - `requirementCollector.ts`: Interactive user prompts
 - `ai-recommender.ts`: AI-powered component selection
 - `display.ts`: Terminal output formatting
 
 **Manager Module** (`src/manager/`):
+
 - Configuration backup/restore
 - `.claude` folder management
 - File operations with error handling
 
 **Tracker Module** (`src/tracker/`):
+
 - Iteration history storage
 - Configuration comparison
 - Rollback capabilities
 
 **Integration Module** (`src/integration/`):
+
 - End-to-end workflow orchestration
 - Error handling and user feedback
 
@@ -220,6 +232,7 @@ CACI maintains comprehensive test coverage across all modules:
 ### Test Types
 
 **Unit Tests**: Individual module functionality
+
 ```bash
 npm test                    # All tests
 npm test -- parser.test.ts  # Specific test file
@@ -227,11 +240,13 @@ npm test -- --watch        # Watch mode
 ```
 
 **Integration Tests**: Cross-module workflows
+
 ```bash
 npm run test:integration
 ```
 
 **End-to-End Tests**: Complete CLI workflows
+
 ```bash
 npm run test:e2e
 ```
@@ -260,10 +275,10 @@ describe('ComponentParser', () => {
     it('should parse valid components.json', async () => {
       // Arrange
       const mockData = { agents: {}, commands: {} };
-      
+
       // Act
       const result = await parseComponents(mockData);
-      
+
       // Assert
       expect(result).toBeDefined();
       expect(result.agents).toEqual({});
@@ -278,6 +293,7 @@ describe('ComponentParser', () => {
 ```
 
 **Testing Best Practices:**
+
 - Write tests before implementing features (TDD)
 - Test both happy path and error cases
 - Use descriptive test names
@@ -296,6 +312,7 @@ CACI enforces strict code quality standards through automated tooling:
 - **Declaration files**: Generated
 
 **TypeScript Configuration:**
+
 ```json
 {
   "compilerOptions": {
@@ -314,6 +331,7 @@ CACI enforces strict code quality standards through automated tooling:
 ### ESLint Configuration
 
 **Rules Overview:**
+
 - **Base**: `eslint:recommended`, `@typescript-eslint/recommended`
 - **Plugins**: TypeScript, Node.js, Jest
 - **Style**: Prettier integration
@@ -321,18 +339,19 @@ CACI enforces strict code quality standards through automated tooling:
 - **Function size**: Max 50 lines per function
 
 **Key Rules:**
+
 ```javascript
 {
   // TypeScript
   "@typescript-eslint/no-unused-vars": "error",
   "@typescript-eslint/no-explicit-any": "warn",
   "@typescript-eslint/prefer-optional-chain": "error",
-  
+
   // Code Quality
   "complexity": ["warn", 10],
   "max-lines-per-function": ["warn", 50],
   "no-console": "off", // Allowed in CLI tools
-  
+
   // Jest
   "jest/expect-expect": "error",
   "jest/no-focused-tests": "error"
@@ -342,6 +361,7 @@ CACI enforces strict code quality standards through automated tooling:
 ### Prettier Configuration
 
 **Code Formatting:**
+
 - **Line width**: 80 characters
 - **Tabs**: 2 spaces
 - **Semicolons**: Required
@@ -363,6 +383,7 @@ npm test            # Test suite
 
 **Pre-commit Validation:**
 All code changes must pass:
+
 1. TypeScript compilation
 2. ESLint rules (no errors)
 3. Prettier formatting
@@ -376,11 +397,13 @@ CACI uses GitHub Actions for continuous integration and deployment:
 ### Pipeline Overview
 
 **Triggered by:**
+
 - Push to `main`, `master`, `develop` branches
 - Pull requests to main branches
 - Manual workflow dispatch
 
 **Multi-platform Testing:**
+
 - **OS**: Ubuntu, macOS, Windows
 - **Node.js**: v18, v20, v22
 - **Parallel execution**: 9 total combinations
@@ -388,6 +411,7 @@ CACI uses GitHub Actions for continuous integration and deployment:
 ### Pipeline Stages
 
 **1. Test Matrix** (Parallel across platforms):
+
 ```yaml
 strategy:
   matrix:
@@ -396,6 +420,7 @@ strategy:
 ```
 
 **2. Quality Checks:**
+
 - Dependency installation and caching
 - TypeScript compilation
 - ESLint validation
@@ -403,16 +428,19 @@ strategy:
 - Flakiness detection (3x test runs)
 
 **3. Build Verification:**
+
 - Production build creation
 - Artifact validation
 - CLI installation testing
 
 **4. Integration Testing:**
+
 - Real-world component testing
 - CLI command verification
 - Cross-platform compatibility
 
 **5. Reporting:**
+
 - Coverage upload to Codecov
 - SonarCloud analysis
 - Artifact storage
@@ -451,6 +479,7 @@ docker-compose up --build
 - **Performance**: Layer optimization, dependency caching
 
 **Development Container:**
+
 ```dockerfile
 FROM node:20-alpine
 WORKDIR /workspace
@@ -465,6 +494,7 @@ RUN npm run build
 ### Vulnerability Reporting
 
 **Process:**
+
 1. Email security issues to elad12390@gmail.com
 2. Include detailed vulnerability description
 3. Provide reproduction steps
@@ -472,6 +502,7 @@ RUN npm run build
 5. Allow 90 days for resolution
 
 **Do NOT:**
+
 - Create public issues for security vulnerabilities
 - Share vulnerabilities in public forums
 - Attempt to exploit vulnerabilities
@@ -479,6 +510,7 @@ RUN npm run build
 ### Security Best Practices
 
 **When Contributing:**
+
 - Never commit secrets or API keys
 - Use environment variables for sensitive data
 - Validate all user inputs
@@ -486,12 +518,14 @@ RUN npm run build
 - Review dependencies for vulnerabilities
 
 **Automated Security:**
+
 - GitHub Dependabot: Dependency vulnerability scanning
 - NPM audit: Regular vulnerability checks
 - GitHub Security Advisories: Automated alerts
 - SonarCloud: Security hotspot detection
 
 **Security Commands:**
+
 ```bash
 npm audit          # Check for vulnerabilities
 npm audit fix      # Auto-fix vulnerabilities
@@ -503,6 +537,7 @@ npm run security   # Run security linting
 ### Before Creating a PR
 
 **Checklist:**
+
 - [ ] Create feature branch from `main`/`master`
 - [ ] Write comprehensive tests
 - [ ] Ensure all tests pass locally
@@ -514,8 +549,9 @@ npm run security   # Run security linting
 ### PR Requirements
 
 **Required:**
+
 1. **Descriptive title**: Clear, concise description
-2. **Detailed description**: 
+2. **Detailed description**:
    - What changes were made
    - Why changes were necessary
    - How to test the changes
@@ -524,23 +560,28 @@ npm run security   # Run security linting
 5. **Backward compatibility**: Maintain compatibility or provide migration path
 
 **PR Template:**
+
 ```markdown
 ## Summary
+
 Brief description of changes made.
 
 ## Type of Change
+
 - [ ] Bug fix (non-breaking change fixing an issue)
 - [ ] New feature (non-breaking change adding functionality)
 - [ ] Breaking change (fix/feature causing existing functionality to change)
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass (`npm test`)
 - [ ] Integration tests pass (`npm run test:integration`)
 - [ ] Manual testing completed
 - [ ] Cross-platform testing (if applicable)
 
 ## Checklist
+
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
 - [ ] Comments added for complex code
@@ -551,12 +592,14 @@ Brief description of changes made.
 ### Review Process
 
 **Automated Checks:**
+
 - CI/CD pipeline must pass (all platforms)
 - Code coverage maintained/improved
 - No security vulnerabilities
 - Code quality metrics met
 
 **Manual Review:**
+
 - Code functionality and logic
 - Test coverage and quality
 - Documentation completeness
@@ -564,6 +607,7 @@ Brief description of changes made.
 - Performance impact
 
 **Reviewer Guidelines:**
+
 - Be constructive and respectful
 - Focus on code, not the person
 - Suggest specific improvements
@@ -572,6 +616,7 @@ Brief description of changes made.
 ### Merging Requirements
 
 **All Required:**
+
 - [ ] All CI checks pass
 - [ ] At least one approving review
 - [ ] No requested changes outstanding
@@ -593,6 +638,7 @@ footer
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -602,6 +648,7 @@ footer
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat(analyzer): add support for custom component filters
 
@@ -613,6 +660,7 @@ test(integration): add end-to-end workflow validation
 ```
 
 **Guidelines:**
+
 - Use present tense ("add feature" not "added feature")
 - Use imperative mood ("move cursor to..." not "moves cursor to...")
 - Limit first line to 72 characters
@@ -622,6 +670,7 @@ test(integration): add end-to-end workflow validation
 ### TypeScript Style Guide
 
 **General Principles:**
+
 - Explicit typing over `any`
 - Interface over type aliases for object shapes
 - Prefer immutability
@@ -629,6 +678,7 @@ test(integration): add end-to-end workflow validation
 - Document complex logic
 
 **Code Examples:**
+
 ```typescript
 // ✅ Good: Explicit interface
 interface UserRequirements {
@@ -653,9 +703,7 @@ function processRequirements(
 }
 
 // ✅ Good: Error handling
-async function parseComponents(
-  data: unknown
-): Promise<ComponentsData> {
+async function parseComponents(data: unknown): Promise<ComponentsData> {
   try {
     return ComponentsSchema.parse(data);
   } catch (error) {
@@ -665,6 +713,7 @@ async function parseComponents(
 ```
 
 **Naming Conventions:**
+
 - **Classes**: PascalCase (`ComponentParser`)
 - **Functions**: camelCase (`parseComponents`)
 - **Variables**: camelCase (`userRequirements`)
@@ -675,7 +724,8 @@ async function parseComponents(
 ### Documentation Style Guide
 
 **Code Documentation:**
-```typescript
+
+````typescript
 /**
  * Parses components.json file and validates structure
  * @param filePath - Absolute path to components.json file
@@ -694,9 +744,10 @@ async function parseComponents(
 ): Promise<ComponentsData> {
   // Implementation
 }
-```
+````
 
 **Markdown Documentation:**
+
 - Use clear headings hierarchy
 - Include code examples for functions
 - Provide usage examples
@@ -708,6 +759,7 @@ async function parseComponents(
 ### Issue Labels
 
 **Type Labels:**
+
 - `bug` - Something isn't working
 - `enhancement` - New feature or request
 - `documentation` - Improvements to documentation
@@ -715,12 +767,14 @@ async function parseComponents(
 - `security` - Security-related issues
 
 **Priority Labels:**
+
 - `priority: critical` - Urgent fixes needed
 - `priority: high` - Important issues
 - `priority: medium` - Standard priority
 - `priority: low` - Nice to have
 
 **Difficulty Labels:**
+
 - `good first issue` - Good for newcomers
 - `help wanted` - Extra attention needed
 - `difficulty: easy` - Simple fixes
@@ -728,6 +782,7 @@ async function parseComponents(
 - `difficulty: hard` - Complex changes needed
 
 **Component Labels:**
+
 - `analyzer` - AI recommendation system
 - `cli` - Command-line interface
 - `manager` - Configuration management
@@ -737,6 +792,7 @@ async function parseComponents(
 ### Pull Request Labels
 
 **Status Labels:**
+
 - `work in progress` - Still being developed
 - `needs review` - Ready for code review
 - `under review` - Currently being reviewed
@@ -745,6 +801,7 @@ async function parseComponents(
 - `ready to merge` - Approved and ready
 
 **Change Type Labels:**
+
 - `breaking change` - Breaking API changes
 - `feature` - New functionality
 - `bugfix` - Bug fixes
@@ -756,11 +813,13 @@ async function parseComponents(
 ### Getting Help
 
 **Preferred Channels:**
+
 1. **GitHub Issues**: Bug reports, feature requests
 2. **GitHub Discussions**: Questions, ideas, general discussion
 3. **Email**: elad12390@gmail.com (security issues, private matters)
 
 **Response Times:**
+
 - **Issues**: Within 48 hours
 - **Pull Requests**: Within 72 hours
 - **Security Reports**: Within 24 hours
@@ -768,12 +827,14 @@ async function parseComponents(
 ### Community Guidelines
 
 **Be Respectful:**
+
 - Use inclusive language
 - Be patient with newcomers
 - Provide constructive feedback
 - Respect different perspectives
 
 **Be Helpful:**
+
 - Search existing issues before creating new ones
 - Provide detailed information
 - Share knowledge and experience
@@ -782,6 +843,7 @@ async function parseComponents(
 ## Recognition
 
 Contributors are recognized in several ways:
+
 - **README**: Contributor list
 - **CHANGELOG**: Feature/fix attributions
 - **Releases**: Release notes mentions

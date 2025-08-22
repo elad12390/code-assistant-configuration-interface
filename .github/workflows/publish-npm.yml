@@ -12,10 +12,10 @@ on:
         default: 'patch'
         type: choice
         options:
-        - patch
-        - minor
-        - major
-        - prerelease
+          - patch
+          - minor
+          - major
+          - prerelease
       tag:
         description: 'NPM tag for publication'
         required: false
@@ -34,12 +34,12 @@ jobs:
   pre-publish-checks:
     name: CACI Pre-publish Checks
     runs-on: ubuntu-latest
-    
+
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.tag.outputs.tag }}
       should_publish: ${{ steps.should_publish.outputs.should_publish }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -114,7 +114,7 @@ jobs:
         run: |
           npm pack --dry-run
           npm audit --production
-          
+
       - name: Check if version already exists on NPM
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -129,13 +129,13 @@ jobs:
     name: CACI Build and Test for Publishing
     runs-on: ${{ matrix.os }}
     needs: pre-publish-checks
-    
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node-version: [18, 20, 22]
-        
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -183,7 +183,7 @@ jobs:
     needs: [pre-publish-checks, build-and-test]
     if: needs.pre-publish-checks.outputs.should_publish == 'true'
     environment: npm-publishing
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -225,7 +225,7 @@ jobs:
         run: |
           # Install changelog generator if not present
           npx auto-changelog --template keepachangelog --commit-limit false --starting-version ${{ needs.pre-publish-checks.outputs.version }} --output CHANGELOG-CURRENT.md || echo "Could not generate changelog"
-          
+
           # If changelog exists, use it for release notes
           if [[ -f CHANGELOG-CURRENT.md ]]; then
             echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_ENV
@@ -261,7 +261,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pre-publish-checks, publish-npm]
     if: needs.pre-publish-checks.outputs.should_publish == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -294,32 +294,32 @@ jobs:
         run: |
           cat > release_notes.md << 'EOF'
           ## CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
-          
+
           ### 📦 Installation
           ```bash
           npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
           ```
-          
+
           ### 🔗 NPM Package
           - **NPM**: https://www.npmjs.com/package/caci/v/${{ needs.pre-publish-checks.outputs.version }}
           - **Tag**: `${{ needs.pre-publish-checks.outputs.tag }}`
-          
+
           ### 🚀 Usage
           ```bash
           caci --help
           caci analyze
           caci configure
           ```
-          
+
           ### 📋 What's New
           ${{ env.CHANGELOG_CONTENT || 'See commit history for changes in this release.' }}
-          
+
           ### 🧪 Testing
           This release has been tested on:
           - Ubuntu Latest, macOS Latest, Windows Latest
           - Node.js versions 18, 20, 22
           - Multiple real-world project scenarios
-          
+
           ### 🔍 Verification
           You can verify the integrity of this release:
           ```bash
@@ -354,7 +354,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [pre-publish-checks, publish-npm, create-github-release]
     if: always() && needs.pre-publish-checks.outputs.should_publish == 'true'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -368,12 +368,12 @@ jobs:
         run: |
           # Wait a bit more for NPM to fully sync
           sleep 60
-          
+
           # Test global installation
           npm install -g caci@${{ needs.pre-publish-checks.outputs.version }}
           caci --version
           caci --help
-          
+
           # Test project installation
           mkdir test-project-install
           cd test-project-install
@@ -396,9 +396,16 @@ jobs:
   publish-summary:
     name: CACI Publication Summary
     runs-on: ubuntu-latest
-    needs: [pre-publish-checks, build-and-test, publish-npm, create-github-release, post-publish]
+    needs:
+      [
+        pre-publish-checks,
+        build-and-test,
+        publish-npm,
+        create-github-release,
+        post-publish,
+      ]
     if: always()
-    
+
     steps:
       - name: Summary
         run: |
@@ -411,7 +418,7 @@ jobs:
           echo "| GitHub Release | ${{ needs.create-github-release.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Post-publish | ${{ needs.post-publish.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.pre-publish-checks.outputs.should_publish }}" == "true" ]]; then
             if [[ "${{ needs.publish-npm.result }}" == "success" ]]; then
               echo "✅ **Successfully published caci@${{ needs.pre-publish-checks.outputs.version }}**" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,44 @@
+name: Test NPM Simple
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_message:
+        description: 'Test message'
+        required: false
+        default: 'Test NPM'
+        type: string
+
+defaults:
+  run:
+    shell: bash
+    working-directory: packages/caci
+
+jobs:
+  test-npm:
+    name: Test NPM Simple Job
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+      
+      - name: Test working directory
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents:"
+          ls -la
+          echo "Package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
+      
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Test message
+        run: echo "✅ Test successful: ${{ inputs.test_message }}"

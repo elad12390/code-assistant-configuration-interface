@@ -1,6 +1,6 @@
 {
   "name": "code-assistant-config-interface",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "CACI (Code Assistant Configuration Interface) - Intelligent CLI tool for configuring Claude Code projects",
   "main": "dist/index.js",
   "bin": {

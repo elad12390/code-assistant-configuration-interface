@@ -18,7 +18,7 @@ describe('Jest Setup', () => {
 jest.setTimeout(30000);
 
 // Override process exit to prevent hanging in CI
-const originalProcessExit = process.exit;
+const originalProcessExit = process.exit.bind(process);
 const overrideProcessExit = (code?: number) => {
   // In test environment, just throw instead of exiting
   if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {

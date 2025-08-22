@@ -32,7 +32,7 @@ jobs:
     name: DEPRECATED - Use CI Pipeline Instead
     runs-on: ubuntu-latest
     if: github.event.inputs.force_run != 'true'
-    
+
     steps:
       - name: Deprecation Notice
         run: |
@@ -51,6 +51,6 @@ jobs:
           echo "- 🎯 **Logical flow** - format → lint → type → test → build → deploy" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Please use the main CI pipeline for all quality checks." >> $GITHUB_STEP_SUMMARY
-          
+
           # Fail the job to make it clear this shouldn't be used
           exit 1

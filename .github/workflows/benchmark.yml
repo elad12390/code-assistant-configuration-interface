@@ -1,4 +1,4 @@
-name: "CACI Package Performance Benchmarks"
+name: 'CACI Package Performance Benchmarks'
 
 # This workflow runs comprehensive performance benchmarks on a schedule
 # Basic performance testing is now handled by the main CI pipeline (ci.yml)

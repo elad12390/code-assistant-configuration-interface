@@ -185,7 +185,12 @@ jobs:
           # Verify package
           echo "📋 Package verification:"
           dpkg --info caci_${DEB_VERSION}_all.deb
-          dpkg --contents caci_${DEB_VERSION}_all.deb | head -20
+          
+          # Count files and show sample (avoid pipe errors with large packages)
+          echo "📁 Package contents (sample):"
+          CONTENT_COUNT=$(dpkg --contents caci_${DEB_VERSION}_all.deb | wc -l)
+          echo "Total files in package: $CONTENT_COUNT"
+          dpkg --contents caci_${DEB_VERSION}_all.deb 2>/dev/null | head -10 || echo "Contents listing truncated due to size"
 
           echo "package_created=true" >> $GITHUB_OUTPUT
 

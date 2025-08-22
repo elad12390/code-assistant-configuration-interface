@@ -4,6 +4,18 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to package'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+    secrets: inherit
   workflow_dispatch:
     inputs:
       version:

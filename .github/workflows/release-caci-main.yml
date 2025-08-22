@@ -200,7 +200,7 @@ jobs:
         with:
           name: caci-release-artifacts
           path: |
-            packages/caci/caci-*.tgz
+            packages/caci/code-assistant-config-interface-*.tgz
             packages/caci/install-caci.sh
             packages/caci/install-caci.ps1
             packages/caci/dist/**
@@ -419,7 +419,7 @@ jobs:
           name: 'CACI ${{ needs.prepare-release.outputs.version }} - Multi-Platform Release'
           body_path: changelog_entry.md
           files: |
-            release-artifacts/caci-release-artifacts/caci-*.tgz
+            release-artifacts/caci-release-artifacts/code-assistant-config-interface-*.tgz
             release-artifacts/caci-release-artifacts/install-caci.sh
             release-artifacts/caci-release-artifacts/install-caci.ps1
             release-artifacts/caci-deb-package/caci_*.deb

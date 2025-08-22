@@ -6,7 +6,7 @@ on:
     paths:
       - 'packages/caci/**'
       - '.github/workflows/ci.yml'
-      - '!packages/caci/caci-*.tgz'
+      - '!packages/caci/code-assistant-config-interface-*.tgz'
       - '!packages/caci/node_modules/**'
       - '!packages/caci/dist/**'
       - '!packages/caci/coverage/**'
@@ -15,7 +15,7 @@ on:
     paths:
       - 'packages/caci/**'
       - '.github/workflows/ci.yml'
-      - '!packages/caci/caci-*.tgz'
+      - '!packages/caci/code-assistant-config-interface-*.tgz'
       - '!packages/caci/node_modules/**'
       - '!packages/caci/dist/**'
       - '!packages/caci/coverage/**'
@@ -183,7 +183,7 @@ jobs:
             dist/
             bin/
             package.json
-            caci-*.tgz
+            code-assistant-config-interface-*.tgz
             caci-sbom.spdx.json
           retention-days: 7
 

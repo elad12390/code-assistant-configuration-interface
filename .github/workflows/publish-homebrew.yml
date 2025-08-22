@@ -76,13 +76,13 @@ jobs:
 
       - name: Create release package (if needed)
         run: |
-          if [ ! -f caci-*.tgz ]; then
+          if [ ! -f code-assistant-config-interface-*.tgz ]; then
             echo "📦 Creating NPM package for Homebrew formula..."
             npm pack
           fi
 
           # List available packages
-          ls -la caci-*.tgz
+          ls -la code-assistant-config-interface-*.tgz
 
       - name: Wait for NPM publication
         if: inputs.dry_run == false
@@ -125,7 +125,7 @@ jobs:
           mkdir -p dmg-contents
 
           # Copy the packaged CLI
-          PKG_FILE=$(ls caci-*.tgz | head -1)
+          PKG_FILE=$(ls code-assistant-config-interface-*.tgz | head -1)
           if [ ! -f "$PKG_FILE" ]; then
             echo "❌ No package file found"
             exit 1
@@ -212,7 +212,7 @@ jobs:
           Option 3 - From Local Package:
           • Extract the .tgz file included in this DMG
           • Open Terminal and navigate to the extracted folder
-          • Run: npm install -g ./caci-${VERSION#v}.tgz
+          • Run: npm install -g ./code-assistant-config-interface-${VERSION#v}.tgz
 
           REQUIREMENTS:
           • Node.js 18 or later (https://nodejs.org/)
@@ -286,7 +286,7 @@ jobs:
           echo "🍺 Creating Homebrew formula for CACI v$CLEAN_VERSION..."
 
           # Get the .tgz file info for Homebrew
-          PKG_FILE=$(ls caci-*.tgz | head -1)
+          PKG_FILE=$(ls code-assistant-config-interface-*.tgz | head -1)
           if [ ! -f "$PKG_FILE" ]; then
             echo "❌ No package file found for Homebrew formula"
             exit 1

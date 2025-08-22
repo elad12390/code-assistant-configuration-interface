@@ -206,24 +206,59 @@ jobs:
       - name: Setup GPG for package signing
         run: |
           echo "🔑 Setting up GPG for package signing..."
+          
+          # Setup GPG home directory with proper permissions
+          export GNUPGHOME="$HOME/.gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          
+          # Configure GPG for non-interactive use
+          echo "use-agent" > "$GNUPGHOME/gpg.conf"
+          echo "pinentry-mode loopback" >> "$GNUPGHOME/gpg.conf"
+          echo "batch" >> "$GNUPGHOME/gpg.conf"
+          echo "no-tty" >> "$GNUPGHOME/gpg.conf"
 
           # Import GPG private key for signing
           if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
+            echo "🔓 Importing production GPG key..."
             
-            # Trust the imported key
-            KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
+            # Write key to temporary file to handle formatting issues
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" > /tmp/gpg_key.asc
+            
+            # Import the key with error handling
+            if gpg --import --batch --yes --pinentry-mode loopback /tmp/gpg_key.asc; then
+              echo "✅ GPG key imported successfully"
+            else
+              echo "❌ Failed to import GPG key"
+              echo "🔍 Checking key format..."
+              head -5 /tmp/gpg_key.asc
+              exit 1
+            fi
+            
+            # Clean up temporary file
+            rm -f /tmp/gpg_key.asc
+            
+            # Get the key ID with more robust extraction
+            KEY_ID=$(gpg --list-secret-keys --with-colons 2>/dev/null | grep '^sec:' | cut -d: -f5 | head -1)
+            if [ -z "$KEY_ID" ]; then
+              # Fallback method
+              KEY_ID=$(gpg --list-secret-keys --keyid-format LONG 2>/dev/null | grep '^sec' | sed 's/.*\/\([A-F0-9]*\).*/\1/' | head -1)
+            fi
+            
             if [ -n "$KEY_ID" ]; then
-              echo "$KEY_ID:6:" | gpg --import-ownertrust
+              # Set ultimate trust for the key
+              echo "$KEY_ID:6:" | gpg --import-ownertrust --batch --yes
               echo "✅ GPG key imported and trusted: $KEY_ID"
             else
-              echo "❌ Failed to get key ID from imported key"
+              echo "❌ Failed to extract key ID from imported key"
+              echo "🔍 Available keys:"
+              gpg --list-secret-keys --keyid-format LONG
               exit 1
             fi
           else
             echo "⚠️ No GPG_PRIVATE_KEY secret found, creating temporary key for demo"
             # Create a temporary GPG key for development (NOT for production)
-            gpg --batch --gen-key <<EOF
+            cat > /tmp/gpg_batch.txt <<EOF
           %no-protection
           Key-Type: RSA
           Key-Length: 2048
@@ -235,22 +270,55 @@ jobs:
           %commit
           EOF
             
-            # Trust the generated key
-            KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
-            if [ -n "$KEY_ID" ]; then
-              echo "$KEY_ID:6:" | gpg --import-ownertrust
-              echo "✅ Temporary GPG key created and trusted: $KEY_ID"
+            if gpg --batch --gen-key /tmp/gpg_batch.txt; then
+              echo "✅ Temporary GPG key created"
+            else
+              echo "❌ Failed to create temporary GPG key"
+              exit 1
             fi
+            
+            # Get the key ID
+            KEY_ID=$(gpg --list-secret-keys --with-colons 2>/dev/null | grep '^sec:' | cut -d: -f5 | head -1)
+            if [ -n "$KEY_ID" ]; then
+              echo "$KEY_ID:6:" | gpg --import-ownertrust --batch --yes
+              echo "✅ Temporary GPG key created and trusted: $KEY_ID"
+            else
+              echo "❌ Failed to get key ID from generated key"
+              exit 1
+            fi
+            
+            # Clean up batch file
+            rm -f /tmp/gpg_batch.txt
           fi
 
-          # List available keys
-          echo "📝 Available GPG keys:"
-          gpg --list-secret-keys --keyid-format LONG || echo "No secret keys found"
+          # Verify GPG setup
+          echo "📝 GPG setup verification:"
+          if gpg --list-secret-keys --keyid-format LONG; then
+            echo "✅ GPG secret keys listed successfully"
+          else
+            echo "❌ No GPG secret keys found"
+            exit 1
+          fi
           
           # Store the signing key ID for later use
-          SIGNING_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
-          echo "GPG_KEY_ID=$SIGNING_KEY" >> $GITHUB_ENV
-          echo "🔑 Using GPG key ID: $SIGNING_KEY"
+          if [ -n "$KEY_ID" ]; then
+            echo "GPG_KEY_ID=$KEY_ID" >> $GITHUB_ENV
+            echo "🔑 Using GPG key ID: $KEY_ID"
+          else
+            echo "❌ No GPG key ID available"
+            exit 1
+          fi
+          
+          # Test GPG signing capability
+          echo "🧪 Testing GPG signing capability..."
+          echo "test" | gpg --batch --yes --armor --detach-sign --default-key "$KEY_ID" > /tmp/test.sig
+          if [ $? -eq 0 ]; then
+            echo "✅ GPG signing test successful"
+            rm -f /tmp/test.sig
+          else
+            echo "❌ GPG signing test failed"
+            exit 1
+          fi
 
       - name: Create APT repository
         id: create_repo
@@ -352,35 +420,79 @@ jobs:
 
           echo "🔏 Signing APT repository..."
           
+          # Verify GPG environment is still available
+          export GNUPGHOME="$HOME/.gnupg"
+          
           if [ -z "$GPG_KEY_ID" ]; then
-            echo "❌ No GPG key ID found"
+            echo "❌ No GPG key ID found in environment"
+            echo "🔍 Checking available GPG keys:"
+            gpg --list-secret-keys --keyid-format LONG
             exit 1
           fi
           
           echo "🔑 Using GPG key: $GPG_KEY_ID"
 
+          # Verify the key exists and is usable
+          if ! gpg --list-secret-keys "$GPG_KEY_ID" >/dev/null 2>&1; then
+            echo "❌ GPG key $GPG_KEY_ID not found in keyring"
+            echo "🔍 Available keys:"
+            gpg --list-secret-keys --keyid-format LONG
+            exit 1
+          fi
+
           # Sign the Release file with specific key
-          gpg --batch --yes --detach-sign --armor --default-key "$GPG_KEY_ID" -o dists/stable/Release.gpg dists/stable/Release
+          echo "🔏 Creating detached signature for Release file..."
+          if gpg --batch --yes --detach-sign --armor --pinentry-mode loopback --default-key "$GPG_KEY_ID" -o dists/stable/Release.gpg dists/stable/Release; then
+            echo "✅ Release.gpg created successfully"
+          else
+            echo "❌ Failed to create Release.gpg"
+            exit 1
+          fi
           
           # Create clearsigned InRelease file
-          gpg --batch --yes --clearsign --default-key "$GPG_KEY_ID" -o dists/stable/InRelease dists/stable/Release
+          echo "🔏 Creating clearsigned InRelease file..."
+          if gpg --batch --yes --clearsign --pinentry-mode loopback --default-key "$GPG_KEY_ID" -o dists/stable/InRelease dists/stable/Release; then
+            echo "✅ InRelease created successfully"
+          else
+            echo "❌ Failed to create InRelease"
+            exit 1
+          fi
 
           echo "✅ Repository signed successfully"
           
           # Verify signatures
           echo "🔍 Verifying signatures..."
-          gpg --verify dists/stable/Release.gpg dists/stable/Release
-          gpg --verify dists/stable/InRelease
-
-          # Export public key for users
-          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            gpg --armor --export "$GPG_KEY_ID" > ../caci-archive-keyring.gpg
+          if gpg --verify dists/stable/Release.gpg dists/stable/Release; then
+            echo "✅ Release.gpg signature verified"
           else
-            gpg --armor --export packages@caci.dev > ../caci-archive-keyring.gpg
+            echo "❌ Release.gpg signature verification failed"
+            exit 1
           fi
           
-          echo "✅ Public key exported for users"
-          echo "📋 Repository ready!"
+          if gpg --verify dists/stable/InRelease; then
+            echo "✅ InRelease signature verified"
+          else
+            echo "❌ InRelease signature verification failed"
+            exit 1
+          fi
+
+          # Export public key for users
+          echo "📤 Exporting public key for users..."
+          if gpg --armor --export "$GPG_KEY_ID" > ../caci-archive-keyring.gpg; then
+            echo "✅ Public key exported successfully"
+            echo "📊 Public key size: $(wc -c < ../caci-archive-keyring.gpg) bytes"
+          else
+            echo "❌ Failed to export public key"
+            exit 1
+          fi
+          
+          # Verify exported key is not empty
+          if [ ! -s "../caci-archive-keyring.gpg" ]; then
+            echo "❌ Exported public key file is empty"
+            exit 1
+          fi
+          
+          echo "📋 Repository signing completed successfully!"
 
       - name: Create installation assets
         if: inputs.dry_run == false
@@ -544,22 +656,76 @@ jobs:
             echo "✅ Repository structure is correct"
           else
             echo "❌ Repository structure is invalid"
+            find apt-repo -type d | head -10
             exit 1
           fi
 
-          # Verify signed files exist
-          if [ -f "apt-repo/dists/stable/Release.gpg" ] && [ -f "apt-repo/dists/stable/InRelease" ]; then
-            echo "✅ Repository is properly signed"
+          # Verify essential files exist
+          REQUIRED_FILES=(
+            "apt-repo/dists/stable/Release"
+            "apt-repo/dists/stable/Release.gpg"
+            "apt-repo/dists/stable/InRelease"
+            "apt-repo/dists/stable/main/binary-amd64/Packages"
+            "apt-repo/dists/stable/main/binary-amd64/Packages.gz"
+          )
+
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [ -f "$file" ]; then
+              echo "✅ Found: $file"
+            else
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+          done
+
+          # Verify signed files exist and are not empty
+          if [ -f "apt-repo/dists/stable/Release.gpg" ] && [ -s "apt-repo/dists/stable/Release.gpg" ]; then
+            echo "✅ Release.gpg exists and is not empty"
           else
-            echo "❌ Repository signing failed"
+            echo "❌ Release.gpg missing or empty"
+            exit 1
+          fi
+
+          if [ -f "apt-repo/dists/stable/InRelease" ] && [ -s "apt-repo/dists/stable/InRelease" ]; then
+            echo "✅ InRelease exists and is not empty"
+          else
+            echo "❌ InRelease missing or empty"
             exit 1
           fi
 
           # Verify package exists
           if ls apt-repo/pool/main/c/caci/caci_*.deb 1> /dev/null 2>&1; then
             echo "✅ DEB package found in repository"
+            ls -la apt-repo/pool/main/c/caci/
           else
             echo "❌ DEB package missing from repository"
+            find apt-repo -name "*.deb" -type f
+            exit 1
+          fi
+
+          # Verify public key was exported
+          if [ -f "caci-archive-keyring.gpg" ] && [ -s "caci-archive-keyring.gpg" ]; then
+            echo "✅ Public key exported successfully"
+            echo "📊 Public key size: $(wc -c < caci-archive-keyring.gpg) bytes"
+          else
+            echo "❌ Public key export failed or file is empty"
+            exit 1
+          fi
+
+          # Verify signature files contain proper GPG signatures
+          if grep -q "BEGIN PGP SIGNATURE" apt-repo/dists/stable/Release.gpg; then
+            echo "✅ Release.gpg contains valid PGP signature"
+          else
+            echo "❌ Release.gpg does not contain valid PGP signature"
+            head -5 apt-repo/dists/stable/Release.gpg
+            exit 1
+          fi
+
+          if grep -q "BEGIN PGP SIGNED MESSAGE" apt-repo/dists/stable/InRelease; then
+            echo "✅ InRelease contains valid PGP signed message"
+          else
+            echo "❌ InRelease does not contain valid PGP signed message"
+            head -5 apt-repo/dists/stable/InRelease
             exit 1
           fi
 

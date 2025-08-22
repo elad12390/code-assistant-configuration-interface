@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Problem Section Component
  * Agent: analyst

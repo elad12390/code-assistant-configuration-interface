@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Getting Started Section Component
  * Agent: dev
@@ -19,7 +21,8 @@ import {
   Sparkles,
   FileText,
   Users,
-  Rocket
+  Rocket,
+  Terminal as TerminalIcon
 } from 'lucide-react'
 
 interface Step {
@@ -44,7 +47,7 @@ export const GettingStartedSection: React.FC = () => {
       number: 1,
       title: 'Run the command',
       description: 'Open your terminal in your project directory',
-      icon: <Terminal className="w-5 h-5" />
+      icon: <TerminalIcon className="w-5 h-5" />
     },
     {
       number: 2,

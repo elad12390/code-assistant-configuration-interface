@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * CTA Section Component
  * Agent: ux-expert

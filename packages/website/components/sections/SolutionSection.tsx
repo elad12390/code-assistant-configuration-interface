@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Solution Section Component
  * Agent: architect

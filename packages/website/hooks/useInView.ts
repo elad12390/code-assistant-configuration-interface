@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * useInView Hook
  * Detects when an element enters the viewport

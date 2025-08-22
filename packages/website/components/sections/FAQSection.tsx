@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * FAQ Section Component
  * Agent: po

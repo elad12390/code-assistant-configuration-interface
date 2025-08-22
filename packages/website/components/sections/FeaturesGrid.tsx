@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Features Grid Component
  * Agent: pm

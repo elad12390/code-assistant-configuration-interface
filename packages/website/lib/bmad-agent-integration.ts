@@ -31,7 +31,7 @@ export class BMadAgentIntegration {
     cta: 'ux-expert'
   }
 
-  private agentCapabilities = {
+  private agentCapabilities: { [key: string]: string[] } = {
     'ux-expert': ['design', 'user-experience', 'visual-elements'],
     'analyst': ['research', 'problem-analysis', 'market-insights'],
     'architect': ['system-design', 'technical-solutions', 'integration'],

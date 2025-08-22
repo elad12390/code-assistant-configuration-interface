@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Benefits Section Component
  * Agent: analyst

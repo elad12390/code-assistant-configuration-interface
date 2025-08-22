@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Hero Section Component
  * Agent: ux-expert

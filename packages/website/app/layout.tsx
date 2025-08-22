@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://caci.dev'),
   title: 'CACI - Code Assistant Configuration Interface',
   description: 'Stop wrestling with Claude Code configs. Start shipping faster with intelligent, automated Claude Code configuration.',
   keywords: ['Claude Code', 'configuration', 'automation', 'developer tools', 'CLI', 'AI assistant'],

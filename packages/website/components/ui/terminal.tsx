@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Terminal Component
  * Reusable terminal mockup with syntax highlighting
@@ -82,7 +84,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           <motion.span
             className="inline-block w-2 h-5 bg-gray-300 ml-1 align-text-bottom"
             animate={{ opacity: [1, 0] }}
-            transition={{ repeat: Infinity, duration: 1, ease: 'steps(2)' }}
+            transition={{ repeat: Infinity, duration: 1, repeatType: 'loop' }}
           />
         </div>
       </div>

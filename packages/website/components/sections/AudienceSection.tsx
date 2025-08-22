@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * Audience Section Component
  * Agent: pm

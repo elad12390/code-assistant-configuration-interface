@@ -247,8 +247,9 @@ jobs:
           # Install changelog generator if not present
           npx auto-changelog --template keepachangelog --commit-limit false --starting-version ${{ needs.pre-publish-checks.outputs.version }} --output CHANGELOG-CURRENT.md || echo "Could not generate changelog"
 
-          # If changelog exists, use it for release notes
+          # Format the generated changelog with Prettier to avoid format:check failures
           if [[ -f CHANGELOG-CURRENT.md ]]; then
+            npx prettier --write CHANGELOG-CURRENT.md || echo "Could not format changelog"
             echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_ENV
             cat CHANGELOG-CURRENT.md >> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV

@@ -31,14 +31,18 @@ describe('CACI CLI Interface', () => {
     });
 
     const result = await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     // Commander.js may exit with code 0 or 1 when displaying help, depending on platform
@@ -61,14 +65,18 @@ describe('CACI CLI Interface', () => {
     });
 
     const result = await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     expect(result).toBe(0);
@@ -90,14 +98,18 @@ describe('CACI CLI Interface', () => {
     });
 
     const result = await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     expect(result).toBe(0);
@@ -124,14 +136,18 @@ describe('CACI CLI Interface', () => {
     });
 
     await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     // Command will fail due to missing components.json but should show configuration output
@@ -157,14 +173,18 @@ describe('CACI CLI Interface', () => {
     });
 
     await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     // Command will fail due to missing components.json but should show configuration output
@@ -190,14 +210,18 @@ describe('CACI CLI Interface', () => {
     });
 
     await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     // Command will fail due to missing components.json but should show configuration output
@@ -218,14 +242,18 @@ describe('CACI CLI Interface', () => {
     });
 
     const result = await new Promise<number>((resolve, reject) => {
-      cli.on('close', resolve);
-      cli.on('error', reject);
-
-      // Set a timeout to prevent hanging
-      setTimeout(() => {
-        cli.kill();
+      const timeoutId = setTimeout(() => {
+        cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 15000);
+      }, 10000);
+      
+      const cleanup = (code: number) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(code);
+      };
+
+      cli.on('close', cleanup);
+      cli.on('error', reject);
     });
 
     expect(result).toBe(0);

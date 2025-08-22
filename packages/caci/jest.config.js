@@ -10,16 +10,15 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
+  // Keep default transformIgnorePatterns since chalk 4.x is CommonJS
   transformIgnorePatterns: [
-    '/node_modules/(?!chalk)/'
+    '/node_modules/'
   ],
   // Windows compatibility - increase timeout for slower Windows CI
   testTimeout: 60000,
   maxWorkers: process.platform === 'win32' ? 1 : '50%',
-  // Handle chalk ESM module transformation
-  moduleNameMapper: {
-    '^chalk$': '<rootDir>/node_modules/chalk/source/index.js'
-  },
+  // Remove chalk module mapping since we're using the CommonJS version (4.1.2)
+  // moduleNameMapper not needed for chalk 4.x
   // Force exit to prevent hanging on Windows
   forceExit: true,
   // Detect open handles to help debug hanging tests

@@ -91,14 +91,15 @@ export async function recommendComponents(
     const response = await model!.invoke([new HumanMessage(prompt)]);
 
     // Parse and validate the response
-    let recommendation: any;
+    let recommendation: unknown;
     try {
       // Extract content from the response
       const content =
         typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
       recommendation = JSON.parse(content);
     } catch (error) {
-      throw new Error(`AI returned invalid JSON: ${response.content}`);
+      const responseContent = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      throw new Error(`AI returned invalid JSON: ${responseContent}`);
     }
 
     // Validate the response structure
@@ -113,10 +114,11 @@ export async function recommendComponents(
     };
 
     return filteredRecommendation;
-  } catch (error: any) {
-    if (error.message?.includes('API_KEY')) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('API_KEY')) {
       throw new Error('Invalid GOOGLE_API_KEY. Please check your API key and try again.');
     }
-    throw new Error(`Failed to get AI recommendations: ${error.message}`);
+    throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }
 }

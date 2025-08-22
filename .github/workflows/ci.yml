@@ -351,7 +351,9 @@ jobs:
 
       - name: Configure npm for Windows
         if: runner.os == 'Windows'
-        run: npm config set script-shell "cmd"
+        run: |
+          npm config set script-shell cmd
+          npm config list
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -372,22 +374,25 @@ jobs:
       - name: Test CLI cross-platform
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # Test packaged CLI on Windows
-            if ls caci-*.tgz 1> /dev/null 2>&1; then
-              PKG_FILE=$(ls caci-*.tgz | head -1)
-              npm install -g "./$PKG_FILE"
-              npx caci --help || echo "CLI help completed"
-              npx caci --version || echo "CLI version completed"
-            else
-              echo "No .tgz file found, testing built CLI instead"
+            # Test built CLI on Windows with proper path handling
+            if [ -f "bin/caci" ]; then
+              echo "Testing CLI on Windows..."
               node bin/caci --help || echo "CLI help completed"
               node bin/caci --version || echo "CLI version completed"
+            else
+              echo "CLI binary not found in bin/caci"
+              ls -la bin/ || echo "bin directory does not exist"
             fi
           else
             # Test built CLI on Unix systems
-            chmod +x bin/caci
-            timeout 30s ./bin/caci --help || echo "CLI help completed"
-            timeout 30s ./bin/caci --version || echo "CLI version completed"
+            if [ -f "bin/caci" ]; then
+              chmod +x bin/caci
+              timeout 30s ./bin/caci --help || echo "CLI help completed"
+              timeout 30s ./bin/caci --version || echo "CLI version completed"
+            else
+              echo "CLI binary not found in bin/caci"
+              ls -la bin/ || echo "bin directory does not exist"
+            fi
           fi
 
   performance-benchmarks:

@@ -12,8 +12,8 @@ export interface ComponentsData {
   commands: Record<string, Component>;
   hooks: Record<string, Component>;
   mcps: Record<string, Component>;
-  settings: any;
-  templates: any;
+  settings: Record<string, unknown>;
+  templates: Record<string, unknown>;
 }
 
 export interface SelectedComponents {

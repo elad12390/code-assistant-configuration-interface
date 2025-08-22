@@ -19,6 +19,25 @@ function arrayToObject(components: Component[]): Record<string, Component> {
  * @param filePath Path to the components.json file
  * @returns Parsed components data
  */
+function convertComponentSection(data: unknown): Record<string, Component> {
+  if (Array.isArray(data)) {
+    return arrayToObject(data as Component[]);
+  }
+  return (data as Record<string, Component>) || {};
+}
+
+function parseRawComponentsData(rawComponentsData: unknown): ComponentsData {
+  const data = rawComponentsData as Record<string, unknown>;
+  return {
+    agents: convertComponentSection(data.agents),
+    commands: convertComponentSection(data.commands),
+    hooks: convertComponentSection(data.hooks),
+    mcps: convertComponentSection(data.mcps),
+    settings: (data.settings as Record<string, unknown>) || {},
+    templates: (data.templates as Record<string, unknown>) || {},
+  };
+}
+
 export function parseComponentsFile(filePath: string): ComponentsData {
   try {
     // Check if file exists
@@ -28,34 +47,19 @@ export function parseComponentsFile(filePath: string): ComponentsData {
 
     // Read and parse the JSON file
     const rawData = fs.readFileSync(filePath, 'utf-8');
-    const rawComponentsData = JSON.parse(rawData);
+    const rawComponentsData = JSON.parse(rawData) as unknown;
 
-    // Convert array format to object format if needed
-    const componentsData: ComponentsData = {
-      agents: Array.isArray(rawComponentsData.agents)
-        ? arrayToObject(rawComponentsData.agents as Component[])
-        : rawComponentsData.agents || {},
-      commands: Array.isArray(rawComponentsData.commands)
-        ? arrayToObject(rawComponentsData.commands as Component[])
-        : rawComponentsData.commands || {},
-      hooks: Array.isArray(rawComponentsData.hooks)
-        ? arrayToObject(rawComponentsData.hooks as Component[])
-        : rawComponentsData.hooks || {},
-      mcps: Array.isArray(rawComponentsData.mcps)
-        ? arrayToObject(rawComponentsData.mcps as Component[])
-        : rawComponentsData.mcps || {},
-      settings: rawComponentsData.settings || {},
-      templates: rawComponentsData.templates || {},
-    };
-
-    return componentsData;
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+    // Convert to standardized format
+    return parseRawComponentsData(rawComponentsData);
+  } catch (error: unknown) {
+    const err = error as Error & { code?: string };
+    if (err.code === 'ENOENT') {
       throw new Error(`Components file not found at path: ${filePath}`);
     } else if (error instanceof SyntaxError) {
       throw new Error(`Invalid JSON in components file: ${error.message}`);
     } else {
-      throw new Error(`Error reading components file: ${error.message}`);
+      const message = err.message || String(error);
+      throw new Error(`Error reading components file: ${message}`);
     }
   }
 }

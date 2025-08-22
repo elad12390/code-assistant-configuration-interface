@@ -5,19 +5,20 @@
  * Agent: architect
  * Owner: architect
  * Editors: pm, dev
+ * Redesigned with Patio.so-inspired impact quote style
  */
 
 import React from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from '@/hooks/useInView'
 import { Card } from '@/components/ui/card'
-import { GradientText } from '@/components/ui/gradient-text'
 import { 
   MessageSquare, 
   Cpu, 
   Rocket,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react'
 
 interface ProcessStep {
@@ -55,106 +56,149 @@ export const SolutionSection: React.FC = () => {
     }
   ]
 
-  const staggerChildren = {
-    animate: {
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
-  }
+  // Word-by-word animation for the main quote
+  const words = "CACI: Your Claude Code Setup, Automated".split(' ')
 
   return (
-    <section ref={ref} className="py-20 px-4">
+    <section ref={ref} className="py-20 px-4 bg-gradient-to-b from-gray-50/50 to-white dark:from-gray-900/50 dark:to-background">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Impactful Quote Section - Patio.so Style */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          className="text-center mb-20"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            <GradientText>CACI: Your Claude Code Setup, Automated</GradientText>
+          <h2 className="text-4xl md:text-6xl font-bold mb-8 leading-tight">
+            {words.map((word, index) => (
+              <motion.span
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: index * 0.1 }}
+                className={`inline-block mr-3 ${
+                  ['CACI:', 'Automated'].includes(word) 
+                    ? 'text-transparent bg-gradient-to-r from-primary to-secondary bg-clip-text' 
+                    : ''
+                }`}
+              >
+                {word}
+              </motion.span>
+            ))}
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          
+          <motion.div
+            initial={{ opacity: 0, scale: 0 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ delay: 0.5, type: "spring" }}
+            className="inline-block"
+          >
+            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.6 }}
+            className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mt-6"
+          >
             One CLI. A few questions. Production-ready Claude Code configuration.
-          </p>
-          <p className="text-lg text-gray-500 dark:text-gray-400 mt-4">
+          </motion.p>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.7 }}
+            className="text-lg text-gray-500 dark:text-gray-400 mt-4"
+          >
             CACI is the configuration interface that asks you smart questions and 
             automatically generates optimized Claude Code setups.
-          </p>
+          </motion.p>
         </motion.div>
 
-        {/* Process Timeline */}
-        <motion.div
-          variants={staggerChildren}
-          initial="initial"
-          animate={isInView ? "animate" : "initial"}
-          className="relative"
-        >
-          {/* Timeline Line */}
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-cyan-200 dark:from-blue-800 dark:via-blue-600 dark:to-cyan-800 hidden md:block" />
+        {/* Process Cards with Enhanced Animations */}
+        <div className="grid md:grid-cols-3 gap-8 relative">
+          {/* Animated Connection Line */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={isInView ? { scaleX: 1 } : {}}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-primary/20 via-primary to-secondary/20 hidden md:block origin-left"
+          />
 
-          {/* Process Steps */}
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {processSteps.map((step, index) => (
-              <motion.div
-                key={index}
-                variants={{
-                  initial: { opacity: 0, y: 50 },
-                  animate: { opacity: 1, y: 0 }
-                }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                className="relative"
-              >
-                <Card className="p-6 h-full hover:shadow-xl transition-all duration-300 group bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                  {/* Step Number */}
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                    {step.number}
-                  </div>
+          {processSteps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 50 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ 
+                duration: 0.6, 
+                delay: 0.2 + index * 0.2,
+                type: "spring",
+                stiffness: 100
+              }}
+              className="relative"
+            >
+              <Card className="p-6 h-full hover-lift bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50">
+                {/* Animated Step Number */}
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={isInView ? { scale: 1, rotate: 0 } : {}}
+                  transition={{ delay: 0.4 + index * 0.2, type: "spring" }}
+                  className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                >
+                  {step.number}
+                </motion.div>
 
-                  {/* Icon */}
-                  <div className="mb-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                    {step.icon}
-                  </div>
+                {/* Icon with Float Animation */}
+                <div className="mb-4 text-primary animate-float">
+                  {step.icon}
+                </div>
 
-                  {/* Content */}
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    {step.description}
-                  </p>
+                {/* Content */}
+                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  {step.description}
+                </p>
 
-                  {/* Duration Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>{step.duration}</span>
-                  </div>
+                {/* Duration Badge with Pulse */}
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded-full text-sm animate-pulse">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{step.duration}</span>
+                </div>
 
-                  {/* Arrow (except last item) */}
-                  {index < processSteps.length - 1 && (
-                    <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2">
-                      <ArrowRight className="w-8 h-8 text-blue-400 dark:text-blue-600" />
-                    </div>
-                  )}
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+                {/* Animated Arrow */}
+                {index < processSteps.length - 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={isInView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ delay: 0.6 + index * 0.2 }}
+                    className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2"
+                  >
+                    <ArrowRight className="w-8 h-8 text-primary animate-pulse" />
+                  </motion.div>
+                )}
+              </Card>
+            </motion.div>
+          ))}
+        </div>
 
-        {/* Bottom Summary */}
+        {/* Bottom Summary with Floating Animation */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: 0.6, delay: 1 }}
           className="mt-16 text-center"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 bg-blue-50 dark:bg-blue-900/20 rounded-full">
-            <Rocket className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <span className="text-lg font-medium text-blue-700 dark:text-blue-300">
+          <motion.div
+            animate={isInView ? { y: [0, -10, 0] } : {}}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-primary/10 to-secondary/10 backdrop-blur-sm rounded-full shadow-lg"
+          >
+            <Rocket className="w-5 h-5 text-primary" />
+            <span className="text-lg font-medium bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Total setup time: Under 5 minutes
             </span>
-          </div>
+          </motion.div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             No more hunting through documentation or debugging config files.
           </p>

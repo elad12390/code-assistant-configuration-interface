@@ -1,93 +1,192 @@
+'use client'
+
 import React from 'react'
 import Link from 'next/link'
-import { Terminal, Github, Twitter, Mail } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Terminal, Github, ExternalLink, FileText, Package, MessageSquare, Users, Heart, Sparkles } from 'lucide-react'
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
 
-  const quickLinks = [
-    { name: 'Documentation', href: '/docs' },
-    { name: 'GitHub', href: 'https://github.com/elad12390/claude-code-configurator' },
-    { name: 'npm Package', href: 'https://www.npmjs.com/package/caci' },
-    { name: 'Changelog', href: '/changelog' }
-  ]
+  const footerSections = {
+    product: {
+      title: 'Product',
+      links: [
+        { name: 'Getting Started', href: '#getting-started' },
+        { name: 'Features', href: '#features' },
+        { name: 'Documentation', href: 'https://github.com/elad12390/claude-code-configurator/blob/main/README.md', external: true },
+        { name: 'Changelog', href: 'https://github.com/elad12390/claude-code-configurator/releases', external: true },
+        { name: 'npm Package', href: 'https://www.npmjs.com/package/caci', external: true }
+      ]
+    },
+    developers: {
+      title: 'Developers',
+      links: [
+        { name: 'GitHub', href: 'https://github.com/elad12390/claude-code-configurator', external: true },
+        { name: 'Contributing', href: 'https://github.com/elad12390/claude-code-configurator/blob/main/CONTRIBUTING.md', external: true },
+        { name: 'Issues', href: 'https://github.com/elad12390/claude-code-configurator/issues', external: true },
+        { name: 'Discussions', href: 'https://github.com/elad12390/claude-code-configurator/discussions', external: true }
+      ]
+    },
+    community: {
+      title: 'Community',
+      links: [
+        { name: 'Discord', href: '#', external: true },
+        { name: 'Twitter', href: '#', external: true },
+        { name: 'Blog', href: '#', external: true },
+        { name: 'Newsletter', href: '#', external: true }
+      ]
+    }
+  }
 
-  const socialLinks = [
-    { name: 'GitHub', icon: Github, href: 'https://github.com/elad12390/claude-code-configurator' },
-    { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/caci' },
-    { name: 'Email', icon: Mail, href: 'mailto:hello@caci.dev' }
-  ]
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  }
 
   return (
-    <footer className="bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Brand Section */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Terminal className="w-10 h-10 text-blue-600 dark:text-blue-400" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200/50 dark:border-gray-800/50">
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12">
+          {/* Brand Section - Larger column */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="md:col-span-2 space-y-4"
+          >
+            <div className="flex items-center space-x-2 group">
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+                className="relative"
+              >
+                <Terminal className="w-10 h-10 text-primary" />
+                <Sparkles className="w-4 h-4 text-secondary absolute -top-1 -right-1" />
+              </motion.div>
+              <span className="text-2xl font-bold text-foreground">
                 CACI
               </span>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">
-              Code Assistant Configuration Interface - Automated Claude Code setup in minutes.
+            <p className="text-muted-foreground max-w-xs">
+              Intelligent Claude Code configuration that understands your project needs and sets up everything perfectly in minutes.
             </p>
-          </div>
-
-          {/* Quick Links */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Quick Links</h3>
-            <ul className="space-y-2">
-              {quickLinks.map((link) => (
-                <li key={link.name}>
-                  <Link 
-                    href={link.href}
-                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    target={link.href.startsWith('http') ? '_blank' : undefined}
-                    rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Social Links */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Connect</h3>
-            <div className="flex space-x-4">
-              {socialLinks.map((link) => {
-                const Icon = link.icon
-                return (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    aria-label={link.name}
-                  >
-                    <Icon className="w-6 h-6" />
-                  </a>
-                )
-              })}
+            <div className="flex items-center gap-4 pt-2">
+              <motion.a
+                href="https://github.com/elad12390/claude-code-configurator"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Github className="w-6 h-6" />
+              </motion.a>
+              <motion.a
+                href="https://www.npmjs.com/package/caci"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Package className="w-6 h-6" />
+              </motion.a>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Links Sections */}
+          {Object.entries(footerSections).map(([key, section], index) => (
+            <motion.div
+              key={key}
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="space-y-4"
+            >
+              <motion.h3 
+                variants={itemVariants}
+                className="font-semibold text-foreground"
+              >
+                {section.title}
+              </motion.h3>
+              <ul className="space-y-3">
+                {section.links.map((link) => (
+                  <motion.li key={link.name} variants={itemVariants}>
+                    <Link 
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1 group"
+                      target={link.external ? '_blank' : undefined}
+                      rel={link.external ? 'noopener noreferrer' : undefined}
+                    >
+                      {link.name}
+                      {link.external && (
+                        <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </Link>
+                  </motion.li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              © {currentYear} CACI. All rights reserved.
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Created with ❤️ by the CACI Team
-            </p>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800"
+        >
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <span>© {currentYear} CACI</span>
+              <Link href="/privacy" className="hover:text-primary transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-primary transition-colors">
+                Terms
+              </Link>
+            </div>
+            <motion.div 
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <span>Made with</span>
+              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+              <span>by</span>
+              <Link 
+                href="https://github.com/elad12390" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors font-medium"
+              >
+                Elad Harizy
+              </Link>
+              <span>&</span>
+              <Link 
+                href="https://github.com/smartari1" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors font-medium"
+              >
+                Arik Liger
+              </Link>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   )

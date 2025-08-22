@@ -5,6 +5,7 @@
  * Agent: analyst
  * Owner: analyst
  * Editors: pm, po
+ * Redesigned with Patio.so-inspired floating tag cloud
  */
 
 import React from 'react'
@@ -17,7 +18,13 @@ import {
   DollarSign, 
   Rocket, 
   RefreshCw,
-  CheckCircle
+  CheckCircle,
+  Zap,
+  Shield,
+  Users,
+  GitBranch,
+  Code,
+  Sparkles
 } from 'lucide-react'
 
 interface Benefit {
@@ -25,15 +32,23 @@ interface Benefit {
   title: string
   description: string
   metrics: string[]
-  visual: React.ReactNode
+  color: string
+}
+
+interface FloatingTag {
+  text: string
+  icon?: React.ReactNode
+  size: 'sm' | 'md' | 'lg'
+  color: string
+  position: { x: number, y: number }
 }
 
 export const BenefitsSection: React.FC = () => {
   const [ref, isInView] = useInView(0.2)
 
-  const benefits: Benefit[] = [
+  const mainBenefits: Benefit[] = [
     {
-      icon: <Clock className="w-8 h-8" />,
+      icon: <Clock className="w-6 h-6" />,
       title: 'Minutes, Not Days',
       description: 'What takes experienced developers hours to configure manually, CACI does in under 5 minutes. Get back to building.',
       metrics: [
@@ -41,10 +56,10 @@ export const BenefitsSection: React.FC = () => {
         '95% faster configuration',
         'Zero learning curve'
       ],
-      visual: <TimeComparisonVisual />
+      color: 'from-blue-400 to-blue-600'
     },
     {
-      icon: <TrendingUp className="w-8 h-8" />,
+      icon: <TrendingUp className="w-6 h-6" />,
       title: 'Best Practices Built-In',
       description: 'Every configuration follows proven patterns from successful development teams. No guesswork, no trial and error.',
       metrics: [
@@ -52,10 +67,10 @@ export const BenefitsSection: React.FC = () => {
         'Validated configurations',
         'Continuous improvements'
       ],
-      visual: <BestPracticesVisual />
+      color: 'from-purple-400 to-purple-600'
     },
     {
-      icon: <DollarSign className="w-8 h-8" />,
+      icon: <DollarSign className="w-6 h-6" />,
       title: 'Cheaper Development',
       description: 'Stop paying developers to read documentation and debug configs. One CACI setup replaces hours of expensive engineering time.',
       metrics: [
@@ -63,168 +78,171 @@ export const BenefitsSection: React.FC = () => {
         'Reduce onboarding costs by 80%',
         'Eliminate configuration debt'
       ],
-      visual: <CostSavingsVisual />
-    },
-    {
-      icon: <Rocket className="w-8 h-8" />,
-      title: 'Faster Delivery',
-      description: 'Ship features faster with Claude Code working optimally from day one. No ramp-up time, no suboptimal configurations.',
-      metrics: [
-        '40% faster feature delivery',
-        'Immediate productivity',
-        'Consistent team velocity'
-      ],
-      visual: <DeliverySpeedVisual />
-    },
-    {
-      icon: <RefreshCw className="w-8 h-8" />,
-      title: 'Always Up-to-Date',
-      description: 'CACI stays current with Claude Code\'s latest features and best practices. Your config automatically benefits from the latest optimizations.',
-      metrics: [
-        'Weekly updates',
-        'New features auto-integrated',
-        'Breaking changes handled'
-      ],
-      visual: <UpdatesVisual />
+      color: 'from-green-400 to-green-600'
     }
   ]
 
+  // Floating tags inspired by Patio.so
+  const floatingTags: FloatingTag[] = [
+    { text: '40% faster delivery', icon: <Rocket className="w-4 h-4" />, size: 'lg', color: 'bg-orange-100 text-orange-700', position: { x: 10, y: 20 } },
+    { text: 'Save $1,250 per setup', size: 'md', color: 'bg-green-100 text-green-700', position: { x: 70, y: 10 } },
+    { text: 'Auto-updated weekly', icon: <RefreshCw className="w-4 h-4" />, size: 'md', color: 'bg-blue-100 text-blue-700', position: { x: 30, y: 60 } },
+    { text: '95% fewer errors', size: 'sm', color: 'bg-purple-100 text-purple-700', position: { x: 80, y: 40 } },
+    { text: 'Industry standards', icon: <Shield className="w-4 h-4" />, size: 'md', color: 'bg-indigo-100 text-indigo-700', position: { x: 15, y: 80 } },
+    { text: 'Team productivity +40%', icon: <Users className="w-4 h-4" />, size: 'lg', color: 'bg-pink-100 text-pink-700', position: { x: 60, y: 75 } },
+    { text: 'Git workflow ready', icon: <GitBranch className="w-4 h-4" />, size: 'sm', color: 'bg-cyan-100 text-cyan-700', position: { x: 45, y: 30 } },
+    { text: 'Zero config debt', size: 'md', color: 'bg-red-100 text-red-700', position: { x: 25, y: 45 } },
+    { text: 'Best practices', icon: <Code className="w-4 h-4" />, size: 'sm', color: 'bg-teal-100 text-teal-700', position: { x: 85, y: 65 } },
+    { text: 'Immediate ROI', icon: <Zap className="w-4 h-4" />, size: 'md', color: 'bg-yellow-100 text-yellow-700', position: { x: 50, y: 50 } }
+  ]
+
   return (
-    <section ref={ref} className="py-20 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
+    <section ref={ref} className="py-20 px-4 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        {/* Header with animated text */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Why Choose CACI?
+          <h2 className="text-3xl md:text-5xl font-bold mb-6">
+            {['Why', 'Choose', 'CACI?'].map((word, index) => (
+              <motion.span
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ delay: index * 0.1 }}
+                className="inline-block mr-3"
+              >
+                {word}
+              </motion.span>
+            ))}
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.3 }}
+            className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+          >
             Transform Claude Code from a powerful tool you'll eventually configure 
             to a productivity superpower you can use today
-          </p>
+          </motion.p>
         </motion.div>
 
-        {/* Benefits List */}
-        <div className="space-y-24">
-          {benefits.map((benefit, index) => (
+        {/* Main Benefits Cards */}
+        <div className="grid md:grid-cols-3 gap-8 mb-20">
+          {mainBenefits.map((benefit, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0, y: 50 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className={`grid md:grid-cols-2 gap-12 items-center ${
-                index % 2 === 1 ? 'md:flex-row-reverse' : ''
-              }`}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ 
+                duration: 0.5, 
+                delay: index * 0.1,
+                type: "spring"
+              }}
+              whileHover={{ y: -5 }}
             >
-              {/* Content */}
-              <div className={index % 2 === 1 ? 'md:order-2' : ''}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white">
-                    {benefit.icon}
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-bold">{benefit.title}</h3>
+              <Card className="p-6 h-full hover-lift bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+                <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${benefit.color} text-white mb-4`}>
+                  {benefit.icon}
                 </div>
-                
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+                <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
                   {benefit.description}
                 </p>
-
-                <ul className="space-y-3">
+                <ul className="space-y-2">
                   {benefit.metrics.map((metric, idx) => (
-                    <li key={idx} className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{metric}</span>
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                      <span className="text-gray-700 dark:text-gray-400">{metric}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-
-              {/* Visual */}
-              <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                <Card className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-                  {benefit.visual}
-                </Card>
-              </div>
+              </Card>
             </motion.div>
           ))}
         </div>
+
+        {/* Floating Tags Cloud - Patio.so Style */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.5 }}
+          className="relative h-96 mb-16"
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+              className="absolute"
+            >
+              <Sparkles className="w-8 h-8 text-primary/20" />
+            </motion.div>
+          </div>
+
+          {floatingTags.map((tag, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={isInView ? { 
+                opacity: 1, 
+                scale: 1,
+                x: [0, Math.random() * 20 - 10, 0],
+                y: [0, Math.random() * 20 - 10, 0]
+              } : {}}
+              transition={{ 
+                opacity: { delay: 0.6 + index * 0.1 },
+                scale: { delay: 0.6 + index * 0.1, type: "spring" },
+                x: { duration: 5 + Math.random() * 5, repeat: Infinity, ease: "easeInOut" },
+                y: { duration: 4 + Math.random() * 6, repeat: Infinity, ease: "easeInOut" }
+              }}
+              className="absolute"
+              style={{ 
+                left: `${tag.position.x}%`, 
+                top: `${tag.position.y}%`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: [-1, 1, -1, 0] }}
+                whileTap={{ scale: 0.95 }}
+                className={`
+                  ${tag.size === 'lg' ? 'px-6 py-3 text-base' : 
+                    tag.size === 'md' ? 'px-4 py-2 text-sm' : 
+                    'px-3 py-1.5 text-xs'}
+                  ${tag.color}
+                  rounded-full shadow-md hover:shadow-lg transition-shadow
+                  flex items-center gap-2 font-medium cursor-pointer
+                `}
+              >
+                {tag.icon}
+                {tag.text}
+              </motion.button>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.8 }}
+          className="text-center"
+        >
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-2">
+            Join thousands of developers who've already supercharged their Claude Code experience
+          </p>
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="inline-flex items-center gap-2 text-primary font-semibold"
+          >
+            <Zap className="w-5 h-5" />
+            <span>Experience the difference today</span>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   )
 }
-
-// Visual Components
-const TimeComparisonVisual: React.FC = () => (
-  <div className="space-y-4">
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span>Manual Setup</span>
-        <span className="text-red-500">2-5 days</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-4">
-        <div className="bg-red-500 h-4 rounded-full" style={{ width: '100%' }} />
-      </div>
-    </div>
-    <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <span>CACI Setup</span>
-        <span className="text-green-500">5 minutes</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-4">
-        <div className="bg-green-500 h-4 rounded-full" style={{ width: '2%' }} />
-      </div>
-    </div>
-  </div>
-)
-
-const BestPracticesVisual: React.FC = () => (
-  <div className="grid grid-cols-2 gap-4">
-    {['Security', 'Performance', 'Scalability', 'Maintainability'].map((practice) => (
-      <div key={practice} className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
-        <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-        <p className="text-sm font-medium">{practice}</p>
-      </div>
-    ))}
-  </div>
-)
-
-const CostSavingsVisual: React.FC = () => (
-  <div className="text-center">
-    <div className="text-5xl font-bold text-green-500 mb-2">$1,250</div>
-    <p className="text-gray-600 dark:text-gray-400">Average saved per setup</p>
-    <div className="mt-4 text-sm text-gray-500">
-      Based on 10 hours saved at $125/hour developer rate
-    </div>
-  </div>
-)
-
-const DeliverySpeedVisual: React.FC = () => (
-  <div className="space-y-4">
-    <div className="flex items-center justify-between">
-      <span className="text-sm">Feature Delivery</span>
-      <span className="text-sm font-bold text-green-500">+40%</span>
-    </div>
-    <div className="flex items-center justify-between">
-      <span className="text-sm">Time to First Commit</span>
-      <span className="text-sm font-bold text-green-500">-90%</span>
-    </div>
-    <div className="flex items-center justify-between">
-      <span className="text-sm">Configuration Errors</span>
-      <span className="text-sm font-bold text-green-500">-95%</span>
-    </div>
-  </div>
-)
-
-const UpdatesVisual: React.FC = () => (
-  <div className="text-center">
-    <RefreshCw className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-spin-slow" />
-    <p className="text-lg font-semibold">Auto-Updated Weekly</p>
-    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-      Always compatible with the latest Claude Code features
-    </p>
-  </div>
-)

@@ -1,9 +1,6 @@
 name: CACI Package NPM Publishing
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_call:
     inputs:
       version:
@@ -76,10 +73,7 @@ jobs:
       - name: Determine version and tag
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-            echo "version=$VERSION" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             CURRENT_VERSION=$(node -p "require('./package.json').version")
             echo "Current version: $CURRENT_VERSION"
             
@@ -108,12 +102,9 @@ jobs:
       - name: Determine NPM tag
         id: tag
         run: |
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            if [[ "${{ steps.version.outputs.version }}" =~ -.*\. ]]; then
-              echo "tag=beta" >> $GITHUB_OUTPUT
-            else
-              echo "tag=latest" >> $GITHUB_OUTPUT
-            fi
+          # Determine tag based on version pattern
+          if [[ "${{ steps.version.outputs.version }}" =~ -.*\. ]]; then
+            echo "tag=beta" >> $GITHUB_OUTPUT
           else
             echo "tag=${{ github.event.inputs.tag || 'latest' }}" >> $GITHUB_OUTPUT
           fi

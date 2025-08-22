@@ -52,71 +52,151 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
         with:
-          ref: ${{ inputs.version }}
+          fetch-depth: 0
+          ref: ${{ inputs.version == 'master' && github.ref || inputs.version }}
 
       - name: Download DEB package (if available from artifacts)
+        id: download_deb
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: caci-deb-package
           path: packages/caci
         continue-on-error: true
 
-      - name: Create DEB package (if not available)
+      - name: Check for existing DEB package
+        id: check_deb
         run: |
-          if [ ! -f caci_*.deb ]; then
-            if [ "${{ inputs.dry_run }}" = "true" ]; then
-              echo "🔍 DRY RUN - Would create DEB package if not available"
-              # Create a mock DEB file for testing APT repository structure
-              touch "caci_master_all.deb"
-              exit 0
-            fi
-            
-            echo "📦 DEB package not found in artifacts, creating it..."
-            
-            # Install DEB packaging tools
-            sudo apt-get update
-            sudo apt-get install -y dpkg-dev build-essential fakeroot
-            
-            # Setup Node.js and build
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            npm install
-            npm run build
-            
+          if ls caci_*.deb 1> /dev/null 2>&1; then
+            echo "deb_exists=true" >> $GITHUB_OUTPUT
+            echo "📦 Found existing DEB package: $(ls caci_*.deb)"
+          else
+            echo "deb_exists=false" >> $GITHUB_OUTPUT
+            echo "📦 No DEB package found, will create one"
+          fi
+
+      - name: Setup Node.js (if needed)
+        if: steps.check_deb.outputs.deb_exists == 'false' && inputs.dry_run == false
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'packages/caci/package-lock.json'
+
+      - name: Create DEB package (if not available)
+        if: steps.check_deb.outputs.deb_exists == 'false'
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "🔍 DRY RUN - Would create DEB package if not available"
+            # Create a mock DEB file for testing APT repository structure
             VERSION="${{ inputs.version }}"
             DEB_VERSION=${VERSION#v}
-            
-            # Create package structure (simplified version)
-            mkdir -p caci_${DEB_VERSION}_all/DEBIAN
-            mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci
-            mkdir -p caci_${DEB_VERSION}_all/usr/local/bin
-            
-            # Copy files
-            cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+            if [ "$VERSION" = "master" ]; then
+              DEB_VERSION="$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+            fi
+            touch "caci_${DEB_VERSION}_all.deb"
+            exit 0
+          fi
+          
+          echo "📦 DEB package not found in artifacts, creating it..."
+          
+          # Install DEB packaging tools
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev build-essential fakeroot
+          
+          # Install dependencies and build
+          npm install
+          npm run build
+          
+          VERSION="${{ inputs.version }}"
+          DEB_VERSION=${VERSION#v}
+          
+          # Handle master branch with proper versioning
+          if [ "$VERSION" = "master" ]; then
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            DEB_VERSION="${PACKAGE_VERSION}-$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+            echo "📦 Using development version: $DEB_VERSION"
+          fi
+          
+          echo "📦 Creating DEB package for CACI v$DEB_VERSION..."
+          
+          # Create package directory structure
+          mkdir -p caci_${DEB_VERSION}_all/DEBIAN
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/bin
+          
+          # Copy application files
+          cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          
+          # Copy node_modules (check local first, then root)
+          if [ -d "node_modules" ]; then
+            echo "📂 Copying local node_modules directory..."
             cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-            cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-            
-            # Create bin directory and copy binary
-            mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin
-            cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
-            chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
-            
-            # Create control file
-            cat > caci_${DEB_VERSION}_all/DEBIAN/control << EOF
+          elif [ -d "../../node_modules" ]; then
+            echo "📂 Copying root node_modules directory..."
+            cp -r ../../node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          else
+            echo "❌ Error: node_modules directory not found"
+            echo "Current directory contents:"
+            ls -la
+            exit 1
+          fi
+          
+          cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
+          cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
+          chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
+          
+          # Create control file
+          cat > caci_${DEB_VERSION}_all/DEBIAN/control << EOF
           Package: caci
           Version: ${DEB_VERSION}
           Section: devel
           Priority: optional
           Architecture: all
           Depends: nodejs (>= 18.0.0), npm
+          Installed-Size: $(du -sk caci_${DEB_VERSION}_all/usr | cut -f1)
           Maintainer: CACI Development Team <noreply@github.com>
           Description: Code Assistant Configuration Interface
+           CACI is an intelligent CLI tool that automates Claude Code project 
+           configuration by analyzing requirements and using AI to recommend 
+           relevant agents, commands, MCPs, and hooks from a large component pool.
+           .
+           This package provides the CACI command-line interface for easy
+           project setup and configuration management.
           Homepage: https://github.com/elad12390/claude-code-configurator
           EOF
-            
-            # Build package
-            dpkg-deb --build caci_${DEB_VERSION}_all
-          fi
+          
+          # Create postinst script to create symlink
+          cat > caci_${DEB_VERSION}_all/DEBIAN/postinst << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          # Create symlink
+          ln -sf /usr/local/lib/nodejs/caci/bin/caci /usr/local/bin/caci
+          
+          # Ensure correct permissions
+          chmod +x /usr/local/lib/nodejs/caci/bin/caci
+          chmod +x /usr/local/bin/caci
+          
+          echo "CACI installed successfully!"
+          echo "Usage: caci configure"
+          echo "Help:  caci --help"
+          EOF
+          chmod 755 caci_${DEB_VERSION}_all/DEBIAN/postinst
+          
+          # Create prerm script to remove symlink
+          cat > caci_${DEB_VERSION}_all/DEBIAN/prerm << 'EOF'
+          #!/bin/bash
+          set -e
+          rm -f /usr/local/bin/caci
+          EOF
+          chmod 755 caci_${DEB_VERSION}_all/DEBIAN/prerm
+          
+          # Build the package
+          dpkg-deb --build caci_${DEB_VERSION}_all
+          
+          echo "✅ DEB package created: caci_${DEB_VERSION}_all.deb"
+          ls -la caci_*.deb
 
       - name: Install APT repository tools
         run: |
@@ -129,8 +209,17 @@ jobs:
 
           # Import GPG private key for signing
           if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
-            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch
-            echo "✅ GPG key imported"
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch --yes
+            
+            # Trust the imported key
+            KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
+            if [ -n "$KEY_ID" ]; then
+              echo "$KEY_ID:6:" | gpg --import-ownertrust
+              echo "✅ GPG key imported and trusted: $KEY_ID"
+            else
+              echo "❌ Failed to get key ID from imported key"
+              exit 1
+            fi
           else
             echo "⚠️ No GPG_PRIVATE_KEY secret found, creating temporary key for demo"
             # Create a temporary GPG key for development (NOT for production)
@@ -145,16 +234,36 @@ jobs:
           Expire-Date: 1y
           %commit
           EOF
+            
+            # Trust the generated key
+            KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
+            if [ -n "$KEY_ID" ]; then
+              echo "$KEY_ID:6:" | gpg --import-ownertrust
+              echo "✅ Temporary GPG key created and trusted: $KEY_ID"
+            fi
           fi
 
           # List available keys
-          gpg --list-secret-keys
+          echo "📝 Available GPG keys:"
+          gpg --list-secret-keys --keyid-format LONG || echo "No secret keys found"
+          
+          # Store the signing key ID for later use
+          SIGNING_KEY=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec:/ {print $5}' | head -1)
+          echo "GPG_KEY_ID=$SIGNING_KEY" >> $GITHUB_ENV
+          echo "🔑 Using GPG key ID: $SIGNING_KEY"
 
       - name: Create APT repository
         id: create_repo
         run: |
           VERSION="${{ inputs.version }}"
           DEB_VERSION=${VERSION#v}
+          
+          # Handle master branch with proper versioning
+          if [ "$VERSION" = "master" ]; then
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            DEB_VERSION="${PACKAGE_VERSION}-$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+            echo "📦 Using development version: $DEB_VERSION"
+          fi
 
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 DRY RUN - Would create APT repository for version $DEB_VERSION"
@@ -174,8 +283,12 @@ jobs:
           DEB_FILE=$(ls caci_*.deb | head -1)
           if [ ! -f "$DEB_FILE" ]; then
             echo "❌ No DEB file found"
+            echo "Available files:"
+            ls -la
             exit 1
           fi
+          
+          echo "📦 Found DEB package: $DEB_FILE"
           cp "$DEB_FILE" apt-repo/pool/main/c/caci/
 
           echo "✅ Repository structure created"
@@ -238,16 +351,35 @@ jobs:
           cd apt-repo
 
           echo "🔏 Signing APT repository..."
+          
+          if [ -z "$GPG_KEY_ID" ]; then
+            echo "❌ No GPG key ID found"
+            exit 1
+          fi
+          
+          echo "🔑 Using GPG key: $GPG_KEY_ID"
 
-          # Sign the Release file
-          gpg --batch --yes --detach-sign --armor -o dists/stable/Release.gpg dists/stable/Release
-          gpg --batch --yes --clearsign -o dists/stable/InRelease dists/stable/Release
+          # Sign the Release file with specific key
+          gpg --batch --yes --detach-sign --armor --default-key "$GPG_KEY_ID" -o dists/stable/Release.gpg dists/stable/Release
+          
+          # Create clearsigned InRelease file
+          gpg --batch --yes --clearsign --default-key "$GPG_KEY_ID" -o dists/stable/InRelease dists/stable/Release
 
-          echo "✅ Repository signed"
+          echo "✅ Repository signed successfully"
+          
+          # Verify signatures
+          echo "🔍 Verifying signatures..."
+          gpg --verify dists/stable/Release.gpg dists/stable/Release
+          gpg --verify dists/stable/InRelease
 
           # Export public key for users
-          gpg --armor --export packages@caci.dev > ../caci-archive-keyring.gpg
-
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            gpg --armor --export "$GPG_KEY_ID" > ../caci-archive-keyring.gpg
+          else
+            gpg --armor --export packages@caci.dev > ../caci-archive-keyring.gpg
+          fi
+          
+          echo "✅ Public key exported for users"
           echo "📋 Repository ready!"
 
       - name: Create installation assets
@@ -437,13 +569,21 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           DEB_VERSION=${VERSION#v}
+          
+          # Handle master branch with proper versioning
+          if [ "$VERSION" = "master" ]; then
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            DEB_VERSION="${PACKAGE_VERSION}-$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
+          fi
 
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "## 🔍 APT Repository Dry Run Summary" >> $GITHUB_STEP_SUMMARY
             echo "**Would create**: APT repository for CACI v$DEB_VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "**GPG Key**: ${{ secrets.GPG_PRIVATE_KEY != '' && 'Production key configured' || 'Would use temporary key' }}" >> $GITHUB_STEP_SUMMARY
           else
             echo "## 📦 APT Repository Creation Complete" >> $GITHUB_STEP_SUMMARY
             echo "**Created**: APT repository for CACI v$DEB_VERSION" >> $GITHUB_STEP_SUMMARY
+            echo "**GPG Key**: ${{ secrets.GPG_PRIVATE_KEY != '' && 'Signed with production key' || 'Signed with temporary key' }}" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Quick Installation" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
@@ -453,10 +593,10 @@ jobs:
             echo "### Manual Installation" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
             echo "# 1. Add GPG key" >> $GITHUB_STEP_SUMMARY
-            echo "curl -fsSL .../caci-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/caci-archive-keyring.gpg" >> $GITHUB_STEP_SUMMARY
+            echo "curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/caci-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/caci-archive-keyring.gpg" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "# 2. Add repository" >> $GITHUB_STEP_SUMMARY
-            echo 'echo "deb [signed-by=/usr/share/keyrings/caci-archive-keyring.gpg] .../apt-repo stable main" | sudo tee /etc/apt/sources.list.d/caci.list' >> $GITHUB_STEP_SUMMARY
+            echo 'echo "deb [signed-by=/usr/share/keyrings/caci-archive-keyring.gpg] https://github.com/elad12390/claude-code-configurator/releases/latest/download/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/caci.list' >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "# 3. Install" >> $GITHUB_STEP_SUMMARY
             echo "sudo apt update && sudo apt install caci" >> $GITHUB_STEP_SUMMARY
@@ -467,4 +607,5 @@ jobs:
             echo "- 🔄 **Automatic updates** via \`apt upgrade\`" >> $GITHUB_STEP_SUMMARY
             echo "- 🏗️ **Professional structure** (pool/dists)" >> $GITHUB_STEP_SUMMARY
             echo "- 📱 **Multi-architecture** support (amd64, arm64)" >> $GITHUB_STEP_SUMMARY
+            echo "- 🔧 **Development build**: $DEB_VERSION" >> $GITHUB_STEP_SUMMARY
           fi

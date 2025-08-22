@@ -198,7 +198,7 @@ jobs:
         working-directory: packages/caci
         run: |
           npm pack
-          npm install -g caci-*.tgz
+          npm install -g code-assistant-config-interface-*.tgz
 
       - name: Test with real world project structure
         run: |

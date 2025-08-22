@@ -94,7 +94,23 @@ jobs:
 
           # Copy application files
           cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-          cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          
+          # Copy node_modules (check local first, then root)
+          if [ -d "node_modules" ]; then
+            echo "📂 Copying local node_modules directory..."
+            cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          elif [ -d "../../node_modules" ]; then
+            echo "📂 Copying root node_modules directory..."
+            cp -r ../../node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          else
+            echo "❌ Error: node_modules directory not found in current or root directory"
+            echo "Current directory contents:"
+            ls -la
+            echo "Root directory contents:"
+            ls -la ../../
+            exit 1
+          fi
+          
           cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
           cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/

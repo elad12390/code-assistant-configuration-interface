@@ -47,7 +47,12 @@ jobs:
           head -20 package-lock.json
           echo "=== Check lockfileVersion ==="
           grep -A 2 -B 2 "lockfileVersion" package-lock.json || echo "No lockfileVersion found!"
-          echo "=== Try NPM CI ==="
+          echo "=== Check npm version ==="
+          npm --version
+          node --version
+          echo "=== Try NPM install instead ==="
+          npm install
+          echo "=== Try NPM CI after install ==="
           npm ci
         shell: bash
 

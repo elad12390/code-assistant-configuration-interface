@@ -17,10 +17,10 @@ jobs:
       test_input: ${{ inputs.message }}
 
   summary:
-    name: Summary  
+    name: Summary
     needs: call-test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Show results
         run: |

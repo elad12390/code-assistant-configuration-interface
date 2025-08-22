@@ -12,18 +12,18 @@ on:
 jobs:
   test-npm-minimal-call:
     name: Test NPM Minimal Call
-    uses: ./.github/workflows/test-npm-minimal.yml@master
+    uses: ./.github/workflows/test-npm-minimal.yml
     with:
       version: ${{ inputs.test_version }}
       dry_run: true
     secrets: inherit
 
   summary:
-    name: Summary  
+    name: Summary
     needs: test-npm-minimal-call
     if: always()
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Show results
         run: |

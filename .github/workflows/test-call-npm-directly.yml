@@ -19,11 +19,11 @@ jobs:
     secrets: inherit
 
   summary:
-    name: Summary  
+    name: Summary
     needs: test-npm-call
     if: always()
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Show results
         run: |

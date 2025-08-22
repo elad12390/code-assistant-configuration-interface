@@ -27,7 +27,7 @@ jobs:
     name: 'Summary'
     needs: test-job
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Show results
         run: |

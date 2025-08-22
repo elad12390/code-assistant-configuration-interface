@@ -13,7 +13,7 @@ jobs:
   test-call:
     name: 'Test Call NPM Workflow'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Test step
         run: echo "Testing workflow call with version ${{ inputs.test_version }}"
@@ -21,7 +21,7 @@ jobs:
   call-npm:
     name: 'Call NPM Workflow'
     needs: test-call
-    uses: elad12390/claude-code-configurator/.github/workflows/publish-npm.yml@master
+    uses: ./.github/workflows/publish-npm.yml
     with:
       version: ${{ inputs.test_version }}
       dry_run: true

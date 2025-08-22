@@ -90,7 +90,7 @@ jobs:
         working-directory: packages/caci
 
   test-npm-call:
-    name: 'Test NPM Workflow Call'  
+    name: 'Test NPM Workflow Call'
     needs: prepare-release
     if: needs.prepare-release.outputs.should_release == 'false'
     uses: ./.github/workflows/publish-npm.yml
@@ -104,7 +104,7 @@ jobs:
     needs: [prepare-release, test-npm-call]
     if: always()
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Summary
         run: |

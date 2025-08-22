@@ -64,6 +64,13 @@ jobs:
       - name: Create DEB package (if not available)
         run: |
           if [ ! -f caci_*.deb ]; then
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "🔍 DRY RUN - Would create DEB package if not available"
+              # Create a mock DEB file for testing APT repository structure
+              touch "caci_master_all.deb"
+              exit 0
+            fi
+            
             echo "📦 DEB package not found in artifacts, creating it..."
             
             # Install DEB packaging tools
@@ -88,7 +95,10 @@ jobs:
             cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
             cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
             cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-            cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
+            
+            # Create bin directory and copy binary
+            mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin
+            cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
             chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
             
             # Create control file

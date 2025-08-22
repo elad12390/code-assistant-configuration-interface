@@ -15,7 +15,6 @@ on:
         required: false
         default: false
         type: boolean
-    secrets: inherit
   workflow_dispatch:
     inputs:
       version:
@@ -79,17 +78,27 @@ jobs:
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             CURRENT_VERSION=$(node -p "require('./packages/caci/package.json').version")
             echo "Current version: $CURRENT_VERSION"
-            cd packages/caci
+            
+            # Calculate new version without modifying package.json
             if [[ "${{ github.event.inputs.version }}" == "prerelease" ]]; then
-              NEW_VERSION=$(npm version prerelease --no-git-tag-version --preid=alpha)
+              NEW_VERSION=$(node -e "
+                const semver = require('semver');
+                const current = '$CURRENT_VERSION';
+                console.log(semver.inc(current, 'prerelease', 'alpha'));
+              ")
             else
-              NEW_VERSION=$(npm version ${{ github.event.inputs.version }} --no-git-tag-version)
+              NEW_VERSION=$(node -e "
+                const semver = require('semver');
+                const current = '$CURRENT_VERSION';
+                console.log(semver.inc(current, '${{ github.event.inputs.version }}'));
+              ")
             fi
-            NEW_VERSION=${NEW_VERSION#v}
             echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-            cd ..
-            # Reset package.json to avoid committing version changes
-            git checkout -- packages/caci/package.json
+          elif [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+            # For workflow_call, version is already provided as input
+            VERSION="${{ inputs.version }}"
+            VERSION=${VERSION#v}  # Remove 'v' prefix if present
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: Determine NPM tag
@@ -108,7 +117,15 @@ jobs:
       - name: Should publish?
         id: should_publish
         run: |
-          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+          DRY_RUN="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            DRY_RUN="true"
+          elif [[ "${{ github.event_name }}" == "workflow_call" && "${{ inputs.dry_run }}" == "true" ]]; then
+            DRY_RUN="true"
+          fi
+
+          if [[ "$DRY_RUN" == "true" ]]; then
+            echo "🔍 DRY RUN MODE - No actual publishing"
             echo "should_publish=false" >> $GITHUB_OUTPUT
           else
             echo "should_publish=true" >> $GITHUB_OUTPUT

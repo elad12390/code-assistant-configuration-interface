@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.test.outputs.value }}
-    
+
     steps:
       - name: Test step
         id: test

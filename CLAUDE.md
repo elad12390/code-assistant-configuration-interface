@@ -10,6 +10,28 @@ CACI (Code Assistant Configuration Interface) is an intelligent CLI tool that au
 
 **Core development workflow:**
 
+> **⚠️ IMPORTANT: Git Workflow Change**  
+> **From now on, ALL development must follow the issue → branch → PR → merge workflow.**  
+> **Direct commits to master are blocked by branch protection rules.**
+
+### Git Workflow
+
+**For ALL changes, follow these steps:**
+
+1. **Create an issue** for the feature/bug/task
+2. **Create a feature branch** from master: `git checkout -b feature/issue-description`
+3. **Make your changes** and commit to the feature branch
+4. **Create a Pull Request** when ready
+5. **Wait for CI/CD checks** to pass and get approvals
+6. **Merge via GitHub** (squash merge recommended)
+
+**Branch protection rules enforce:**
+- ✅ Required status checks: Lint, Type Check, Format Check, Build & Package, Unit Tests, Integration Tests
+- ✅ Required pull request reviews (1 approval required)
+- ✅ Dismiss stale reviews when new commits are pushed
+- ✅ No direct pushes to master (even for admins)
+- ✅ No force pushes or branch deletion
+
 ```bash
 # Install dependencies
 cd claude-config && npm install

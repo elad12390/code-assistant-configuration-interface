@@ -191,7 +191,7 @@ jobs:
         shell: bash
         run: |
           npm pack
-          npm install -g @claude-code/caci-*.tgz
+          npm install -g claude-code-caci-*.tgz
           caci --version
           caci --help
 
@@ -201,7 +201,7 @@ jobs:
           mkdir test-clean-install
           cd test-clean-install
           npm init -y
-          npm install ../@claude-code/caci-*.tgz
+          npm install ../claude-code-caci-*.tgz
           node -e "console.log('CLI installed successfully')"
 
   publish-npm:

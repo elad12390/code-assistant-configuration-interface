@@ -66,7 +66,7 @@ jobs:
       - name: Check Prettier formatting
         run: |
           npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}" "*.{json,md,yml,yaml}"
-          cd .. && npx prettier --check "*.{json,md,yml,yaml}" ".github/workflows/*.yml"
+          cd ../.. && npx prettier --check "*.{json,md,yml,yaml}" ".github/workflows/*.yml"
 
   lint-check:
     name: "Lint Check"

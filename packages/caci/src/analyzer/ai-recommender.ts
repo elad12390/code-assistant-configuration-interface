@@ -50,7 +50,7 @@ async function callClaude(prompt: string): Promise<string> {
       '-p',
       prompt,
       '--output-format',
-      'json',
+      'text',
       '--model',
       'sonnet',
       '--max-turns',
@@ -58,7 +58,7 @@ async function callClaude(prompt: string): Promise<string> {
       '--permission-mode',
       'plan',
       '--append-system-prompt',
-      'Chat-only; no tools; Output strict JSON matching the exact schema provided.',
+      'You are a component recommendation API. Respond ONLY with valid JSON. No explanations, no questions, no markdown. Just output the JSON object exactly as specified in the prompt.',
     ];
 
     const claude = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -117,13 +117,16 @@ Available Components:
 - Hooks: ${Object.keys(componentsData.hooks).join(', ')}
 - MCPs: ${Object.keys(componentsData.mcps).join(', ')}
 
-Based on the user's requirements, please recommend the most relevant components from each category.
-Return your response as a JSON object with the following structure:
+Based on the user's requirements, recommend the most relevant components from each category.
+
+YOU ARE A JSON API. OUTPUT ONLY JSON. NO QUESTIONS. NO EXPLANATIONS.
+
+Return ONLY this JSON structure with real component names from the available lists:
 {
-  "agents": ["agent-name-1", "agent-name-2", ...],
-  "commands": ["command-name-1", "command-name-2", ...],
-  "hooks": ["hook-name-1", "hook-name-2", ...],
-  "mcps": ["mcp-name-1", "mcp-name-2", ...]
+  "agents": ["agent-name-1", "agent-name-2"],
+  "commands": ["command-name-1", "command-name-2"], 
+  "hooks": ["hook-name-1", "hook-name-2"],
+  "mcps": ["mcp-name-1", "mcp-name-2"]
 }
 
 Important guidelines:
@@ -134,7 +137,8 @@ Important guidelines:
 5. Include a reasonable number of recommendations (3-8 per category)
 6. If a category is not relevant to the user's project, you can return an empty array for that category
 7. Pay special attention to package.json, requirements.txt, or other dependency files in the structure
-8. Do not include any explanations or markdown formatting, just the JSON object`;
+
+RESPOND WITH ONLY THE JSON OBJECT - NO OTHER TEXT OR FORMATTING`;
 }
 
 /**
@@ -160,7 +164,17 @@ export async function recommendComponents(
     // Parse and validate the response
     let recommendation: unknown;
     try {
-      recommendation = JSON.parse(response);
+      // With --output-format text, Claude should return just the text response
+      let jsonText = response.trim();
+      
+      // Remove any markdown code blocks if present
+      const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1];
+      }
+      
+      // Try to parse as JSON
+      recommendation = JSON.parse(jsonText);
     } catch (error) {
       throw new Error(`Claude returned invalid JSON: ${response}`);
     }

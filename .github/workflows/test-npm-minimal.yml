@@ -12,7 +12,6 @@ on:
         required: false
         default: false
         type: boolean
-    secrets: inherit
 
 jobs:
   test-npm:

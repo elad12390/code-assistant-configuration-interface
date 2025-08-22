@@ -71,12 +71,13 @@ jobs:
 
       - name: Determine version and tag
         id: version
+        working-directory: packages/caci
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            CURRENT_VERSION=$(node -p "require('./packages/caci/package.json').version")
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
             echo "Current version: $CURRENT_VERSION"
             
             # Calculate new version without modifying package.json

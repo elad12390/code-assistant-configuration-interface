@@ -37,6 +37,11 @@ on:
         required: false
         default: true
         type: boolean
+      publish_apt:
+        description: 'Publish to APT repository'
+        required: false
+        default: true
+        type: boolean
 
 defaults:
   run:
@@ -527,6 +532,267 @@ jobs:
           retention-days: 90
 
   # ============================================================================
+  # APT REPOSITORY JOB
+  # ============================================================================
+  publish-apt:
+    name: 'Publish to APT Repository'
+    needs: [prepare-release, publish-deb]
+    if: inputs.publish_apt && needs.prepare-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+        with:
+          ref: ${{ needs.prepare-release.outputs.version }}
+
+      - name: Download DEB package
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: caci-deb-package
+          path: packages/caci
+
+      - name: Install APT repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev apt-utils gnupg2
+
+      - name: Setup GPG for package signing
+        run: |
+          echo "🔑 Setting up GPG for package signing..."
+
+          # Import GPG private key for signing
+          if [ -n "${{ secrets.GPG_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --batch
+            echo "✅ GPG key imported"
+          else
+            echo "⚠️ No GPG_PRIVATE_KEY secret found, creating temporary key for demo"
+            # Create a temporary GPG key for development (NOT for production)
+            gpg --batch --gen-key <<EOF
+          %no-protection
+          Key-Type: RSA
+          Key-Length: 2048
+          Subkey-Type: RSA
+          Subkey-Length: 2048
+          Name-Real: CACI Package Signing
+          Name-Email: packages@caci.dev
+          Expire-Date: 1y
+          %commit
+          EOF
+          fi
+
+          # List available keys
+          gpg --list-secret-keys
+
+      - name: Create APT repository structure
+        run: |
+          cd packages/caci
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+          DEB_VERSION=${VERSION#v}
+
+          echo "📦 Creating APT repository for CACI v$DEB_VERSION..."
+
+          # Create repository directory structure
+          mkdir -p apt-repo/pool/main/c/caci
+          mkdir -p apt-repo/dists/stable/main/binary-amd64
+          mkdir -p apt-repo/dists/stable/main/binary-arm64
+          mkdir -p apt-repo/dists/stable/main/source
+
+          # Copy DEB package to pool
+          DEB_FILE=$(ls caci_*.deb | head -1)
+          cp "$DEB_FILE" apt-repo/pool/main/c/caci/
+
+          echo "✅ Repository structure created"
+          ls -la apt-repo/pool/main/c/caci/
+
+      - name: Generate APT repository metadata
+        run: |
+          cd packages/caci/apt-repo
+
+          echo "📝 Generating APT repository metadata..."
+
+          # Generate Packages file for binary-amd64
+          dpkg-scanpackages pool/main > dists/stable/main/binary-amd64/Packages
+          gzip -k dists/stable/main/binary-amd64/Packages
+
+          # For now, copy amd64 to arm64 (since our package is architecture: all)
+          cp dists/stable/main/binary-amd64/Packages dists/stable/main/binary-arm64/Packages
+          cp dists/stable/main/binary-amd64/Packages.gz dists/stable/main/binary-arm64/Packages.gz
+
+          # Create empty Sources file
+          touch dists/stable/main/source/Sources
+          gzip -k dists/stable/main/source/Sources
+
+          # Generate Release file
+          cat > dists/stable/Release << EOF
+          Origin: CACI
+          Label: CACI Package Repository
+          Suite: stable
+          Codename: stable
+          Version: 1.0
+          Architectures: amd64 arm64
+          Components: main
+          Description: CACI (Code Assistant Configuration Interface) Package Repository
+          Date: $(date -Ru)
+          EOF
+
+          # Add file hashes to Release
+          echo "MD5Sum:" >> dists/stable/Release
+          find dists/stable -name "Packages*" -o -name "Sources*" | while read file; do
+            echo " $(md5sum "$file" | cut -d' ' -f1) $(stat -c%s "$file") ${file#dists/stable/}"
+          done >> dists/stable/Release
+
+          echo "SHA1:" >> dists/stable/Release
+          find dists/stable -name "Packages*" -o -name "Sources*" | while read file; do
+            echo " $(sha1sum "$file" | cut -d' ' -f1) $(stat -c%s "$file") ${file#dists/stable/}"
+          done >> dists/stable/Release
+
+          echo "SHA256:" >> dists/stable/Release
+          find dists/stable -name "Packages*" -o -name "Sources*" | while read file; do
+            echo " $(sha256sum "$file" | cut -d' ' -f1) $(stat -c%s "$file") ${file#dists/stable/}"
+          done >> dists/stable/Release
+
+          echo "✅ Release file generated"
+
+      - name: Sign APT repository
+        run: |
+          cd packages/caci/apt-repo
+
+          echo "🔏 Signing APT repository..."
+
+          # Sign the Release file
+          gpg --batch --yes --detach-sign --armor -o dists/stable/Release.gpg dists/stable/Release
+          gpg --batch --yes --clearsign -o dists/stable/InRelease dists/stable/Release
+
+          echo "✅ Repository signed"
+
+          # Export public key for users
+          gpg --armor --export packages@caci.dev > caci-archive-keyring.gpg
+
+          echo "📋 Repository ready!"
+
+      - name: Create APT installation instructions
+        run: |
+          cd packages/caci
+
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+
+          # Create installation script for APT repository
+          cat > install-caci-apt.sh << 'EOF'
+          #!/bin/bash
+          # CACI APT Repository Installation Script
+
+          set -e
+
+          echo "🔧 Adding CACI APT Repository..."
+          echo "=================================="
+
+          # Check if running as root or with sudo
+          if [ "$EUID" -ne 0 ]; then
+              echo "❌ This script requires root privileges."
+              echo "💡 Please run with: sudo $0"
+              exit 1
+          fi
+
+          # Check if running on Debian/Ubuntu
+          if ! command -v apt-get &> /dev/null; then
+              echo "❌ APT not found. This script is for Debian/Ubuntu systems only."
+              exit 1
+          fi
+
+          # Add GPG key
+          echo "🔑 Adding CACI repository GPG key..."
+          curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/caci-archive-keyring.gpg | gpg --dearmor -o /usr/share/keyrings/caci-archive-keyring.gpg
+
+          # Add repository to sources.list.d
+          echo "📦 Adding CACI repository..."
+          echo "deb [signed-by=/usr/share/keyrings/caci-archive-keyring.gpg] https://github.com/elad12390/claude-code-configurator/releases/latest/download/apt-repo stable main" > /etc/apt/sources.list.d/caci.list
+
+          # Update package lists
+          echo "🔄 Updating package lists..."
+          apt-get update
+
+          # Install CACI
+          echo "🚀 Installing CACI..."
+          apt-get install -y caci
+
+          echo ""
+          echo "✅ CACI installed successfully via APT!"
+          echo "=================================="
+          echo "💡 Usage: caci configure"
+          echo "📖 Help:  caci --help"
+          echo "🔧 Update: sudo apt update && sudo apt upgrade caci"
+          echo ""
+          echo "🎉 Happy coding with CACI!"
+          EOF
+          chmod +x install-caci-apt.sh
+
+          # Create simple installation instructions
+          cat > APT-INSTALL.md << EOF
+          # CACI APT Repository Installation
+
+          ## Quick Install (Recommended)
+
+          \`\`\`bash
+          # Download and run the installation script
+          curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/install-caci-apt.sh | sudo bash
+          \`\`\`
+
+          ## Manual Installation
+
+          \`\`\`bash
+          # 1. Add GPG key
+          curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/caci-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/caci-archive-keyring.gpg
+
+          # 2. Add repository
+          echo "deb [signed-by=/usr/share/keyrings/caci-archive-keyring.gpg] https://github.com/elad12390/claude-code-configurator/releases/latest/download/apt-repo stable main" | sudo tee /etc/apt/sources.list.d/caci.list
+
+          # 3. Update and install
+          sudo apt update
+          sudo apt install caci
+          \`\`\`
+
+          ## Usage
+
+          \`\`\`bash
+          # Configure Claude Code project
+          caci configure
+
+          # Get help
+          caci --help
+
+          # Update CACI
+          sudo apt update && sudo apt upgrade caci
+          \`\`\`
+
+          ## Uninstall
+
+          \`\`\`bash
+          # Remove package
+          sudo apt remove caci
+
+          # Remove repository
+          sudo rm /etc/apt/sources.list.d/caci.list
+          sudo rm /usr/share/keyrings/caci-archive-keyring.gpg
+          sudo apt update
+          \`\`\`
+          EOF
+
+          echo "✅ APT installation instructions created"
+
+      - name: Upload APT repository artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: caci-apt-repository
+          path: |
+            packages/caci/apt-repo/**
+            packages/caci/caci-archive-keyring.gpg
+            packages/caci/install-caci-apt.sh
+            packages/caci/APT-INSTALL.md
+          retention-days: 90
+
+  # ============================================================================
   # GITHUB RELEASE JOB - Aggregates all artifacts
   # ============================================================================
   create-github-release:
@@ -538,6 +804,7 @@ jobs:
         publish-docker,
         publish-deb,
         publish-homebrew,
+        publish-apt,
       ]
     if: always() && needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
@@ -581,7 +848,13 @@ jobs:
           brew install caci  # (after formula submission)
           \`\`\`
 
-          #### Debian/Ubuntu
+          #### APT (Ubuntu/Debian)
+          \`\`\`bash
+          # Quick install via APT repository
+          curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/install-caci-apt.sh | sudo bash
+          \`\`\`
+
+          #### DEB Package (Manual)
           \`\`\`bash
           # Download caci_${VERSION#v}_all.deb from this release
           sudo dpkg -i caci_${VERSION#v}_all.deb
@@ -618,7 +891,7 @@ jobs:
 
           - **Node.js**: 18+ required
           - **Platforms**: Linux, macOS, Windows
-          - **Package formats**: NPM, Docker, DEB, Homebrew
+          - **Package formats**: NPM, Docker, APT, DEB, Homebrew
           - **Size**: ~2MB (compressed)
 
           ---
@@ -643,6 +916,10 @@ jobs:
             release-artifacts/caci-deb-package/caci_*.deb
             release-artifacts/caci-homebrew-artifacts/caci.rb
             release-artifacts/caci-homebrew-artifacts/CACI-*.dmg
+            release-artifacts/caci-apt-repository/apt-repo/**
+            release-artifacts/caci-apt-repository/caci-archive-keyring.gpg
+            release-artifacts/caci-apt-repository/install-caci-apt.sh
+            release-artifacts/caci-apt-repository/APT-INSTALL.md
           draft: false
           prerelease: false
 
@@ -658,6 +935,7 @@ jobs:
         publish-docker,
         publish-deb,
         publish-homebrew,
+        publish-apt,
         create-github-release,
       ]
     if: always()
@@ -682,6 +960,7 @@ jobs:
           echo "| NPM Publish | ${{ needs.publish-npm.result == 'success' && '✅ Published' || needs.publish-npm.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Hub | ${{ needs.publish-docker.result == 'success' && '✅ Published' || needs.publish-docker.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| DEB Package | ${{ needs.publish-deb.result == 'success' && '✅ Created' || needs.publish-deb.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| APT Repository | ${{ needs.publish-apt.result == 'success' && '✅ Published' || needs.publish-apt.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Homebrew | ${{ needs.publish-homebrew.result == 'success' && '✅ Updated' || needs.publish-homebrew.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Release | ${{ needs.create-github-release.result == 'success' && '✅ Created' || needs.create-github-release.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} | ${{ needs.prepare-release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -693,6 +972,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "📦 **NPM**: \`npm install -g caci@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
             echo "🐳 **Docker**: \`docker run --rm caci:${{ needs.prepare-release.outputs.version }} --help\`" >> $GITHUB_STEP_SUMMARY
+            echo "🔧 **APT**: \`curl -fsSL https://github.com/elad12390/claude-code-configurator/releases/latest/download/install-caci-apt.sh | sudo bash\`" >> $GITHUB_STEP_SUMMARY
             echo "🍺 **Homebrew**: \`brew install caci\` (after formula submission)" >> $GITHUB_STEP_SUMMARY
             echo "📥 **DEB**: Download from GitHub Releases" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

@@ -280,8 +280,7 @@ jobs:
             # Get the key ID
             KEY_ID=$(gpg --list-secret-keys --with-colons 2>/dev/null | grep '^sec:' | cut -d: -f5 | head -1)
             if [ -n "$KEY_ID" ]; then
-              echo "$KEY_ID:6:" | gpg --import-ownertrust --batch --yes
-              echo "✅ Temporary GPG key created and trusted: $KEY_ID"
+              echo "✅ Temporary GPG key created: $KEY_ID"
             else
               echo "❌ Failed to get key ID from generated key"
               exit 1

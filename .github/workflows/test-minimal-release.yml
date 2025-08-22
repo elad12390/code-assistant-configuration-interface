@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Test installation
         run: npm ci

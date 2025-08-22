@@ -67,7 +67,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -176,7 +176,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -223,7 +223,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -296,7 +296,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         run: npm ci

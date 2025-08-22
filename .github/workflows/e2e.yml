@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Cache E2E testing artifacts
         uses: actions/cache@v4
@@ -184,7 +184,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci
@@ -469,7 +469,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci
@@ -550,7 +550,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/caci/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci

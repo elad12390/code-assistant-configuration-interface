@@ -427,13 +427,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v$ACTUAL_VERSION
-          name: CACI (Code Assistant Configuration Interface) v$ACTUAL_VERSION
-          body_path: release_notes.md
+          tag_name: v${{ needs.pre-publish-checks.outputs.version }}
+          name: CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
+          body: ${{ steps.changelog.outputs.content }}
           draft: false
           prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
           files: |
-            packages/caci/code-assistant-config-interface-$ACTUAL_VERSION.tgz
+            packages/caci/code-assistant-config-interface-*.tgz
 
   post-publish:
     name: CACI Post-publish Tasks

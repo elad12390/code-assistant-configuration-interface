@@ -10,17 +10,20 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
-  // Keep default transformIgnorePatterns since chalk 4.x is CommonJS
+  // Transform node_modules that contain ES modules
   transformIgnorePatterns: [
-    '/node_modules/'
+    '/node_modules/(?!(chalk)/)'
   ],
-  // Windows compatibility - increase timeout for slower Windows CI
-  testTimeout: 60000,
+  // Fix module resolution for chalk 4.x CommonJS
+  moduleNameMapper: {
+    '^chalk$': '<rootDir>/node_modules/chalk/source/index.js'
+  },
+  // Reduce timeout for faster CI feedback
+  testTimeout: 30000,
   maxWorkers: process.platform === 'win32' ? 1 : '50%',
-  // Remove chalk module mapping since we're using the CommonJS version (4.1.2)
-  // moduleNameMapper not needed for chalk 4.x
-  // Force exit to prevent hanging on Windows
+  // Clean exit settings for CI stability
   forceExit: true,
-  // Detect open handles to help debug hanging tests
-  detectOpenHandles: true
+  detectOpenHandles: true,
+  // Prevent Jest from hanging on timeouts
+  setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.ts']
 };

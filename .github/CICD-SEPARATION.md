@@ -6,7 +6,7 @@ This document outlines the clear separation between the **CACI Package** CI/CD a
 
 ```
 claude-code-configurator/
-├── caci/                           # CACI Package (CLI Tool)
+├── packages/caci/                           # CACI Package (CLI Tool)
 │   ├── src/                        # ← Package CI/CD triggers
 │   ├── tests/
 │   ├── package.json
@@ -40,12 +40,12 @@ claude-code-configurator/
 - **`benchmark.yml`** - Performance benchmarks (scheduled)
 
 ### Triggers:
-- **Paths**: `caci/**` only
-- **Excludes**: `!caci/node_modules/**`, `!caci/dist/**`, `!caci/coverage/**`
+- **Paths**: `packages/caci/**` only
+- **Excludes**: `!packages/caci/node_modules/**`, `!packages/caci/dist/**`, `!packages/caci/coverage/**`
 - **Branches**: main, master, develop
 - **Tags**: `v*` (for publishing)
 
-### Working Directory: `caci/`
+### Working Directory: `packages/caci/`
 
 ## 🌐 Website CI/CD
 
@@ -70,7 +70,7 @@ claude-code-configurator/
 - Strict path filtering prevents accidents
 
 ### ✅ Independent Dependencies
-- Package uses `caci/package-lock.json`
+- Package uses `packages/caci/package-lock.json`
 - Website uses `packages/website/package-lock.json`
 - No shared node_modules or build artifacts
 
@@ -96,7 +96,7 @@ claude-code-configurator/
 
 | Change Type | Package CI | Package Publish | Website CI | Website Deploy |
 |-------------|------------|-----------------|------------|----------------|
-| `caci/src/` | ✅ Runs | 🟡 On tags | ❌ Skipped | ❌ Skipped |
+| `packages/caci/src/` | ✅ Runs | 🟡 On tags | ❌ Skipped | ❌ Skipped |
 | `packages/website/` | ❌ Skipped | ❌ Skipped | ✅ Runs | ✅ Runs |
 | `README.md` | ❌ Skipped | ❌ Skipped | ❌ Skipped | ❌ Skipped |
 | `v1.0.0` tag | ❌ Skipped | ✅ Runs | ❌ Skipped | ❌ Skipped |
@@ -104,8 +104,8 @@ claude-code-configurator/
 ## 🔧 Maintenance
 
 ### Adding New Package Workflows
-1. Use working directory: `caci/`
-2. Add path filter: `caci/**`
+1. Use working directory: `packages/caci/`
+2. Add path filter: `packages/caci/**`
 3. Prefix name with "CACI Package"
 
 ### Adding New Website Workflows  
@@ -116,7 +116,7 @@ claude-code-configurator/
 ### Verification Commands
 ```bash
 # Test package CI triggers
-git commit -m "test" caci/src/test.ts
+git commit -m "test" packages/caci/src/test.ts
 
 # Test website CI triggers  
 git commit -m "test" packages/website/app/test.tsx

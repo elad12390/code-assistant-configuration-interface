@@ -4,21 +4,21 @@ on:
   push:
     branches: [main, master, develop]
     paths:
-      - 'caci/**'
+      - 'packages/caci/**'
       - '.github/workflows/ci.yml'
-      - '!caci/caci-*.tgz'
-      - '!caci/node_modules/**'
-      - '!caci/dist/**'
-      - '!caci/coverage/**'
+      - '!packages/caci/caci-*.tgz'
+      - '!packages/caci/node_modules/**'
+      - '!packages/caci/dist/**'
+      - '!packages/caci/coverage/**'
   pull_request:
     branches: [main, master, develop]
     paths:
-      - 'caci/**'
+      - 'packages/caci/**'
       - '.github/workflows/ci.yml'
-      - '!caci/caci-*.tgz'
-      - '!caci/node_modules/**'
-      - '!caci/dist/**'
-      - '!caci/coverage/**'
+      - '!packages/caci/caci-*.tgz'
+      - '!packages/caci/node_modules/**'
+      - '!packages/caci/dist/**'
+      - '!packages/caci/coverage/**'
   workflow_dispatch:
 
 concurrency:
@@ -33,7 +33,7 @@ permissions:
 defaults:
   run:
     shell: bash
-    working-directory: caci
+    working-directory: packages/caci
 
 env:
   NODE_OPTIONS: --max-old-space-size=4096
@@ -58,7 +58,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -82,7 +82,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -104,7 +104,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -129,7 +129,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -157,7 +157,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -180,10 +180,10 @@ jobs:
         with:
           name: build-artifacts-${{ github.run_number }}
           path: |
-            caci/dist/
-            caci/bin/
-            caci/package.json
-            caci/caci-*.tgz
+            packages/caci/dist/
+            packages/caci/bin/
+            packages/caci/package.json
+            packages/caci/caci-*.tgz
             caci-sbom.spdx.json
           retention-days: 7
 
@@ -207,7 +207,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -224,7 +224,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
-          file: ./caci/coverage/lcov.info
+          file: ./packages/caci/coverage/lcov.info
           flags: unittests
           name: unit-tests-coverage
           fail_ci_if_error: false
@@ -246,7 +246,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -274,7 +274,7 @@ jobs:
           if [ -f "../test-workspace/components.json" ]; then
             echo "Testing with existing components.json..."
             cd ../test-workspace
-            timeout 30s node ../caci/dist/cli/index.js --help || true
+            timeout 30s node ../packages/caci/dist/cli/index.js --help || true
           fi
 
   # ============================================================================
@@ -297,7 +297,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -317,7 +317,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=medium --dev caci/
+          args: --severity-threshold=medium --dev packages/caci/
         continue-on-error: true
 
   multi-platform-tests:
@@ -347,7 +347,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Configure npm for Windows
         if: runner.os == 'Windows'
@@ -398,7 +398,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
@@ -450,7 +450,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8

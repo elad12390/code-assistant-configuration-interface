@@ -55,36 +55,36 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Cache security scanning artifacts
         uses: actions/cache@v4
         id: cache-security
         with:
           path: |
-            caci/node_modules
+            packages/caci/node_modules
             ~/.npm
             ~/.cache/npm
             ~/.cache/snyk
             ~/.trivy
             ~/.semgrep
-          key: ${{ runner.os }}-security-${{ hashFiles('caci/package-lock.json') }}-${{ github.sha }}
+          key: ${{ runner.os }}-security-${{ hashFiles('packages/caci/package-lock.json') }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-security-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-security-${{ hashFiles('packages/caci/package-lock.json') }}-
             ${{ runner.os }}-security-
 
       - name: Install dependencies
         if: steps.cache-security.outputs.cache-hit != 'true'
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Run npm audit
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm audit --audit-level=low --json > npm-audit-results.json || true
 
       - name: Parse npm audit results
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           echo "## NPM Audit Results" >> $GITHUB_STEP_SUMMARY
 
@@ -116,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: npm-audit-results
-          path: caci/npm-audit-results.json
+          path: packages/caci/npm-audit-results.json
           retention-days: 30
 
   snyk-security-scan:
@@ -132,10 +132,10 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Run Snyk to check for vulnerabilities
@@ -146,13 +146,13 @@ jobs:
         with:
           args: --severity-threshold=medium --sarif-file-output=snyk.sarif --json-file-output=snyk-results.json
           command: test
-          working-directory: caci
+          working-directory: packages/caci
 
       - name: Upload Snyk results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: caci/snyk.sarif
+          sarif_file: packages/caci/snyk.sarif
         continue-on-error: true
 
       - name: Upload Snyk results
@@ -160,7 +160,7 @@ jobs:
         if: always()
         with:
           name: snyk-results
-          path: caci/snyk-results.json
+          path: packages/caci/snyk-results.json
           retention-days: 30
 
   codeql-analysis:
@@ -185,21 +185,21 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
-          source-root: caci/src
+          source-root: packages/caci/src
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Perform CodeQL Analysis
@@ -224,7 +224,7 @@ jobs:
             p/ci
             p/nodejs
             p/typescript
-          scanDirPath: caci/src
+          scanDirPath: packages/caci/src
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
         continue-on-error: true
@@ -268,17 +268,17 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Install license checker
         run: npm install -g license-checker
 
       - name: Check licenses
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           # Check for problematic licenses
           license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense;0BSD' --production --json > license-check.json || true
@@ -304,8 +304,8 @@ jobs:
         with:
           name: license-report
           path: |
-            caci/license-check.json
-            caci/license-summary.csv
+            packages/caci/license-check.json
+            packages/caci/license-summary.csv
           retention-days: 30
 
   docker-security:
@@ -323,8 +323,8 @@ jobs:
       - name: Build Docker image for security scanning
         uses: docker/build-push-action@v5
         with:
-          context: caci
-          file: caci/Dockerfile
+          context: packages/caci
+          file: packages/caci/Dockerfile
           push: false
           tags: security-scan:latest
           cache-from: type=gha
@@ -399,16 +399,16 @@ jobs:
           echo "**Security Best Practices Check:**" >> $GITHUB_STEP_SUMMARY
 
           # Check for hardcoded secrets patterns (excluding legitimate uses)
-          POTENTIAL_SECRETS=$(grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" | wc -l)
+          POTENTIAL_SECRETS=$(grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" packages/caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" | wc -l)
           if [ "$POTENTIAL_SECRETS" -gt 0 ]; then
             echo "⚠️ Potential hardcoded secrets found in source code" >> $GITHUB_STEP_SUMMARY
-            grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" >> $GITHUB_STEP_SUMMARY || true
+            grep -r -E "(password|secret|key|token)\s*=\s*['\"][^'\"]+['\"]" --include="*.ts" --include="*.js" packages/caci/src/ | grep -v "// " | grep -v "process.env" | grep -v "console.log" | grep -v "Error" | grep -v "Object.keys" | grep -v "\\[key:" >> $GITHUB_STEP_SUMMARY || true
           else
             echo "✅ No obvious hardcoded secrets in source code" >> $GITHUB_STEP_SUMMARY
           fi
 
           # Check for proper error handling
-          if grep -r "try\|catch" --include="*.ts" --include="*.js" caci/src/ > /dev/null; then
+          if grep -r "try\|catch" --include="*.ts" --include="*.js" packages/caci/src/ > /dev/null; then
             echo "✅ Error handling patterns found" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ Consider adding more error handling" >> $GITHUB_STEP_SUMMARY

@@ -47,33 +47,33 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Cache E2E testing artifacts
         uses: actions/cache@v4
         id: cache-e2e
         with:
           path: |
-            caci/node_modules
-            caci/dist
+            packages/caci/node_modules
+            packages/caci/dist
             ~/.npm
             ~/.cache/npm
-            caci/node_modules/.cache
+            packages/caci/node_modules/.cache
             ${{ runner.os == 'Windows' && '%APPDATA%/npm-cache' || '~/.cache/npm' }}
             ${{ runner.os == 'macOS' && '~/Library/Caches/npm' || '' }}
-          key: ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('caci/package-lock.json') }}-${{ hashFiles('caci/src/**/*') }}
+          key: ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('packages/caci/package-lock.json') }}-${{ hashFiles('packages/caci/src/**/*') }}
           restore-keys: |
-            ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('packages/caci/package-lock.json') }}-
             ${{ runner.os }}-e2e-${{ matrix.node-version }}-
             ${{ runner.os }}-e2e-
 
       - name: Install dependencies
         if: steps.cache-e2e.outputs.cache-hit != 'true'
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Create test workspace
@@ -116,13 +116,13 @@ jobs:
         shell: bash
         run: |
           cd e2e-test-workspace
-          node ../caci/dist/cli/index.js --help || echo "Help command test completed"
+          node ../packages/caci/dist/cli/index.js --help || echo "Help command test completed"
 
       - name: Test CLI version command
         shell: bash
         run: |
           cd e2e-test-workspace
-          node ../caci/dist/cli/index.js --version || echo "Version command test completed"
+          node ../packages/caci/dist/cli/index.js --version || echo "Version command test completed"
 
       - name: Test CLI with components.json
         shell: bash
@@ -130,13 +130,13 @@ jobs:
           cd e2e-test-workspace
 
           # Test configure command (this will prompt but should handle gracefully)
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "Configure command test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Configure command test completed"
 
           # Test init command
-          node ../caci/dist/cli/index.js init --help || echo "Init command test completed"
+          node ../packages/caci/dist/cli/index.js init --help || echo "Init command test completed"
 
           # Test history command
-          node ../caci/dist/cli/index.js history || echo "History command test completed"
+          node ../packages/caci/dist/cli/index.js history || echo "History command test completed"
 
       - name: Test CLI without components.json
         shell: bash
@@ -145,7 +145,7 @@ jobs:
           cd e2e-test-empty
 
           # Test behavior when no components.json exists
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "No components.json test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "No components.json test completed"
 
       - name: Test CLI with invalid components.json
         shell: bash
@@ -157,7 +157,7 @@ jobs:
           echo "{ invalid json }" > components.json
 
           # Test error handling
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "Invalid JSON test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Invalid JSON test completed"
 
       - name: Test CLI with minimal components.json
         shell: bash
@@ -169,7 +169,7 @@ jobs:
           echo "{}" > components.json
 
           # Test with minimal config
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "Minimal config test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Minimal config test completed"
 
   e2e-real-world:
     name: CACI Real World E2E Testing
@@ -184,18 +184,18 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Install CLI globally
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm pack
           npm install -g caci-*.tgz
@@ -469,14 +469,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Test file system operations
@@ -518,7 +518,7 @@ jobs:
           EOF
 
           # Test reading configuration
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "File operations test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "File operations test completed"
 
           # Check if any backup files were created
           ls -la || true
@@ -532,7 +532,7 @@ jobs:
           echo '{"original": true}' > components.json
 
           # Run CLI command that might create backups
-          echo "q" | node ../caci/dist/cli/index.js configure || echo "Backup test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Backup test completed"
 
           # Check for backup files
           find . -name "*.backup*" -o -name "*backup*" || echo "No backup files found"
@@ -550,14 +550,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Performance test with time measurement
@@ -597,14 +597,14 @@ jobs:
 
           # Measure execution time
           echo "Testing CLI performance..."
-          time echo "q" | node ../caci/dist/cli/index.js configure || echo "Performance test completed"
+          time echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Performance test completed"
 
       - name: Memory usage test
         run: |
           cd e2e-perf-test
 
           # Monitor memory usage during execution
-          /usr/bin/time -v echo "q" | node ../caci/dist/cli/index.js configure || echo "Memory test completed"
+          /usr/bin/time -v echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Memory test completed"
 
   e2e-summary:
     name: CACI E2E Test Summary

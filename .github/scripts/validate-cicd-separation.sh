@@ -37,12 +37,12 @@ echo "📦 Testing Package Workflows..."
 echo "--------------------------------"
 
 # Test 1: Package workflows exist
-PACKAGE_WORKFLOWS=$(find .github/workflows -name "*.yml" -exec grep -l "working-directory: caci" {} \; 2>/dev/null | wc -l)
+PACKAGE_WORKFLOWS=$(find .github/workflows -name "*.yml" -exec grep -l "working-directory: packages/caci" {} \; 2>/dev/null | wc -l)
 validate "Package workflows exist" "$([ $PACKAGE_WORKFLOWS -gt 0 ] && echo true || echo false)"
 
 # Test 2: Package workflows have correct path filters
-PACKAGE_PATH_FILTERS=$(grep -r "caci/\*\*" .github/workflows/*.yml 2>/dev/null | wc -l)
-validate "Package workflows have caci/** path filters" "$([ $PACKAGE_PATH_FILTERS -gt 0 ] && echo true || echo false)"
+PACKAGE_PATH_FILTERS=$(grep -r "packages/caci/\*\*" .github/workflows/*.yml 2>/dev/null | wc -l)
+validate "Package workflows have packages/caci/** path filters" "$([ $PACKAGE_PATH_FILTERS -gt 0 ] && echo true || echo false)"
 
 # Test 3: Package workflows don't reference website paths
 PACKAGE_WEBSITE_REFS=$(grep -r "packages/website" .github/workflows/ci.yml .github/workflows/publish-npm.yml .github/workflows/security.yml 2>/dev/null | wc -l)
@@ -61,7 +61,7 @@ WEBSITE_PATH_FILTERS=$(grep -r "packages/website/\*\*" .github/workflows/*.yml 2
 validate "Website workflows have packages/website/** path filters" "$([ $WEBSITE_PATH_FILTERS -gt 0 ] && echo true || echo false)"
 
 # Test 6: Website workflows don't reference package paths  
-WEBSITE_PACKAGE_REFS=$(grep -r "working-directory: caci" .github/workflows/website-ci.yml .github/workflows/deploy-website.yml 2>/dev/null | wc -l)
+WEBSITE_PACKAGE_REFS=$(grep -r "working-directory: packages/caci" .github/workflows/website-ci.yml .github/workflows/deploy-website.yml 2>/dev/null | wc -l)
 validate "Website workflows don't reference package paths" "$([ $WEBSITE_PACKAGE_REFS -eq 0 ] && echo true || echo false)"
 
 echo ""
@@ -81,13 +81,13 @@ echo "🔧 Testing Directory Structure..."
 echo "----------------------------------"
 
 # Test 9: Package directory exists
-validate "Package directory (caci/) exists" "$([ -d "caci" ] && echo true || echo false)"
+validate "Package directory (packages/caci/) exists" "$([ -d "caci" ] && echo true || echo false)"
 
 # Test 10: Website directory exists
 validate "Website directory (packages/website/) exists" "$([ -d "packages/website" ] && echo true || echo false)"
 
 # Test 11: Package has package.json
-validate "Package has package.json" "$([ -f "caci/package.json" ] && echo true || echo false)"
+validate "Package has package.json" "$([ -f "packages/caci/package.json" ] && echo true || echo false)"
 
 # Test 12: Website has package.json
 validate "Website has package.json" "$([ -f "packages/website/package.json" ] && echo true || echo false)"
@@ -97,7 +97,7 @@ echo "📄 Testing Exclusion Patterns..."
 echo "---------------------------------"
 
 # Test 13: Package workflows exclude build artifacts
-PACKAGE_EXCLUDES=$(grep -r "!caci/node_modules" .github/workflows/*.yml 2>/dev/null | wc -l)
+PACKAGE_EXCLUDES=$(grep -r "!packages/caci/node_modules" .github/workflows/*.yml 2>/dev/null | wc -l)
 validate "Package workflows exclude build artifacts" "$([ $PACKAGE_EXCLUDES -gt 0 ] && echo true || echo false)"
 
 # Test 14: Website workflows exclude build artifacts

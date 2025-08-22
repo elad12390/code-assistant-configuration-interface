@@ -51,11 +51,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Determine version and tag
@@ -65,9 +65,9 @@ jobs:
             VERSION=${GITHUB_REF#refs/tags/v}
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            CURRENT_VERSION=$(node -p "require('./caci/package.json').version")
+            CURRENT_VERSION=$(node -p "require('./packages/caci/package.json').version")
             echo "Current version: $CURRENT_VERSION"
-            cd caci
+            cd packages/caci
             if [[ "${{ github.event.inputs.version }}" == "prerelease" ]]; then
               NEW_VERSION=$(npm version prerelease --no-git-tag-version --preid=alpha)
             else
@@ -77,7 +77,7 @@ jobs:
             echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
             cd ..
             # Reset package.json to avoid committing version changes
-            git checkout -- caci/package.json
+            git checkout -- packages/caci/package.json
           fi
 
       - name: Determine NPM tag
@@ -103,14 +103,14 @@ jobs:
           fi
 
       - name: Run comprehensive tests
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm run build
           npm run test:coverage
           npm test
 
       - name: Verify package integrity
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm pack --dry-run
           npm audit --production
@@ -145,18 +145,18 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Run tests
-        working-directory: caci
+        working-directory: packages/caci
         run: npm test
 
       - name: Test CLI installation
@@ -174,7 +174,7 @@ jobs:
           mkdir test-clean-install
           cd test-clean-install
           npm init -y
-          npm install ../caci/caci-*.tgz
+          npm install ../packages/caci/caci-*.tgz
           node -e "console.log('CLI installed successfully')"
 
   publish-npm:
@@ -195,27 +195,27 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Update version
         if: github.event_name == 'workflow_dispatch'
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           VERSION="${{ needs.pre-publish-checks.outputs.version }}"
           npm version $VERSION --no-git-tag-version
           echo "Updated package version to $VERSION"
 
       - name: Build for production
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Final pre-publish checks
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm run test:coverage
           npm audit --production --audit-level moderate
@@ -238,7 +238,7 @@ jobs:
       - name: Publish to NPM
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           echo "Publishing caci@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
           npm publish --tag ${{ needs.pre-publish-checks.outputs.tag }} --access public
@@ -273,18 +273,18 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'caci/package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
-        working-directory: caci
+        working-directory: packages/caci
         run: npm ci
 
       - name: Build project
-        working-directory: caci
+        working-directory: packages/caci
         run: npm run build
 
       - name: Create release package
-        working-directory: caci
+        working-directory: packages/caci
         run: |
           npm pack
           ls -la caci-*.tgz
@@ -347,7 +347,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
           files: |
-            caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
+            packages/caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
 
   post-publish:
     name: CACI Post-publish Tasks

@@ -92,8 +92,8 @@ jobs:
       - name: Build Docker image (test)
         uses: docker/build-push-action@v5
         with:
-          context: caci
-          file: caci/Dockerfile
+          context: packages/caci
+          file: packages/caci/Dockerfile
           platforms: linux/amd64
           push: false
           tags: test-image:latest
@@ -124,8 +124,8 @@ jobs:
       - name: Build Docker image for scanning
         uses: docker/build-push-action@v5
         with:
-          context: caci
-          file: caci/Dockerfile
+          context: packages/caci
+          file: packages/caci/Dockerfile
           platforms: linux/amd64
           push: false
           tags: scan-image:latest
@@ -205,8 +205,8 @@ jobs:
       - name: Build and push multi-platform Docker image
         uses: docker/build-push-action@v5
         with:
-          context: caci
-          file: caci/Dockerfile
+          context: packages/caci
+          file: packages/caci/Dockerfile
           platforms: ${{ needs.prepare.outputs.platforms }}
           push: true
           tags: ${{ needs.prepare.outputs.tags }}

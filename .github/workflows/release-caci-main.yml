@@ -107,7 +107,14 @@ jobs:
         run: |
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "🔍 DRY RUN MODE - No actual version bump"
-            NEW_VERSION=$(npm version ${{ inputs.version_bump }} --no-git-tag-version --dry-run)
+            # Get current version and calculate what the new version would be
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            NEW_VERSION=$(node -e "
+              const semver = require('semver');
+              const current = '$CURRENT_VERSION';
+              const bump = '${{ inputs.version_bump }}';
+              console.log('v' + semver.inc(current, bump));
+            ")
             echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
             echo "should_release=false" >> $GITHUB_OUTPUT
           else

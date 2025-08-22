@@ -26,6 +26,7 @@ CACI (Code Assistant Configuration Interface) is an intelligent CLI tool that au
 6. **Merge via GitHub** (squash merge recommended)
 
 **Branch protection rules enforce:**
+
 - ✅ Required status checks: Lint, Type Check, Format Check, Build & Package, Unit Tests, Integration Tests
 - ✅ Required pull request reviews (1 approval required)
 - ✅ Dismiss stale reviews when new commits are pushed

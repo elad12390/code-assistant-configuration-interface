@@ -53,7 +53,7 @@ jobs:
           echo "=== Try NPM install instead ==="
           npm install
           echo "=== Try NPM CI after install ==="
-          npm ci
+          npm install
         shell: bash
 
       - name: Success summary

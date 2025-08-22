@@ -71,7 +71,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-website-deps.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         run: npm run lint
@@ -106,7 +106,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-website-deps.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
       - name: Check code formatting
         run: npm run format:check
@@ -141,7 +141,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-website-deps.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
       - name: Type check
         run: npm run type-check
@@ -184,7 +184,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-website.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
       - name: Build website
         run: npm run build
@@ -233,7 +233,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-website-deps.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
 
       - name: Download build artifacts
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8

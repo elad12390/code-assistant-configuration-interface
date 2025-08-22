@@ -70,7 +70,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-e2e.outputs.cache-hit != 'true'
         working-directory: packages/caci
-        run: npm ci
+        run: npm install
 
       - name: Build project
         working-directory: packages/caci
@@ -188,7 +188,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: packages/caci
-        run: npm ci
+        run: npm install
 
       - name: Build project
         working-directory: packages/caci
@@ -473,7 +473,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: packages/caci
-        run: npm ci
+        run: npm install
 
       - name: Build project
         working-directory: packages/caci
@@ -554,7 +554,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: packages/caci
-        run: npm ci
+        run: npm install
 
       - name: Build project
         working-directory: packages/caci

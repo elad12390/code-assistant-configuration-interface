@@ -61,7 +61,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Check Prettier formatting
         run: |
@@ -85,7 +85,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         run: npx eslint src/ tests/ --ext .ts,.tsx,.js,.jsx --max-warnings 100
@@ -107,7 +107,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: TypeScript compilation check
         run: npx tsc --noEmit
@@ -132,7 +132,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Check licenses
         run: npx license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense;0BSD' --production
@@ -160,7 +160,7 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build TypeScript
         run: npm run build
@@ -216,7 +216,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run unit tests with coverage
         run: npm run test:coverage
@@ -255,7 +255,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run integration tests
         run: |
@@ -306,7 +306,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate
@@ -360,7 +360,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run tests on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}
         env:
@@ -414,7 +414,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install GNU time for measurements
         run: sudo apt-get update && sudo apt-get install -y time
@@ -473,7 +473,7 @@ jobs:
           path: ./caci
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run E2E tests
         run: |

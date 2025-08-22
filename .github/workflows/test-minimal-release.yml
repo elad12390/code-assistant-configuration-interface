@@ -51,7 +51,7 @@ jobs:
           cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Test installation
-        run: npm ci
+        run: npm install
         working-directory: packages/caci
 
       - name: Test version check

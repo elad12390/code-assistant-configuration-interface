@@ -63,7 +63,7 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Download release artifacts (if available)

@@ -38,7 +38,7 @@ jobs:
           echo "Package.json exists: $(test -f package.json && echo 'YES' || echo 'NO')"
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Test message
         run: echo "✅ Test successful: ${{ inputs.test_message }}"

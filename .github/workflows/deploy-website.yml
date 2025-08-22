@@ -58,7 +58,7 @@ jobs:
 
       - name: Install Dependencies
         if: steps.cache-website.outputs.cache-hit != 'true'
-        run: npm ci
+        run: npm install
         working-directory: ./packages/website
 
       - name: Install Vercel CLI
@@ -90,7 +90,7 @@ jobs:
           cache-dependency-path: packages/website/package-lock.json
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
         working-directory: ./packages/website
 
       - name: Install Vercel CLI

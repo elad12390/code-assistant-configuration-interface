@@ -80,7 +80,7 @@ jobs:
             # Setup Node.js and build
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
             sudo apt-get install -y nodejs
-            npm ci
+            npm install
             npm run build
             
             VERSION="${{ inputs.version }}"

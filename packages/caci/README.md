@@ -126,4 +126,4 @@ MIT
 - Uses Google Generative AI (Gemini) for AI-powered recommendations
 - Built with Commander.js for CLI interface
 - Uses Chalk for colorful terminal output
-- Inspired by the BMAD-method installer
+- Inspired by the BMAD-method installer# Test CI trigger

@@ -1,7 +1,7 @@
 {
-  "rootDirectory": "packages/website",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "npm run build --workspace=@caci/website",
+  "outputDirectory": "packages/website/.next",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "ignoreCommand": "npx turbo-ignore"
 }

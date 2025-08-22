@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-configurator",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "claude-config"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@caci/website",
+    "dev": "npm run dev --workspace=@caci/website",
+    "build:cli": "npm run build --workspace=caci",
+    "test": "npm test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "devDependencies": {
+    "vercel": "^46.0.2"
+  }
+}

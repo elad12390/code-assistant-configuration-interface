@@ -34,10 +34,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} antialiased`}>
-        <Header />
-        {children}
-        <Footer />
+      <body className={`${inter.className} antialiased bg-grid bg-gradient-radial min-h-screen`}>
+        <div className="relative z-10">
+          <Header />
+          {children}
+          <Footer />
+        </div>
       </body>
     </html>
   )

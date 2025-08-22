@@ -35,7 +35,7 @@ describe('Analyzer Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock tree command for project structure analysis
     const mockTreeProcess: any = {
       on: jest.fn((event: string, callback: (code: number) => void) => {

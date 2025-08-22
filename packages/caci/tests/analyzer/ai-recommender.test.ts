@@ -84,7 +84,7 @@ describe('AI Recommender', () => {
         return mockFailProcess;
       }),
     };
-    
+
     mockSpawn.mockReturnValueOnce(mockFailProcess as ChildProcess);
 
     await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(

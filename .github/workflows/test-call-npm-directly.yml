@@ -1,0 +1,33 @@
+name: Test Call NPM Directly
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_version:
+        description: 'Test version'
+        required: false
+        default: 'v1.0.1'
+        type: string
+
+jobs:
+  test-npm-call:
+    name: Test NPM Call
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      version: ${{ inputs.test_version }}
+      dry_run: true
+    secrets: inherit
+
+  summary:
+    name: Summary  
+    needs: test-npm-call
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Show results
+        run: |
+          echo "NPM workflow result: ${{ needs.test-npm-call.result }}"
+          echo "## NPM Workflow Call Test" >> $GITHUB_STEP_SUMMARY
+          echo "- Input version: ${{ inputs.test_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- NPM call result: ${{ needs.test-npm-call.result }}" >> $GITHUB_STEP_SUMMARY

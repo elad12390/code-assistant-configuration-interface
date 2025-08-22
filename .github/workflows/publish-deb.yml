@@ -1,4 +1,4 @@
-name: 'Create DEB Package'
+name: CACI Package DEB Publishing
 
 on:
   workflow_call:

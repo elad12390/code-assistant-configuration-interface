@@ -35,7 +35,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -69,7 +69,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -102,7 +102,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -140,7 +140,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -177,7 +177,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -214,7 +214,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);
@@ -246,7 +246,7 @@ describe('CACI CLI Interface', () => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
       }, 10000);
-      
+
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);
         resolve(code);

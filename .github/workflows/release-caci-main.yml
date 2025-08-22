@@ -172,7 +172,7 @@ jobs:
           # CACI Installation Script
           set -e
           echo "🚀 Installing CACI (Code Assistant Configuration Interface)..."
-          npm install -g caci
+          npm install -g code-assistant-config-interface
           echo "✅ CACI installed successfully!"
           echo "💡 Usage: caci configure"
           echo "📖 Help:  caci --help"
@@ -184,7 +184,7 @@ jobs:
           # CACI Installation Script for Windows
           Write-Host "🚀 Installing CACI (Code Assistant Configuration Interface)..." -ForegroundColor Green
           try {
-              npm install -g caci
+              npm install -g code-assistant-config-interface
               Write-Host "✅ CACI installed successfully!" -ForegroundColor Green
               Write-Host "💡 Usage: caci configure" -ForegroundColor Cyan
               Write-Host "📖 Help:  caci --help" -ForegroundColor Cyan
@@ -344,7 +344,7 @@ jobs:
 
           #### NPM (Recommended)
           \`\`\`bash
-          npm install -g @claude-code/caci@${VERSION}
+          npm install -g code-assistant-config-interface@${VERSION}
           \`\`\`
 
           #### Docker
@@ -479,7 +479,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Installation Commands:**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "📦 **NPM**: \`npm install -g @claude-code/caci@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **NPM**: \`npm install -g code-assistant-config-interface@${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
             echo "🐳 **Docker**: \`docker run --rm caci:${{ needs.prepare-release.outputs.version }} --help\`" >> $GITHUB_STEP_SUMMARY
             echo "🔧 **APT**: \`curl -fsSL .../install-caci-apt.sh | sudo bash\`" >> $GITHUB_STEP_SUMMARY
             echo "🍺 **Homebrew**: \`brew install caci\`" >> $GITHUB_STEP_SUMMARY

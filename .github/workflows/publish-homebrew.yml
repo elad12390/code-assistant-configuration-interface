@@ -91,12 +91,12 @@ jobs:
           CLEAN_VERSION=${VERSION#v}
 
           echo "⏳ Waiting for NPM publication to propagate..."
-          echo "Checking for @claude-code/caci@$CLEAN_VERSION on NPM..."
+          echo "Checking for code-assistant-config-interface@$CLEAN_VERSION on NPM..."
 
           # Wait up to 5 minutes for NPM to propagate
           for i in {1..10}; do
-            if npm view @claude-code/caci@$CLEAN_VERSION version >/dev/null 2>&1; then
-              echo "✅ Package @claude-code/caci@$CLEAN_VERSION is available on NPM"
+            if npm view code-assistant-config-interface@$CLEAN_VERSION version >/dev/null 2>&1; then
+              echo "✅ Package code-assistant-config-interface@$CLEAN_VERSION is available on NPM"
               break
             else
               echo "⏳ Attempt $i/10: Package not yet available, waiting 30 seconds..."
@@ -305,7 +305,7 @@ jobs:
           class Caci < Formula
             desc "Code Assistant Configuration Interface - Intelligent Claude Code project configurator"
             homepage "https://github.com/elad12390/claude-code-configurator"
-            url "https://registry.npmjs.org/@claude-code/caci/-/caci-${CLEAN_VERSION}.tgz"
+            url "https://registry.npmjs.org/code-assistant-config-interface/-/code-assistant-config-interface-${CLEAN_VERSION}.tgz"
             sha256 "${PKG_SHA256}"
             license "MIT"
             version "${CLEAN_VERSION}"

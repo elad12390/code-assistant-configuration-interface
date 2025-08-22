@@ -50,10 +50,15 @@ defaults:
 env:
   NODE_OPTIONS: --max-old-space-size=4096
 
+concurrency:
+  group: caci-release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   packages: write
   pull-requests: read
+  security-events: write
 
 jobs:
   # ============================================================================

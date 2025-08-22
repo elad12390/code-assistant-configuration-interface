@@ -190,9 +190,8 @@ jobs:
       - name: Test CLI installation
         shell: bash
         run: |
-          cd caci
           npm pack
-          npm install -g caci-*.tgz
+          npm install -g @claude-code/caci-*.tgz
           caci --version
           caci --help
 
@@ -202,7 +201,7 @@ jobs:
           mkdir test-clean-install
           cd test-clean-install
           npm init -y
-          npm install ../packages/caci/caci-*.tgz
+          npm install ../@claude-code/caci-*.tgz
           node -e "console.log('CLI installed successfully')"
 
   publish-npm:
@@ -385,6 +384,7 @@ jobs:
           node-version: '20'
 
       - name: Test installation from NPM
+        if: needs.publish-npm.result == 'success'
         run: |
           # Wait a bit more for NPM to fully sync
           sleep 60

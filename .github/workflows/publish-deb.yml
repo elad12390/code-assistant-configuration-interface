@@ -96,6 +96,7 @@ jobs:
           cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
+          mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
           cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
           chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
 

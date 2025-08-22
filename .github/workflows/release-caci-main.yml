@@ -121,7 +121,29 @@ jobs:
             echo "should_release=true" >> $GITHUB_OUTPUT  # Set to true for dry run to trigger jobs
           else
             echo "📦 Bumping version: ${{ inputs.version_bump }}"
-            NEW_VERSION=$(npm version ${{ inputs.version_bump }} --no-git-tag-version)
+            # Get current version and bump it manually to avoid npm script conflicts
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "Current version: $CURRENT_VERSION"
+            
+            # Calculate new version using semver logic
+            if [ "${{ inputs.version_bump }}" = "patch" ]; then
+              NEW_VERSION=$(node -e "const v='$CURRENT_VERSION'; const parts=v.split('.'); console.log('v'+parts[0]+'.'+parts[1]+'.'+(+parts[2]+1))")
+            elif [ "${{ inputs.version_bump }}" = "minor" ]; then
+              NEW_VERSION=$(node -e "const v='$CURRENT_VERSION'; const parts=v.split('.'); console.log('v'+parts[0]+'.'+(+parts[1]+1)+'.0')")
+            else
+              NEW_VERSION=$(node -e "const v='$CURRENT_VERSION'; const parts=v.split('.'); console.log('v'+(+parts[0]+1)+'.0.0')")
+            fi
+            
+            # Update package.json manually
+            NEW_VERSION_CLEAN=${NEW_VERSION#v}
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.version = '$NEW_VERSION_CLEAN';
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              console.log('Updated package.json to version $NEW_VERSION_CLEAN');
+            "
+            
             echo "new=$NEW_VERSION" >> $GITHUB_OUTPUT
             echo "should_release=true" >> $GITHUB_OUTPUT
           fi

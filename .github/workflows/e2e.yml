@@ -1,14 +1,24 @@
-name: CACI E2E Testing
+name: "Scheduled E2E Tests"
+
+# This workflow runs comprehensive E2E tests on a schedule
+# Basic E2E testing is now handled by the main CI pipeline (ci.yml)
+# This provides additional comprehensive E2E scenarios
 
 on:
-  push:
-    branches: [main, master, develop]
-  pull_request:
-    branches: [main, master, develop]
-  workflow_dispatch:
   schedule:
-    # Run E2E tests daily at 2 AM UTC
+    # Run comprehensive E2E tests daily at 2 AM UTC
     - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'E2E test suite to run'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - smoke
+          - regression
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}

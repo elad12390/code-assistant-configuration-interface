@@ -1,14 +1,19 @@
-name: CACI Security Scanning
+name: "Scheduled Security Scan"
+
+# This workflow runs comprehensive security scans on a schedule
+# Daily security scanning is now handled by the main CI pipeline (ci.yml)
+# This provides additional deep security analysis
 
 on:
-  push:
-    branches: [main, master, develop]
-  pull_request:
-    branches: [main, master, develop]
   schedule:
-    # Run security scans daily at 3 AM UTC
+    # Run comprehensive security scans daily at 3 AM UTC
     - cron: '0 3 * * *'
   workflow_dispatch:
+    inputs:
+      deep_scan:
+        description: 'Run deep security scan'
+        required: false
+        default: 'true'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}

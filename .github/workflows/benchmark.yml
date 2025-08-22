@@ -1,12 +1,12 @@
-name: CACI Performance Benchmarking
+name: "Scheduled Performance Benchmarks"
+
+# This workflow runs comprehensive performance benchmarks on a schedule
+# Basic performance testing is now handled by the main CI pipeline (ci.yml)
+# This provides detailed benchmarking across multiple scenarios
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
   schedule:
-    # Run benchmarks weekly on Sunday at 4 AM UTC
+    # Run comprehensive benchmarks weekly on Sunday at 4 AM UTC
     - cron: '0 4 * * 0'
   workflow_dispatch:
     inputs:

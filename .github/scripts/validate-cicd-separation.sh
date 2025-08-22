@@ -81,7 +81,7 @@ echo "🔧 Testing Directory Structure..."
 echo "----------------------------------"
 
 # Test 9: Package directory exists
-validate "Package directory (packages/caci/) exists" "$([ -d "caci" ] && echo true || echo false)"
+validate "Package directory (packages/caci/) exists" "$([ -d "packages/caci" ] && echo true || echo false)"
 
 # Test 10: Website directory exists
 validate "Website directory (packages/website/) exists" "$([ -d "packages/website" ] && echo true || echo false)"

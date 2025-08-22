@@ -30,7 +30,7 @@ jest.mock('@langchain/google-genai', () => {
 });
 
 describe('Analyzer Integration', () => {
-  const componentsFilePath = path.join(__dirname, '../../../components.json');
+  const componentsFilePath = path.join(__dirname, '../../../../components.json');
 
   beforeEach(() => {
     // Set a mock API key

@@ -2,7 +2,7 @@ import * as path from 'path';
 import { parseComponentsFile, getComponent, getComponentsByType } from '../../src/analyzer/parser';
 
 describe('Component Parser', () => {
-  const componentsFilePath = path.join(__dirname, '../../../components.json');
+  const componentsFilePath = path.join(__dirname, '../../../../components.json');
 
   it('should parse components.json file successfully', () => {
     const componentsData = parseComponentsFile(componentsFilePath);

@@ -1,0 +1,163 @@
+---
+# Landing Page Documentation Workflow
+# BMad-driven workflow for creating and maintaining landing page docs
+
+workflow:
+  id: landing-page-documentation
+  name: CACI Landing Page Documentation Workflow
+  version: 1.0.0
+  description: Agent-driven workflow for landing page content creation and maintenance
+  type: documentation
+  
+stages:
+  - id: planning
+    name: Initial Planning
+    agent: bmad-orchestrator
+    transitions:
+      next: content-creation
+    artifacts:
+      - name: landing-page-brief
+        type: markdown
+        description: High-level overview and objectives
+    tasks:
+      - Gather requirements for landing page
+      - Define target audience and messaging
+      - Create content outline
+  
+  - id: content-creation
+    name: Content Creation
+    parallel: true
+    stages:
+      - id: hero-content
+        agent: ux-expert
+        artifacts:
+          - name: hero-section
+            type: markdown
+        tasks:
+          - Create compelling headline
+          - Write subheadline
+          - Design CTA messaging
+          
+      - id: problem-analysis
+        agent: analyst
+        artifacts:
+          - name: problem-section
+            type: markdown
+        tasks:
+          - Research developer pain points
+          - Analyze configuration complexity
+          - Document time/cost impacts
+          
+      - id: solution-design
+        agent: architect
+        artifacts:
+          - name: solution-section
+            type: markdown
+        tasks:
+          - Design solution architecture
+          - Create process flow
+          - Document technical approach
+          
+      - id: feature-planning
+        agent: pm
+        artifacts:
+          - name: features-section
+            type: markdown
+          - name: audience-section
+            type: markdown
+        tasks:
+          - Define key features
+          - Map features to benefits
+          - Identify target segments
+    transitions:
+      next: review-refinement
+      
+  - id: review-refinement
+    name: Review and Refinement
+    agent: po
+    artifacts:
+      - name: consolidated-content
+        type: markdown
+    tasks:
+      - Review all sections for consistency
+      - Ensure messaging alignment
+      - Validate against requirements
+      - Run quality checklists
+    transitions:
+      next: technical-review
+      condition: content-approved
+      
+  - id: technical-review
+    name: Technical Review
+    agent: qa
+    artifacts:
+      - name: technical-validation
+        type: checklist
+    tasks:
+      - Validate code examples
+      - Check technical accuracy
+      - Verify feature descriptions
+      - Test interactive elements
+    transitions:
+      next: implementation
+      condition: technical-approved
+      
+  - id: implementation
+    name: Implementation
+    agent: dev
+    artifacts:
+      - name: implemented-components
+        type: code
+      - name: test-results
+        type: test-report
+    tasks:
+      - Implement React components
+      - Create interactive elements
+      - Add animations and transitions
+      - Run component tests
+    transitions:
+      next: deployment-ready
+      condition: tests-passing
+      
+  - id: deployment-ready
+    name: Deployment Preparation
+    agent: sm
+    artifacts:
+      - name: deployment-checklist
+        type: checklist
+      - name: final-documentation
+        type: markdown
+    tasks:
+      - Final quality checks
+      - Performance optimization
+      - Accessibility validation
+      - SEO optimization
+      
+validation:
+  required_artifacts:
+    - hero-section
+    - problem-section
+    - solution-section
+    - features-section
+    - audience-section
+    - technical-validation
+    - test-results
+    
+quality_gates:
+  - id: content-quality
+    checks:
+      - messaging_consistency
+      - brand_alignment
+      - readability_score
+      
+  - id: technical-quality
+    checks:
+      - code_examples_valid
+      - no_broken_links
+      - performance_metrics
+      
+  - id: accessibility
+    checks:
+      - wcag_compliance
+      - keyboard_navigation
+      - screen_reader_compatible

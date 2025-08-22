@@ -1,0 +1,194 @@
+---
+# CACI Landing Page Documentation Template
+# Following BMad methodology for agent-driven content creation
+
+template:
+  name: landing-page-tmpl
+  version: 1.0.0
+  description: Template for CACI landing page documentation with BMad agent assignments
+  outputFile: docs/landing-page-complete.md
+  mode: interactive
+
+metadata:
+  project: CACI - Code Assistant Configuration Interface
+  domain: Developer Tools / CLI
+  audience: Developers using Claude Code
+  tone: Professional yet approachable
+  
+sections:
+  - id: hero
+    title: Hero Section
+    agent: ux-expert
+    owner: ux-expert
+    editors: [pm, po]
+    elicit: true
+    instruction: |
+      Create a compelling hero section that immediately communicates CACI's value.
+      Include:
+      - Main headline that captures the core benefit (pain relief + outcome)
+      - Subheadline that expands on the promise
+      - Primary CTA that encourages immediate action
+      Focus on emotional connection with developer pain points.
+
+  - id: problem
+    title: Problem Statement
+    agent: analyst
+    owner: analyst
+    editors: [pm, ux-expert]
+    elicit: true
+    instruction: |
+      Analyze and articulate the specific problems developers face with Claude Code configuration.
+      Include:
+      - The complexity of manual configuration
+      - Time lost in setup and debugging
+      - Missed opportunities due to configuration friction
+      - Real developer frustrations and pain points
+      Use data and specific examples where possible.
+
+  - id: solution
+    title: Solution Overview
+    agent: architect
+    owner: architect
+    editors: [pm, dev]
+    elicit: true
+    instruction: |
+      Present CACI's technical approach to solving the configuration problem.
+      Include:
+      - High-level architecture of the solution
+      - The three-step process (interview, generation, deployment)
+      - Technical differentiators
+      - Why this approach is superior
+      Balance technical accuracy with accessibility.
+
+  - id: features
+    title: Key Features
+    agent: pm
+    owner: pm
+    editors: [architect, ux-expert]
+    elicit: true
+    instruction: |
+      Detail the four main feature categories with specific benefits.
+      Include:
+      - Smart Sub-Agents (with examples)
+      - Workflow Hooks (with use cases)
+      - MCP Integrations (with tool examples)
+      - Custom Commands (with scenarios)
+      Make features tangible with real-world applications.
+
+  - id: benefits
+    title: Why Choose CACI
+    agent: analyst
+    owner: analyst
+    editors: [pm, po]
+    elicit: true
+    instruction: |
+      Analyze and present the key benefits from multiple perspectives.
+      Include:
+      - Time savings (quantified)
+      - Best practices implementation
+      - Cost reduction
+      - Faster delivery
+      - Future-proofing
+      Support with metrics and reasoning where possible.
+
+  - id: audience
+    title: Target Audience
+    agent: pm
+    owner: pm
+    editors: [analyst, po]
+    elicit: true
+    instruction: |
+      Define and speak to specific user segments.
+      Include:
+      - Solo Developers (their unique needs)
+      - Development Teams (collaboration benefits)
+      - Tech Leads (management advantages)
+      - DevOps Engineers (integration capabilities)
+      Make each segment feel understood and catered to.
+
+  - id: getting-started
+    title: Getting Started
+    agent: dev
+    owner: dev
+    editors: [qa, sm]
+    elicit: true
+    instruction: |
+      Provide clear, actionable steps to start using CACI.
+      Include:
+      - The one-line installation command
+      - What happens during setup
+      - Expected outcomes
+      - Next steps checklist
+      Ensure technical accuracy and simplicity.
+
+  - id: cta
+    title: Call to Action
+    agent: ux-expert
+    owner: ux-expert
+    editors: [pm, po]
+    elicit: true
+    instruction: |
+      Create a compelling final call to action.
+      Include:
+      - Summary of key value proposition
+      - Urgency/motivation to act now
+      - Clear next step
+      - Link to get started
+      Make it impossible to resist trying CACI.
+
+  - id: faq
+    title: Frequently Asked Questions
+    agent: po
+    owner: po
+    editors: [pm, qa]
+    elicit: false
+    instruction: |
+      Address common questions and concerns.
+      Include:
+      - Technical prerequisites
+      - Compatibility questions
+      - Customization capabilities
+      - Security/privacy concerns
+      Keep answers concise and reassuring.
+
+dependencies:
+  agents:
+    - ux-expert
+    - analyst
+    - architect
+    - pm
+    - dev
+    - qa
+    - po
+    - sm
+  tasks:
+    - create-doc
+    - advanced-elicitation
+  data:
+    - elicitation-methods
+  utils:
+    - bmad-doc-template
+
+elicitation_config:
+  default_methods:
+    - expand-contract
+    - critique-refine
+    - identify-risks
+    - assess-alignment
+  section_specific:
+    hero:
+      - agile-team-perspective
+      - stakeholder-roundtable
+    problem:
+      - tree-of-thoughts
+      - hindsight-reflection
+    solution:
+      - meta-prompting
+      - red-team-blue-team
+
+quality_checks:
+  - messaging_consistency
+  - technical_accuracy
+  - audience_alignment
+  - cta_effectiveness
+  - seo_optimization

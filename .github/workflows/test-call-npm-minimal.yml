@@ -12,7 +12,7 @@ on:
 jobs:
   test-npm-minimal-call:
     name: Test NPM Minimal Call
-    uses: ./.github/workflows/test-npm-minimal.yml
+    uses: ./.github/workflows/test-npm-minimal.yml@master
     with:
       version: ${{ inputs.test_version }}
       dry_run: true

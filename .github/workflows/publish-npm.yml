@@ -260,21 +260,86 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "Publishing code-assistant-config-interface@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
-          npm publish --tag ${{ needs.pre-publish-checks.outputs.tag }} --access public
+          echo "🚀 Publishing code-assistant-config-interface@${{ needs.pre-publish-checks.outputs.version }} with tag ${{ needs.pre-publish-checks.outputs.tag }}"
+          
+          # Verify authentication and package info before publishing
+          echo "📋 Pre-publish verification:"
+          echo "- NPM User: $(npm whoami 2>/dev/null || echo 'Authentication failed')"
+          echo "- Package version: $(node -p 'require("./package.json").version')"
+          echo "- Package name: $(node -p 'require("./package.json").name')"
+          echo "- Publish tag: ${{ needs.pre-publish-checks.outputs.tag }}"
+          echo ""
+          
+          # Attempt to publish with retry logic
+          MAX_PUBLISH_ATTEMPTS=3
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_PUBLISH_ATTEMPTS ]; do
+            echo "📤 Publish attempt $ATTEMPT/$MAX_PUBLISH_ATTEMPTS..."
+            
+            if npm publish --tag ${{ needs.pre-publish-checks.outputs.tag }} --access public; then
+              echo "✅ Successfully published to NPM!"
+              break
+            else
+              PUBLISH_EXIT_CODE=$?
+              echo "❌ Publish attempt $ATTEMPT failed with exit code $PUBLISH_EXIT_CODE"
+              
+              if [ $ATTEMPT -eq $MAX_PUBLISH_ATTEMPTS ]; then
+                echo "💥 All publish attempts failed. Exiting."
+                exit $PUBLISH_EXIT_CODE
+              else
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+                ATTEMPT=$((ATTEMPT + 1))
+              fi
+            fi
+          done
 
       - name: Verify publication
         run: |
-          sleep 30  # Wait for NPM to sync
-          PUBLISHED_VERSION=$(npm view code-assistant-config-interface@${{ needs.pre-publish-checks.outputs.tag }} version)
-          if [[ "$PUBLISHED_VERSION" == "${{ needs.pre-publish-checks.outputs.version }}" ]]; then
-            echo "✅ Successfully published version ${{ needs.pre-publish-checks.outputs.version }}"
-          else
-            echo "❌ Publication verification failed"
-            echo "Expected: ${{ needs.pre-publish-checks.outputs.version }}"
-            echo "Published: $PUBLISHED_VERSION"
-            exit 1
-          fi
+          echo "🔍 Verifying publication of version ${{ needs.pre-publish-checks.outputs.version }}"
+          
+          # Wait for NPM registry to propagate (with exponential backoff)
+          MAX_ATTEMPTS=10
+          ATTEMPT=1
+          
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking if version ${{ needs.pre-publish-checks.outputs.version }} is available..."
+            
+            # Try to fetch the specific version that was just published
+            if PUBLISHED_VERSION=$(npm view code-assistant-config-interface@${{ needs.pre-publish-checks.outputs.version }} version 2>/dev/null); then
+              if [[ "$PUBLISHED_VERSION" == "${{ needs.pre-publish-checks.outputs.version }}" ]]; then
+                echo "✅ Successfully verified publication of version ${{ needs.pre-publish-checks.outputs.version }}"
+                
+                # Also verify it shows up with the correct tag
+                TAGGED_VERSION=$(npm view code-assistant-config-interface@${{ needs.pre-publish-checks.outputs.tag }} version 2>/dev/null || echo "not-found")
+                if [[ "$TAGGED_VERSION" == "${{ needs.pre-publish-checks.outputs.version }}" ]]; then
+                  echo "✅ Version is correctly tagged as '${{ needs.pre-publish-checks.outputs.tag }}'"
+                else
+                  echo "⚠️ Version published but tag '${{ needs.pre-publish-checks.outputs.tag }}' may still be propagating (currently: $TAGGED_VERSION)"
+                fi
+                
+                exit 0
+              fi
+            fi
+            
+            echo "Version not yet available, waiting..."
+            WAIT_TIME=$((2 ** (ATTEMPT - 1)))  # Exponential backoff: 1, 2, 4, 8, 16 seconds...
+            sleep $WAIT_TIME
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+          
+          echo "❌ Publication verification failed after $MAX_ATTEMPTS attempts"
+          echo "Expected version: ${{ needs.pre-publish-checks.outputs.version }}"
+          echo "Expected tag: ${{ needs.pre-publish-checks.outputs.tag }}"
+          
+          # Show current NPM registry state for debugging
+          echo ""
+          echo "📊 Current NPM registry state:"
+          npm view code-assistant-config-interface versions --json 2>/dev/null || echo "Package not found or error querying registry"
+          npm view code-assistant-config-interface@latest version 2>/dev/null || echo "Latest tag not found"
+          
+          exit 1
 
   create-github-release:
     name: CACI Create GitHub Release

@@ -43,6 +43,10 @@ jobs:
           cat package.json | head -10
           echo "=== Test package-lock.json ==="
           ls -la package-lock.json
+          echo "=== Check package-lock.json content ==="
+          head -20 package-lock.json
+          echo "=== Check lockfileVersion ==="
+          grep -A 2 -B 2 "lockfileVersion" package-lock.json || echo "No lockfileVersion found!"
           echo "=== Try NPM CI ==="
           npm ci
         shell: bash

@@ -21,7 +21,7 @@ jobs:
   call-npm:
     name: 'Call NPM Workflow'
     needs: test-call
-    uses: ./.github/workflows/publish-npm.yml
+    uses: elad12390/claude-code-configurator/.github/workflows/publish-npm.yml@master
     with:
       version: ${{ inputs.test_version }}
       dry_run: true

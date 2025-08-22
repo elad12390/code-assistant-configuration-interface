@@ -421,17 +421,23 @@ jobs:
           git tag -a v$ACTUAL_VERSION -m "Release v$ACTUAL_VERSION"
           git push origin v$ACTUAL_VERSION
 
+      - name: Get package version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ needs.pre-publish-checks.outputs.version }}
-          name: CACI (Code Assistant Configuration Interface) v${{ needs.pre-publish-checks.outputs.version }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: CACI (Code Assistant Configuration Interface) v${{ steps.get_version.outputs.version }}
           body: ${{ steps.changelog.outputs.content }}
           draft: false
-          prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
+          prerelease: false
           files: |
             packages/caci/code-assistant-config-interface-*.tgz
 

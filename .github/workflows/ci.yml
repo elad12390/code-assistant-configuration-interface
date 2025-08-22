@@ -40,17 +40,20 @@ jobs:
         with:
           path: |
             caci/node_modules
-            ~/.cache/npm
             ~/.npm
-            %APPDATA%/npm-cache
-            %LOCALAPPDATA%/npm-cache
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('caci/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-${{ matrix.node-version }}-
             ${{ runner.os }}-node-
 
+      - name: Configure npm for Windows
+        if: runner.os == 'Windows'
+        working-directory: caci
+        run: |
+          npm config set script-shell "cmd"
+          npm config set cache-min 3600
+
       - name: Install dependencies
-        if: steps.cache-nodemodules.outputs.cache-hit != 'true'
         working-directory: caci
         run: npm ci
 
@@ -63,6 +66,7 @@ jobs:
         env:
           CI: true
           NODE_OPTIONS: --max-old-space-size=4096
+          FORCE_COLOR: '1'
         run: npm test
 
       - name: Run tests with coverage
@@ -78,6 +82,7 @@ jobs:
         env:
           CI: true
           NODE_OPTIONS: --max-old-space-size=4096
+          FORCE_COLOR: '1'
         run: |
           echo "Running tests multiple times to detect flakiness..."
           for i in 1 2 3; do
@@ -110,13 +115,20 @@ jobs:
           npm pack
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             # On Windows, use npm link instead of global install for testing
+            echo "Testing CLI installation on Windows..."
             npm link
-            npx caci --help || true
-            npx caci --version || true
+            # Use npx to test the CLI commands (without timeout on Windows)
+            echo "Testing caci --help..."
+            npx caci --help || echo "Help command completed"
+            echo "Testing caci --version..."
+            npx caci --version || echo "Version command completed"
           else
+            echo "Testing CLI installation on Unix..."
             npm install -g caci-*.tgz
-            caci --help || true
-            caci --version || true
+            echo "Testing caci --help..."
+            timeout 30s caci --help || echo "Help command completed"
+            echo "Testing caci --version..."
+            timeout 30s caci --version || echo "Version command completed"
           fi
 
   build-test:

@@ -5,7 +5,7 @@ on:
     branches: [main, master, develop]
     paths:
       - 'packages/caci/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/**'
       - '!packages/caci/caci-*.tgz'
       - '!packages/caci/node_modules/**'
       - '!packages/caci/dist/**'
@@ -14,7 +14,7 @@ on:
     branches: [main, master, develop]
     paths:
       - 'packages/caci/**'
-      - '.github/workflows/ci.yml'
+      - '.github/workflows/**'
       - '!packages/caci/caci-*.tgz'
       - '!packages/caci/node_modules/**'
       - '!packages/caci/dist/**'

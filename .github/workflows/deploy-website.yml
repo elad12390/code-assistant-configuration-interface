@@ -32,8 +32,25 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: packages/website/package-lock.json
+
+      - name: Cache website dependencies and build artifacts
+        uses: actions/cache@v4
+        id: cache-website
+        with:
+          path: |
+            packages/website/node_modules
+            packages/website/.next
+            ~/.npm
+            ~/.cache/npm
+            packages/website/node_modules/.cache
+            ~/.vercel
+          key: ${{ runner.os }}-website-${{ hashFiles('packages/website/package-lock.json') }}-${{ hashFiles('packages/website/**/*', '!packages/website/node_modules/**', '!packages/website/.next/**') }}
+          restore-keys: |
+            ${{ runner.os }}-website-${{ hashFiles('packages/website/package-lock.json') }}-
+            ${{ runner.os }}-website-
       
       - name: Install Dependencies
+        if: steps.cache-website.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: ./packages/website
       

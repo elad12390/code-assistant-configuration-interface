@@ -39,7 +39,26 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'caci/package-lock.json'
 
+      - name: Cache E2E testing artifacts
+        uses: actions/cache@v4
+        id: cache-e2e
+        with:
+          path: |
+            caci/node_modules
+            caci/dist
+            ~/.npm
+            ~/.cache/npm
+            caci/node_modules/.cache
+            ${{ runner.os == 'Windows' && '%APPDATA%/npm-cache' || '~/.cache/npm' }}
+            ${{ runner.os == 'macOS' && '~/Library/Caches/npm' || '' }}
+          key: ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('caci/package-lock.json') }}-${{ hashFiles('caci/src/**/*') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-${{ matrix.node-version }}-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-e2e-${{ matrix.node-version }}-
+            ${{ runner.os }}-e2e-
+
       - name: Install dependencies
+        if: steps.cache-e2e.outputs.cache-hit != 'true'
         working-directory: caci
         run: npm ci
 

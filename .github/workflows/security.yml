@@ -52,7 +52,24 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'caci/package-lock.json'
 
+      - name: Cache security scanning artifacts
+        uses: actions/cache@v4
+        id: cache-security
+        with:
+          path: |
+            caci/node_modules
+            ~/.npm
+            ~/.cache/npm
+            ~/.cache/snyk
+            ~/.trivy
+            ~/.semgrep
+          key: ${{ runner.os }}-security-${{ hashFiles('caci/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-security-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-security-
+
       - name: Install dependencies
+        if: steps.cache-security.outputs.cache-hit != 'true'
         working-directory: caci
         run: npm ci
 

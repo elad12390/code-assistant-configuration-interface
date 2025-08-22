@@ -72,7 +72,25 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'caci/package-lock.json'
 
+      - name: Cache benchmark dependencies
+        uses: actions/cache@v4
+        id: cache-benchmark
+        with:
+          path: |
+            caci/node_modules
+            caci/dist
+            ~/.npm
+            ~/.cache/npm
+            caci/node_modules/.cache
+            .github/benchmark-baseline.json
+            benchmark-results
+          key: ${{ runner.os }}-benchmark-${{ hashFiles('caci/package-lock.json') }}-${{ hashFiles('caci/src/**/*') }}
+          restore-keys: |
+            ${{ runner.os }}-benchmark-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-benchmark-
+
       - name: Install dependencies
+        if: steps.cache-benchmark.outputs.cache-hit != 'true'
         working-directory: caci
         run: npm ci
 

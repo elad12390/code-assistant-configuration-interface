@@ -29,15 +29,26 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'caci/package-lock.json'
 
-      - name: Cache node modules
+      - name: Cache dependencies and linting artifacts
         uses: actions/cache@v4
+        id: cache-lint
         with:
-          path: caci/node_modules
-          key: ${{ runner.os }}-node-20-${{ hashFiles('caci/package-lock.json') }}
+          path: |
+            caci/node_modules
+            caci/dist
+            ~/.npm
+            ~/.cache/npm
+            ~/.eslintcache
+            ~/.cache/prettier
+            caci/.eslintcache
+            caci/node_modules/.cache
+          key: ${{ runner.os }}-lint-${{ hashFiles('caci/package-lock.json') }}-${{ hashFiles('caci/src/**/*', 'caci/.eslintrc.js', 'caci/.prettierrc.js') }}
           restore-keys: |
-            ${{ runner.os }}-node-20-
+            ${{ runner.os }}-lint-${{ hashFiles('caci/package-lock.json') }}-
+            ${{ runner.os }}-lint-
 
       - name: Install dependencies
+        if: steps.cache-lint.outputs.cache-hit != 'true'
         working-directory: caci
         run: npm ci
 

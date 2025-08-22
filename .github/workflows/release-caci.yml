@@ -323,6 +323,7 @@ jobs:
             packages/caci/install-caci.sh
             packages/caci/install-caci.ps1
             packages/caci/CACI-*.dmg
+            packages/caci/caci.rb
           draft: false
           prerelease: false
 
@@ -333,6 +334,110 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Update Homebrew Formula
+        if: inputs.dry_run == false
+        run: |
+          echo "🍺 Updating Homebrew formula..."
+
+          NEW_VERSION="${{ steps.version_bump.outputs.new }}"
+          # Remove 'v' prefix if present
+          VERSION_NO_V=${NEW_VERSION#v}
+
+          # Get the .tgz file info for Homebrew
+          PKG_FILE=$(ls caci-*.tgz | head -1)
+          PKG_SIZE=$(stat -c%s "$PKG_FILE" 2>/dev/null || stat -f%z "$PKG_FILE" 2>/dev/null || echo "0")
+          PKG_SHA256=$(sha256sum "$PKG_FILE" 2>/dev/null | cut -d' ' -f1 || shasum -a 256 "$PKG_FILE" | cut -d' ' -f1)
+
+          echo "Package: $PKG_FILE"
+          echo "Size: $PKG_SIZE bytes"
+          echo "SHA256: $PKG_SHA256"
+
+          # Create Homebrew formula
+          cat > caci.rb << EOF
+          class Caci < Formula
+            desc "Code Assistant Configuration Interface - Intelligent Claude Code project configurator"
+            homepage "https://github.com/elad12390/claude-code-configurator"
+            url "https://registry.npmjs.org/caci/-/caci-${VERSION_NO_V}.tgz"
+            sha256 "${PKG_SHA256}"
+            license "MIT"
+            version "${VERSION_NO_V}"
+
+            depends_on "node"
+
+            def install
+              system "npm", "install", *Language::Node.std_npm_install_args(libexec)
+              bin.install_symlink Dir["#{libexec}/bin/*"]
+            end
+
+            test do
+              assert_match "#{version}", shell_output("#{bin}/caci --version")
+              # Test help command
+              assert_match "configure", shell_output("#{bin}/caci --help")
+            end
+          end
+          EOF
+
+          echo "✅ Homebrew formula created: caci.rb"
+          cat caci.rb
+
+          # Create tap repository structure (for potential tap release)
+          mkdir -p homebrew-tap/Formula
+          cp caci.rb homebrew-tap/Formula/
+
+          # Create tap README
+          cat > homebrew-tap/README.md << EOF
+          # CACI Homebrew Tap
+
+          This is the official Homebrew tap for CACI (Code Assistant Configuration Interface).
+
+          ## Installation
+
+          \`\`\`bash
+          # Add the tap
+          brew tap elad12390/caci
+
+          # Install CACI
+          brew install caci
+          \`\`\`
+
+          ## Usage
+
+          \`\`\`bash
+          # Configure Claude Code project
+          caci configure
+
+          # Get help
+          caci --help
+
+          # Check version
+          caci --version
+          \`\`\`
+
+          ## About CACI
+
+          CACI is an intelligent CLI tool that automates Claude Code project configuration by analyzing requirements and using AI to recommend relevant agents, commands, MCPs, and hooks from a large component pool.
+
+          ## Support
+
+          - [GitHub Repository](https://github.com/elad12390/claude-code-configurator)
+          - [Issues](https://github.com/elad12390/claude-code-configurator/issues)
+          EOF
+
+          echo "✅ Homebrew tap structure created"
+
+      - name: Create Homebrew PR (if enabled)
+        if: inputs.dry_run == false && env.HOMEBREW_GITHUB_TOKEN != ''
+        run: |
+          echo "🍺 Creating Homebrew Core PR..."
+
+          # This would require additional setup and is optional
+          # For now, we'll create the formula file for manual submission
+          echo "Homebrew formula ready for submission to homebrew-core"
+          echo "Formula file: caci.rb"
+          echo "Manual submission: https://github.com/Homebrew/homebrew-core/blob/HEAD/CONTRIBUTING.md"
+        env:
+          HOMEBREW_GITHUB_TOKEN: ${{ secrets.HOMEBREW_GITHUB_TOKEN }}
 
       - name: Summary
         run: |
@@ -357,10 +462,22 @@ jobs:
           if [ "${{ inputs.dry_run }}" = "false" ]; then
             echo "🎉 **Release ${{ steps.version_bump.outputs.new }} created successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Installation:**" >> $GITHUB_STEP_SUMMARY
+            echo "**Installation Options:**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **NPM:**" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY
             echo "npm install -g caci@${{ steps.version_bump.outputs.new }}" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🍺 **Homebrew (macOS/Linux):**" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "brew install caci  # (after formula submission)" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "💾 **Direct Download:**" >> $GITHUB_STEP_SUMMARY
+            echo "- 🍎 **macOS**: Download CACI-${{ steps.version_bump.outputs.new }}.dmg" >> $GITHUB_STEP_SUMMARY
+            echo "- 🐧 **Linux**: Download install-caci.sh" >> $GITHUB_STEP_SUMMARY
+            echo "- 🪟 **Windows**: Download install-caci.ps1" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Usage:**" >> $GITHUB_STEP_SUMMARY
             echo '```bash' >> $GITHUB_STEP_SUMMARY

@@ -54,7 +54,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: caci
-  DOCKERHUB_IMAGE_NAME: caci
+  DOCKERHUB_IMAGE_NAME: eladiut/caci
 
 jobs:
   prepare:
@@ -107,7 +107,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            ghcr.io/elad12390/caci
             ${{ env.DOCKERHUB_IMAGE_NAME }}
           tags: |
             type=ref,event=branch
@@ -116,8 +116,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' }}
-            type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_call' }}
+            type=raw,value=${{ github.event.inputs.version }},enable=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
+            type=raw,value=${{ inputs.version }},enable=${{ github.event_name == 'workflow_call' && inputs.version != '' }}
 
   test-build:
     name: CACI Test Docker Build
@@ -229,6 +229,9 @@ jobs:
     needs: [prepare, build-and-scan]
     if: needs.prepare.outputs.should_push == 'true'
     environment: docker-publishing
+    permissions:
+      contents: read
+      packages: write
 
     outputs:
       images_published: ${{ steps.publish_status.outputs.images_published }}
@@ -275,9 +278,10 @@ jobs:
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}
+          image: ghcr.io/elad12390/caci:latest
           format: spdx-json
           output-file: sbom.spdx.json
+        continue-on-error: true
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
@@ -290,7 +294,7 @@ jobs:
         id: publish_status
         run: |
           echo "images_published=true" >> $GITHUB_OUTPUT
-          echo "registry_urls=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}, ${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          echo "registry_urls=ghcr.io/elad12390/caci, ${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_OUTPUT
 
   test-published:
     name: CACI Test Published Images
@@ -315,7 +319,7 @@ jobs:
         id: image
         run: |
           if [[ "${{ matrix.registry }}" == "ghcr.io" ]]; then
-            echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_OUTPUT
+            echo "image=ghcr.io/elad12390/caci" >> $GITHUB_OUTPUT
           else
             echo "image=${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_OUTPUT
           fi
@@ -363,7 +367,7 @@ jobs:
 
           # Monitor the container
           VERSION=$(echo "${{ needs.prepare.outputs.tags }}" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1 || echo "latest")
-          snyk container monitor ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION} --project-name=caci-docker
+          snyk container monitor ghcr.io/elad12390/caci:${VERSION} --project-name=caci-docker
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         continue-on-error: true
@@ -386,7 +390,7 @@ jobs:
           # CACI Docker Runner
 
           VERSION="${VERSION:-latest}"
-          IMAGE="${IMAGE:-ghcr.io/caci:${VERSION}}"
+          IMAGE="${IMAGE:-eladiut/caci:${VERSION}}"
           WORKSPACE="${WORKSPACE:-$(pwd)}"
 
           echo "Running CACI from Docker..."
@@ -405,7 +409,7 @@ jobs:
           version: '3.8'
           services:
             caci:
-              image: ghcr.io/caci:latest
+              image: eladiut/caci:latest
               volumes:
                 - .:/workspace
               working_dir: /workspace
@@ -458,7 +462,7 @@ jobs:
               echo "🐳 **Published Images:**" >> $GITHUB_STEP_SUMMARY
               echo '```' >> $GITHUB_STEP_SUMMARY
               echo "GitHub Container Registry:" >> $GITHUB_STEP_SUMMARY
-              echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+              echo "ghcr.io/elad12390/caci" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "Docker Hub:" >> $GITHUB_STEP_SUMMARY
               echo "${{ env.DOCKERHUB_IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
@@ -469,7 +473,7 @@ jobs:
               echo "🚀 **Usage:**" >> $GITHUB_STEP_SUMMARY
               echo '```bash' >> $GITHUB_STEP_SUMMARY
               echo "# Run with Docker" >> $GITHUB_STEP_SUMMARY
-              echo "docker run --rm -v \$(pwd):/workspace -w /workspace ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --help" >> $GITHUB_STEP_SUMMARY
+              echo "docker run --rm -v \$(pwd):/workspace -w /workspace ghcr.io/elad12390/caci:latest --help" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "# Or from Docker Hub" >> $GITHUB_STEP_SUMMARY
               echo "docker run --rm -v \$(pwd):/workspace -w /workspace ${{ env.DOCKERHUB_IMAGE_NAME }}:latest --help" >> $GITHUB_STEP_SUMMARY

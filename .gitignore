@@ -46,3 +46,7 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+# Next.js build output
+.next/
+*.next/
+packages/*/.next/

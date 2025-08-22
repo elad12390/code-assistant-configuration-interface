@@ -5,6 +5,7 @@
  * Agent: analyst
  * Owner: analyst
  * Editors: pm, ux-expert
+ * Redesigned with Patio.so-inspired sliding cards
  */
 
 import React from 'react'
@@ -15,174 +16,129 @@ import {
   Clock, 
   FileCode, 
   Bug, 
-  BookOpen,
-  AlertCircle,
-  Settings 
+  Settings,
+  GitBranch,
+  Zap
 } from 'lucide-react'
 
 export const ProblemSection: React.FC = () => {
   const [ref, isInView] = useInView(0.2)
 
-  const problemPoints = [
+  const problems = [
     {
-      icon: <BookOpen className="w-5 h-5" />,
-      title: 'Sub-agents',
-      description: 'for specialized tasks'
+      title: 'Manual Configuration Hell',
+      description: 'Hours spent writing YAML configs, setting up agents, and debugging integrations',
+      icon: <FileCode className="w-8 h-8" />,
+      color: 'from-red-500 to-orange-500',
+      image: (
+        <div className="p-4 bg-gray-900 rounded-lg font-mono text-xs text-green-400">
+          <div className="opacity-60">sub_agents:</div>
+          <div className="ml-4">code_reviewer:</div>
+          <div className="ml-8 opacity-40">name: "Expert"</div>
+          <div className="ml-8 opacity-40">instructions: |</div>
+          <div className="text-red-400 mt-2">⚠️ Error: Invalid config</div>
+        </div>
+      )
     },
     {
-      icon: <Settings className="w-5 h-5" />,
-      title: 'Hooks',
-      description: 'for automated workflows'
+      title: 'Lost in Documentation',
+      description: 'Endless docs to understand agents, MCPs, hooks, and commands for Claude Code',
+      icon: <Clock className="w-8 h-8" />,
+      color: 'from-blue-500 to-cyan-500',
+      image: (
+        <div className="space-y-2">
+          <div className="h-2 bg-gray-300 rounded w-full animate-pulse" />
+          <div className="h-2 bg-gray-300 rounded w-4/5 animate-pulse delay-75" />
+          <div className="h-2 bg-gray-300 rounded w-3/4 animate-pulse delay-100" />
+          <div className="h-2 bg-gray-300 rounded w-5/6 animate-pulse delay-150" />
+          <div className="h-2 bg-gray-300 rounded w-2/3 animate-pulse delay-200" />
+        </div>
+      )
     },
     {
-      icon: <FileCode className="w-5 h-5" />,
-      title: 'MCP integrations',
-      description: 'for external tools'
-    },
-    {
-      icon: <AlertCircle className="w-5 h-5" />,
-      title: 'Custom commands',
-      description: 'for your specific needs'
-    }
-  ]
-
-  const painPoints = [
-    {
-      icon: <Clock className="w-6 h-6 text-orange-500" />,
-      text: 'Days spent reading documentation'
-    },
-    {
-      icon: <FileCode className="w-6 h-6 text-red-500" />,
-      text: 'Complex YAML configurations'
-    },
-    {
-      icon: <Bug className="w-6 h-6 text-purple-500" />,
-      text: 'Debugging integration issues'
+      title: 'Missing Best Practices',
+      description: 'No guidance on optimal setups for your specific project type and needs',
+      icon: <GitBranch className="w-8 h-8" />,
+      color: 'from-purple-500 to-pink-500',
+      image: (
+        <div className="flex flex-col items-center justify-center h-full">
+          <div className="text-6xl mb-2">🤷</div>
+          <div className="text-sm text-gray-500">Where do I start?</div>
+        </div>
+      )
     }
   ]
 
   return (
-    <section ref={ref} className="py-20 px-4 bg-gray-50 dark:bg-gray-900/50">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          {/* Left: Problem Description */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              The Problem Every Developer Faces
-            </h2>
-            
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-              You know Claude Code can transform your development workflow with:
-            </p>
+    <section ref={ref} className="py-20 px-4 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+            Stop the Configuration Struggle
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Every developer faces the same challenges when setting up Claude Code
+          </p>
+        </motion.div>
 
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              {problemPoints.map((point, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-start gap-3"
-                >
-                  <div className="mt-1 text-blue-600 dark:text-blue-400">
-                    {point.icon}
-                  </div>
-                  <div>
-                    <p className="font-semibold">{point.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {point.description}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <p className="text-lg text-gray-700 dark:text-gray-300 font-medium">
-              But between reading documentation, writing YAML configs, setting up 
-              file structures, and debugging integration issues...
-            </p>
-
-            <div className="mt-8 space-y-4">
-              {painPoints.map((pain, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={isInView ? { opacity: 1, x: 0 } : {}}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className="flex items-center gap-4"
-                >
-                  {pain.icon}
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {pain.text}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Right: Visual Representation */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6 }}
-            className="relative"
-          >
-            <Card className="p-6 bg-gray-900 text-green-400 font-mono text-sm overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-orange-500/10 group-hover:opacity-0 transition-opacity duration-500" />
-              
-              <div className="relative">
-                <div className="mb-4 text-gray-500">
-                  # claude-config.yaml
-                </div>
-                <pre className="text-xs leading-relaxed">
-{`sub_agents:
-  code_reviewer:
-    name: "Code Review Expert"
-    instructions: |
-      You are a senior developer...
-      Focus on code quality...
-      # 200+ lines of config...
-    
-hooks:
-  pre_commit:
-    - name: "Format Check"
-      command: |
-        # Complex bash scripts...
-        # More configuration...
-    
-mcp_servers:
-  database:
-    command: "node"
-    args: ["server.js"]
-    env:
-      # Environment setup...
-      # Integration configs...`}
-                </pre>
-                
-                <motion.div
-                  className="mt-4 text-center text-red-400"
-                  animate={isInView ? { opacity: [0.5, 1, 0.5] } : {}}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                >
-                  ⚠️ Error: Invalid configuration
-                </motion.div>
-              </div>
-            </Card>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={isInView ? { opacity: 1 } : {}}
-              transition={{ delay: 0.8 }}
-              className="text-center mt-6 text-gray-600 dark:text-gray-400 italic"
+        {/* Sliding Cards Container */}
+        <div className="space-y-8">
+          {problems.map((problem, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: index % 2 === 0 ? -100 : 100 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ 
+                duration: 0.8, 
+                delay: index * 0.2,
+                type: "spring",
+                stiffness: 100
+              }}
             >
-              You're looking at days of setup time—if you get it right the first time.
-            </motion.p>
-          </motion.div>
+              <Card className="p-8 hover-lift overflow-hidden group">
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  {/* Content Side */}
+                  <div className={index % 2 === 0 ? 'order-1' : 'order-2'}>
+                    <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${problem.color} text-white mb-4`}>
+                      {problem.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">{problem.title}</h3>
+                    <p className="text-lg text-muted-foreground">{problem.description}</p>
+                  </div>
+
+                  {/* Visual Side */}
+                  <div className={`${index % 2 === 0 ? 'order-2' : 'order-1'} relative h-48 rounded-lg bg-gray-50 dark:bg-gray-800 p-6 group-hover:scale-105 transition-transform duration-300`}>
+                    <div className="absolute inset-0 bg-gradient-to-br opacity-10 rounded-lg" 
+                         style={{ backgroundImage: `linear-gradient(135deg, var(--tw-gradient-stops))` }} />
+                    {problem.image}
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
         </div>
+
+        {/* Bottom CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className="text-center mt-16"
+        >
+          <p className="text-xl text-muted-foreground mb-2">
+            What if there was a better way?
+          </p>
+          <div className="flex items-center justify-center gap-2 text-primary">
+            <Zap className="w-5 h-5" />
+            <span className="font-semibold">There is.</span>
+          </div>
+        </motion.div>
       </div>
     </section>
   )

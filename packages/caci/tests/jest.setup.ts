@@ -1,5 +1,7 @@
 // Jest setup file for handling timeouts and cleanup
 
+/* eslint-disable jest/require-top-level-describe */
+
 // Global test setup to prevent hanging
 beforeEach(() => {
   // Clear all active timers before each test
@@ -11,6 +13,8 @@ afterEach(() => {
   jest.clearAllTimers();
   jest.restoreAllMocks();
 });
+
+/* eslint-enable jest/require-top-level-describe */
 
 // Set up proper test environment
 jest.setTimeout(30000);

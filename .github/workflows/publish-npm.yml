@@ -182,7 +182,7 @@ jobs:
         shell: bash
         run: |
           npm pack
-          npm install -g claude-code-caci-*.tgz
+          npm install -g code-assistant-config-interface-*.tgz
           caci --version
           caci --help
 
@@ -192,7 +192,7 @@ jobs:
           mkdir test-clean-install
           cd test-clean-install
           npm init -y
-          npm install ../claude-code-caci-*.tgz
+          npm install ../code-assistant-config-interface-*.tgz
           node -e "console.log('CLI installed successfully')"
 
   publish-npm:
@@ -302,7 +302,7 @@ jobs:
       - name: Create release package
         run: |
           npm pack
-          ls -la caci-*.tgz
+          ls -la code-assistant-config-interface-*.tgz
 
       - name: Generate release notes
         id: release_notes
@@ -362,7 +362,7 @@ jobs:
           draft: false
           prerelease: ${{ contains(needs.pre-publish-checks.outputs.version, '-') }}
           files: |
-            packages/caci/caci-${{ needs.pre-publish-checks.outputs.version }}.tgz
+            packages/caci/code-assistant-config-interface-${{ needs.pre-publish-checks.outputs.version }}.tgz
 
   post-publish:
     name: CACI Post-publish Tasks

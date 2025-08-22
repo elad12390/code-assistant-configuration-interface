@@ -98,7 +98,8 @@ export async function recommendComponents(
         typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
       recommendation = JSON.parse(content);
     } catch (error) {
-      const responseContent = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      const responseContent =
+        typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
       throw new Error(`AI returned invalid JSON: ${responseContent}`);
     }
 

@@ -89,56 +89,56 @@ jobs:
         run: |
           NEW_VERSION="${{ steps.version_bump.outputs.new }}"
           DATE=$(date +"%Y-%m-%d")
-          
+
           # Create changelog entry
           cat > changelog_entry.md << EOF
           ## [$NEW_VERSION] - $DATE
-          
+
           ### Added
           - New release $NEW_VERSION
-          
+
           ### Changed
           - Package version bumped from ${{ steps.current_version.outputs.current }} to $NEW_VERSION
-          
+
           ### Technical
           - All tests passing
           - Build artifacts updated
           - Dependencies up to date
           EOF
-          
+
           echo "Generated changelog entry for $NEW_VERSION"
 
       - name: Create release assets
         run: |
           echo "📦 Creating release assets..."
-          
+
           # Package the CLI
           npm pack
-          
+
           # Create installation scripts
           cat > install-caci.sh << 'EOF'
           #!/bin/bash
           # CACI Installation Script
-          
+
           set -e
-          
+
           echo "🚀 Installing CACI (Code Assistant Configuration Interface)..."
-          
+
           # Install via npm
           npm install -g caci
-          
+
           echo "✅ CACI installed successfully!"
           echo "💡 Usage: caci configure"
           echo "📖 Help:  caci --help"
           EOF
           chmod +x install-caci.sh
-          
+
           # Create PowerShell install script for Windows
           cat > install-caci.ps1 << 'EOF'
           # CACI Installation Script for Windows
-          
+
           Write-Host "🚀 Installing CACI (Code Assistant Configuration Interface)..." -ForegroundColor Green
-          
+
           try {
               npm install -g caci
               Write-Host "✅ CACI installed successfully!" -ForegroundColor Green
@@ -149,6 +149,126 @@ jobs:
               exit 1
           }
           EOF
+
+      - name: Create macOS DMG installer
+        if: inputs.dry_run == false
+        run: |
+          echo "🍎 Creating macOS DMG installer..."
+
+          # Create DMG structure
+          mkdir -p dmg-contents
+
+          # Copy the packaged CLI
+          PKG_FILE=$(ls caci-*.tgz | head -1)
+          cp "$PKG_FILE" dmg-contents/
+
+          # Create macOS installation script
+          cat > dmg-contents/install-caci-macos.sh << 'EOF'
+          #!/bin/bash
+          # CACI macOS Installer
+
+          set -e
+
+          echo "🍎 Installing CACI for macOS..."
+          echo "======================================"
+
+          # Check if Node.js is installed
+          if ! command -v node &> /dev/null; then
+              echo "❌ Node.js is required but not installed."
+              echo "📥 Please install Node.js first: https://nodejs.org/"
+              exit 1
+          fi
+
+          # Check if npm is available
+          if ! command -v npm &> /dev/null; then
+              echo "❌ npm is required but not installed."
+              echo "📥 Please install npm first."
+              exit 1
+          fi
+
+          echo "✅ Node.js $(node --version) detected"
+          echo "✅ npm $(npm --version) detected"
+          echo ""
+
+          echo "🚀 Installing CACI globally..."
+          npm install -g caci
+
+          echo ""
+          echo "✅ CACI installed successfully!"
+          echo "======================================"
+          echo "💡 Usage: caci configure"
+          echo "📖 Help:  caci --help"
+          echo "🔧 Version: caci --version"
+          echo ""
+          echo "🎉 Happy coding with CACI!"
+          EOF
+          chmod +x dmg-contents/install-caci-macos.sh
+
+          # Create README for DMG
+          cat > dmg-contents/README.txt << EOF
+          CACI - Code Assistant Configuration Interface
+          ============================================
+
+          Welcome to CACI v${{ steps.version_bump.outputs.new }}!
+
+          INSTALLATION OPTIONS:
+
+          Option 1 - Automatic Installation (Recommended):
+          • Double-click "install-caci-macos.sh"
+          • Follow the prompts
+
+          Option 2 - Manual Installation:
+          • Open Terminal
+          • Run: npm install -g caci
+
+          Option 3 - From Package:
+          • Extract the .tgz file
+          • Run: npm install -g ./caci-${{ steps.version_bump.outputs.new }}.tgz
+
+          USAGE:
+          • Configure Claude Code: caci configure
+          • Get help: caci --help
+          • Check version: caci --version
+
+          REQUIREMENTS:
+          • Node.js 18+ (https://nodejs.org/)
+          • npm (comes with Node.js)
+
+          SUPPORT:
+          • GitHub: https://github.com/elad12390/claude-code-configurator
+          • Issues: https://github.com/elad12390/claude-code-configurator/issues
+
+          Enjoy using CACI! 🚀
+          EOF
+
+          # Install create-dmg if not available (for local testing)
+          if ! command -v create-dmg &> /dev/null; then
+              echo "Installing create-dmg..."
+              npm install -g create-dmg || echo "create-dmg installation failed, using alternative method"
+          fi
+
+          # Create DMG using create-dmg (if available) or hdiutil
+          if command -v create-dmg &> /dev/null; then
+              echo "Using create-dmg to build installer..."
+              create-dmg \
+                --volname "CACI Installer" \
+                --volicon "dmg-contents/README.txt" \
+                --window-pos 200 120 \
+                --window-size 800 600 \
+                --icon-size 100 \
+                --app-drop-link 600 185 \
+                "CACI-${{ steps.version_bump.outputs.new }}.dmg" \
+                "dmg-contents/" || echo "create-dmg failed, using hdiutil"
+          fi
+
+          # Fallback: Create simple DMG with hdiutil (always available on macOS runners)
+          if [ ! -f "CACI-${{ steps.version_bump.outputs.new }}.dmg" ]; then
+              echo "Using hdiutil to create DMG..."
+              hdiutil create -volname "CACI Installer" -srcfolder dmg-contents -ov -format UDZO "CACI-${{ steps.version_bump.outputs.new }}.dmg"
+          fi
+
+          echo "✅ DMG created: CACI-${{ steps.version_bump.outputs.new }}.dmg"
+          ls -la CACI-*.dmg
 
       - name: Commit version bump
         if: inputs.dry_run == false
@@ -171,18 +291,18 @@ jobs:
           git tag -a "${{ steps.version_bump.outputs.new }}" -m "Release ${{ steps.version_bump.outputs.new }}
 
           🚀 CACI Package Release ${{ steps.version_bump.outputs.new }}
-          
+
           This release includes:
           - All core functionality tested and working
           - Multi-platform support (Linux, macOS, Windows)
           - Comprehensive CI/CD pipeline validation
           - Security scanning passed
           - Performance benchmarks completed
-          
+
           📦 Install: npm install -g caci
           🔧 Usage: caci configure
           📖 Docs: https://github.com/elad12390/claude-code-configurator
-          
+
           🤖 Generated with [Claude Code](https://claude.ai/code)"
 
       - name: Push changes and tags
@@ -202,6 +322,7 @@ jobs:
             packages/caci/caci-*.tgz
             packages/caci/install-caci.sh
             packages/caci/install-caci.ps1
+            packages/caci/CACI-*.dmg
           draft: false
           prerelease: false
 
@@ -224,7 +345,7 @@ jobs:
             echo "## 🚀 Release Summary" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Previous Version | ${{ steps.current_version.outputs.current }} |" >> $GITHUB_STEP_SUMMARY
@@ -232,7 +353,7 @@ jobs:
           echo "| Bump Type | ${{ inputs.version_bump }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Dry Run | ${{ inputs.dry_run }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ inputs.dry_run }}" = "false" ]; then
             echo "🎉 **Release ${{ steps.version_bump.outputs.new }} created successfully!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

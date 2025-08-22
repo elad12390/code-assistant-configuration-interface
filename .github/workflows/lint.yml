@@ -305,6 +305,7 @@ jobs:
     
     steps:
       - name: Summary
+        working-directory: .
         run: |
           echo "## Linting & Code Quality Summary" >> $GITHUB_STEP_SUMMARY
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY

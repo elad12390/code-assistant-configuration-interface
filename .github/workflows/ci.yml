@@ -78,7 +78,6 @@ jobs:
         working-directory: caci
         run: |
           npm config set script-shell "cmd"
-          npm config set cache-min 3600
 
       - name: Install dependencies
         if: steps.cache-all.outputs.cache-hit != 'true'

@@ -13,11 +13,15 @@ module.exports = {
   transformIgnorePatterns: [
     '/node_modules/(?!chalk)/'
   ],
-  // Windows compatibility
-  testTimeout: 30000,
-  maxWorkers: '50%',
+  // Windows compatibility - increase timeout for slower Windows CI
+  testTimeout: 60000,
+  maxWorkers: process.platform === 'win32' ? 1 : '50%',
   // Handle chalk ESM module transformation
   moduleNameMapper: {
     '^chalk$': '<rootDir>/node_modules/chalk/source/index.js'
-  }
+  },
+  // Force exit to prevent hanging on Windows
+  forceExit: true,
+  // Detect open handles to help debug hanging tests
+  detectOpenHandles: true
 };

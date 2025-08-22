@@ -1,6 +1,9 @@
 # Docker Usage Guide for CACI
 
-This comprehensive guide explains how to build, deploy, and use the CACI (Code Assistant Configuration Interface) CLI tool in Docker containers. CACI automates Claude Code project configuration by analyzing requirements and using AI to recommend relevant agents, commands, MCPs, and hooks.
+This comprehensive guide explains how to build, deploy, and use the CACI (Code
+Assistant Configuration Interface) CLI tool in Docker containers. CACI automates
+Claude Code project configuration by analyzing requirements and using AI to
+recommend relevant agents, commands, MCPs, and hooks.
 
 ## Prerequisites
 
@@ -102,26 +105,28 @@ docker run --rm \
 
 ### Environment Variables
 
-| Variable         | Required | Default     | Description                                                |
-| ---------------- | -------- | ----------- | ---------------------------------------------------------- |
-| `GOOGLE_API_KEY` | Yes*     | -           | Your Google API key for AI-powered recommendations        |
-| `NODE_ENV`       | No       | production  | Set to 'development' or 'production'                      |
-| `DEBUG`          | No       | -           | Enable debug logging (e.g., `caci:*`)                     |
-| `CACI_CACHE_DIR` | No       | /tmp/caci   | Directory for temporary files and cache                   |
-| `CACI_CONFIG_DIR`| No       | ./.claude   | Target directory for Claude Code configuration            |
+| Variable          | Required | Default    | Description                                        |
+| ----------------- | -------- | ---------- | -------------------------------------------------- |
+| `GOOGLE_API_KEY`  | Yes\*    | -          | Your Google API key for AI-powered recommendations |
+| `NODE_ENV`        | No       | production | Set to 'development' or 'production'               |
+| `DEBUG`           | No       | -          | Enable debug logging (e.g., `caci:*`)              |
+| `CACI_CACHE_DIR`  | No       | /tmp/caci  | Directory for temporary files and cache            |
+| `CACI_CONFIG_DIR` | No       | ./.claude  | Target directory for Claude Code configuration     |
 
-*Required for AI recommendations. Some commands (like `init`, `history`) work without it.
+\*Required for AI recommendations. Some commands (like `init`, `history`) work
+without it.
 
 ### Volume Mounts
 
-| Mount Point  | Purpose                          | Required | Notes                           |
-| ------------ | -------------------------------- | -------- | ------------------------------- |
-| `/workspace` | Your project directory           | Yes      | Should be writable by container |
-| `/tmp/caci`  | Cache and temporary files        | No       | Improves performance if mounted |
+| Mount Point  | Purpose                   | Required | Notes                           |
+| ------------ | ------------------------- | -------- | ------------------------------- |
+| `/workspace` | Your project directory    | Yes      | Should be writable by container |
+| `/tmp/caci`  | Cache and temporary files | No       | Improves performance if mounted |
 
 ### Multi-Platform Support
 
 CACE supports multiple architectures:
+
 - **linux/amd64**: Intel/AMD 64-bit (most common)
 - **linux/arm64**: ARM 64-bit (Apple Silicon, ARM servers)
 
@@ -129,7 +134,8 @@ Docker automatically pulls the correct image for your platform.
 
 ### Security Considerations
 
-- **Non-root execution**: Container runs as user `caci:nodejs` (UID: 1001, GID: 1001)
+- **Non-root execution**: Container runs as user `caci:nodejs` (UID: 1001,
+  GID: 1001)
 - **Minimal attack surface**: Based on Alpine Linux with only necessary packages
 - **No privileged access**: Runs without elevated permissions
 - **Read-only filesystem**: Only `/workspace` and `/tmp` are writable
@@ -262,13 +268,13 @@ for project in "${PROJECTS[@]}"; do
         echo "Warning: Directory $project does not exist, skipping..."
         continue
     fi
-    
+
     echo "🔧 Configuring $project..."
     docker run -it --rm \
         -v "$(pwd)/$project:/workspace" \
         -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
         "$IMAGE" configure
-    
+
     echo "✅ Completed $project"
     echo "---"
 done
@@ -445,15 +451,15 @@ The Docker image is optimized for:
 
 ### Image Details
 
-| Property           | Value                              |
-| ------------------ | ---------------------------------- |
-| Base Image         | `node:20-alpine`                   |
-| Final Size         | ~150MB (compressed: ~50MB)         |
-| User               | `caci:nodejs` (UID: 1001, GID: 1001) |
-| Working Directory  | `/workspace`                       |
-| Entry Point        | `caci`                             |
-| Supported Platforms| `linux/amd64`, `linux/arm64`       |
-| Health Check       | `caci --version` every 30s         |
+| Property            | Value                                |
+| ------------------- | ------------------------------------ |
+| Base Image          | `node:20-alpine`                     |
+| Final Size          | ~150MB (compressed: ~50MB)           |
+| User                | `caci:nodejs` (UID: 1001, GID: 1001) |
+| Working Directory   | `/workspace`                         |
+| Entry Point         | `caci`                               |
+| Supported Platforms | `linux/amd64`, `linux/arm64`         |
+| Health Check        | `caci --version` every 30s           |
 
 ### Performance Tips
 
@@ -516,7 +522,8 @@ CACE uses GitHub Actions for automated Docker image publishing:
 
 - **Multi-platform builds**: Automatic builds for AMD64 and ARM64
 - **Security scanning**: Vulnerability scans with Docker Scout and Snyk
-- **Multi-registry publishing**: Images published to both GitHub Container Registry and Docker Hub
+- **Multi-registry publishing**: Images published to both GitHub Container
+  Registry and Docker Hub
 - **Automated testing**: Container functionality tests across platforms
 - **Version tagging**: Semantic versioning with Git tags
 
@@ -528,10 +535,10 @@ CACE uses GitHub Actions for automated Docker image publishing:
 
 ### Image Registries
 
-| Registry | Image Name | Purpose |
-| -------- | ---------- | ------- |
+| Registry                  | Image Name               | Purpose                        |
+| ------------------------- | ------------------------ | ------------------------------ |
 | GitHub Container Registry | `ghcr.io/elad12390/caci` | Primary registry (recommended) |
-| Docker Hub | `elad12390/caci` | Alternative registry |
+| Docker Hub                | `elad12390/caci`         | Alternative registry           |
 
 ### Image Tags
 
@@ -558,18 +565,18 @@ jobs:
     permissions:
       contents: read
       packages: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Configure with CACI
         run: |
           docker run --rm \
             -v ${{ github.workspace }}:/workspace \
             -e GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }} \
             ghcr.io/elad12390/caci:latest configure
-      
+
       - name: Verify configuration
         run: |
           if [[ -d ".claude" ]]; then
@@ -579,7 +586,7 @@ jobs:
             echo "❌ CACI configuration failed"
             exit 1
           fi
-      
+
       - name: Commit configuration (if needed)
         if: github.event_name == 'push'
         run: |
@@ -598,7 +605,7 @@ stages:
   - validate
 
 variables:
-  DOCKER_IMAGE: "ghcr.io/elad12390/caci:latest"
+  DOCKER_IMAGE: 'ghcr.io/elad12390/caci:latest'
 
 configure:
   stage: configure
@@ -637,19 +644,19 @@ validate:
 ```groovy
 pipeline {
     agent any
-    
+
     environment {
         GOOGLE_API_KEY = credentials('google-api-key')
         CACI_IMAGE = 'ghcr.io/elad12390/caci:latest'
     }
-    
+
     stages {
         stage('Pull CACI Image') {
             steps {
                 sh 'docker pull ${CACI_IMAGE}'
             }
         }
-        
+
         stage('Configure Project') {
             steps {
                 sh '''
@@ -660,14 +667,14 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Archive Configuration') {
             steps {
                 archiveArtifacts artifacts: '.claude/**, .configurator/**', fingerprint: true
             }
         }
     }
-    
+
     post {
         always {
             sh 'docker system prune -f'
@@ -680,7 +687,7 @@ pipeline {
 
 ```yaml
 trigger:
-- main
+  - main
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -689,24 +696,24 @@ variables:
   CACI_IMAGE: 'ghcr.io/elad12390/caci:latest'
 
 steps:
-- task: Docker@2
-  displayName: 'Pull CACI Image'
-  inputs:
-    command: 'pull'
-    arguments: '$(CACI_IMAGE)'
+  - task: Docker@2
+    displayName: 'Pull CACI Image'
+    inputs:
+      command: 'pull'
+      arguments: '$(CACI_IMAGE)'
 
-- script: |
-    docker run --rm \
-      -v $(Build.SourcesDirectory):/workspace \
-      -e GOOGLE_API_KEY="$(GOOGLE_API_KEY)" \
-      $(CACI_IMAGE) configure
-  displayName: 'Configure with CACI'
+  - script: |
+      docker run --rm \
+        -v $(Build.SourcesDirectory):/workspace \
+        -e GOOGLE_API_KEY="$(GOOGLE_API_KEY)" \
+        $(CACI_IMAGE) configure
+    displayName: 'Configure with CACI'
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Configuration'
-  inputs:
-    pathToPublish: '$(Build.SourcesDirectory)/.claude'
-    artifactName: 'claude-config'
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Configuration'
+    inputs:
+      pathToPublish: '$(Build.SourcesDirectory)/.claude'
+      artifactName: 'claude-config'
 ```
 
 ## Advanced Usage
@@ -762,26 +769,26 @@ spec:
   template:
     spec:
       containers:
-      - name: caci
-        image: ghcr.io/elad12390/caci:latest
-        command: ["caci", "configure"]
-        env:
-        - name: GOOGLE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: google-api-key
-              key: key
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
-        securityContext:
-          runAsUser: 1001
-          runAsGroup: 1001
-          allowPrivilegeEscalation: false
+        - name: caci
+          image: ghcr.io/elad12390/caci:latest
+          command: ['caci', 'configure']
+          env:
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: google-api-key
+                  key: key
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+          securityContext:
+            runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
       volumes:
-      - name: workspace
-        persistentVolumeClaim:
-          claimName: project-workspace
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: project-workspace
       restartPolicy: Never
   backoffLimit: 3
 ```
@@ -800,19 +807,22 @@ For issues related to the Docker setup:
 
 ### Common Error Solutions
 
-| Error | Solution |
-| ----- | -------- |
-| "Permission denied" | Check file permissions or use `--user` flag |
-| "API key invalid" | Verify `GOOGLE_API_KEY` is correctly set |
-| "No such file or directory" | Ensure volume mount path is correct |
-| "Container exits immediately" | Check entry point and command syntax |
-| "Network timeout" | Verify internet connectivity and proxy settings |
+| Error                         | Solution                                        |
+| ----------------------------- | ----------------------------------------------- |
+| "Permission denied"           | Check file permissions or use `--user` flag     |
+| "API key invalid"             | Verify `GOOGLE_API_KEY` is correctly set        |
+| "No such file or directory"   | Ensure volume mount path is correct             |
+| "Container exits immediately" | Check entry point and command syntax            |
+| "Network timeout"             | Verify internet connectivity and proxy settings |
 
 ### Community and Documentation
 
-- **GitHub Repository**: [https://github.com/elad12390/claude-code-configurator](https://github.com/elad12390/claude-code-configurator)
-- **Docker Hub**: [https://hub.docker.com/r/elad12390/caci](https://hub.docker.com/r/elad12390/caci)
-- **GitHub Container Registry**: [https://ghcr.io/elad12390/caci](https://ghcr.io/elad12390/caci)
+- **GitHub Repository**:
+  [https://github.com/elad12390/claude-code-configurator](https://github.com/elad12390/claude-code-configurator)
+- **Docker Hub**:
+  [https://hub.docker.com/r/elad12390/caci](https://hub.docker.com/r/elad12390/caci)
+- **GitHub Container Registry**:
+  [https://ghcr.io/elad12390/caci](https://ghcr.io/elad12390/caci)
 - **Issues and Bug Reports**: GitHub Issues
 - **CLI Documentation**: See main README.md file
 

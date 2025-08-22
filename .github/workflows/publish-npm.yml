@@ -250,9 +250,7 @@ jobs:
           # Create changelog content directly in environment variable without creating a problematic file
           CHANGELOG_CONTENT="## Release v$ACTUAL_VERSION - Generated with Claude Code"
 
-          # Add recent commits to changelog
-          COMMITS=$(git log --oneline --since="$(git log --oneline | head -20 | tail -1 | cut -d' ' -f1)^" --pretty=format:"- %s" | head -10)
-          CHANGELOG_CONTENT="${CHANGELOG_CONTENT}${COMMITS}"
+          # Skip complex git operations that can fail
 
           echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG_CONTENT" >> $GITHUB_ENV

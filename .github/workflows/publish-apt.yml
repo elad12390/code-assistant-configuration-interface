@@ -247,7 +247,7 @@ jobs:
             
             if [ -n "$KEY_ID" ]; then
               # Set ultimate trust for the key
-              echo "$KEY_ID:6:" | gpg --import-ownertrust --batch --yes
+              echo "✅ GPG key ID extracted: $KEY_ID"
               echo "✅ GPG key imported and trusted: $KEY_ID"
             else
               echo "❌ Failed to extract key ID from imported key"

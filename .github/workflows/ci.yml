@@ -373,7 +373,8 @@ jobs:
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             # Test packaged CLI on Windows
-            npm install -g ./caci-*.tgz
+            PKG_FILE=$(ls caci-*.tgz | head -1)
+            npm install -g "./$PKG_FILE"
             npx caci --help || echo "CLI help completed"
             npx caci --version || echo "CLI version completed"
           else

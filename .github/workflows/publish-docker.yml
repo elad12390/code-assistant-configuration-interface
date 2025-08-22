@@ -1,4 +1,4 @@
-name: CACI Docker Publishing
+name: CACI Package Docker Publishing
 
 on:
   push:

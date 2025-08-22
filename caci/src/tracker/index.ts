@@ -91,7 +91,6 @@ export async function listIterations(
 
   for (const entry of entries) {
     if (entry.isFile() && entry.name.endsWith('.json')) {
-      const iterationId = entry.name.replace('.json', '');
       const iterationFilePath = path.join(iterationsPath, entry.name);
 
       try {

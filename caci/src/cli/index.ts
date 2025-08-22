@@ -23,7 +23,7 @@ program
   .description('Run full configuration workflow with AI recommendations')
   .action(async () => {
     const options = program.opts();
-    const projectDir = path.resolve(options.projectDir);
+    const projectDir = path.resolve(options.projectDir as string);
     await runConfigurationCommand(projectDir);
   });
 
@@ -32,7 +32,7 @@ program
   .description('Initialize CACI configuration for your project')
   .action(async () => {
     const options = program.opts();
-    const projectDir = path.resolve(options.projectDir);
+    const projectDir = path.resolve(options.projectDir as string);
     await runConfigurationCommand(projectDir);
   });
 
@@ -41,7 +41,7 @@ program
   .description('Update existing CACI configuration')
   .action(async () => {
     const options = program.opts();
-    const projectDir = path.resolve(options.projectDir);
+    const projectDir = path.resolve(options.projectDir as string);
     await runConfigurationCommand(projectDir);
   });
 
@@ -50,7 +50,7 @@ program
   .description('Reset to previous configuration from backup')
   .action(async () => {
     const options = program.opts();
-    const projectDir = path.resolve(options.projectDir);
+    const projectDir = path.resolve(options.projectDir as string);
     await resetConfiguration(projectDir);
   });
 
@@ -59,7 +59,7 @@ program
   .description('View configuration iteration history')
   .action(async () => {
     const options = program.opts();
-    const projectDir = path.resolve(options.projectDir);
+    const projectDir = path.resolve(options.projectDir as string);
     await viewHistory(projectDir);
   });
 
@@ -82,7 +82,7 @@ async function runConfigurationCommand(projectDir: string) {
     console.log('   - Make sure components.json exists in your project directory');
     console.log('   - Ensure GOOGLE_API_KEY environment variable is set for AI recommendations');
     console.log('   - Check that you have write permissions in the project directory');
-    process.exit(1);
+    throw new Error('Configuration failed');
   }
 }
 
@@ -114,12 +114,12 @@ async function resetConfiguration(projectDir: string) {
       },
     ]);
 
-    await restoreBackup(projectDir, selectedBackup);
+    await restoreBackup(projectDir, selectedBackup as string);
     console.log('\n✅ Configuration restored successfully!');
   } catch (error) {
     console.error('\n❌ Reset failed!');
     console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    throw error;
   }
 }
 
@@ -146,7 +146,7 @@ async function viewHistory(projectDir: string) {
   } catch (error) {
     console.error('\n❌ Failed to view history!');
     console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    throw error;
   }
 }
 

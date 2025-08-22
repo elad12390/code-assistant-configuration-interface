@@ -2,7 +2,6 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { ComponentsData, UserRequirements } from './index';
-import { Component } from './index';
 
 // Define the schema for AI response
 const RecommendationSchema = z.object({

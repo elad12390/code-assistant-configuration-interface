@@ -60,7 +60,7 @@ describe('Iteration Tracker', () => {
   it('should list saved iterations', async () => {
     // Initially, there should be no iterations
     const initialIterations = await listIterations(projectDir);
-    expect(initialIterations).toEqual([]);
+    expect(initialIterations).toStrictEqual([]);
 
     // Save an iteration
     const selectedComponents: SelectedComponents = {
@@ -107,8 +107,8 @@ describe('Iteration Tracker', () => {
     expect(details).toBeDefined();
     expect(details.id).toBe(iterationId);
     expect(details.timestamp).toBeDefined();
-    expect(details.selectedComponents).toEqual(selectedComponents);
-    expect(details.userRequirements).toEqual(userRequirements);
+    expect(details.selectedComponents).toStrictEqual(selectedComponents);
+    expect(details.userRequirements).toStrictEqual(userRequirements);
   });
 
   it.skip('should compare different iterations', async () => {
@@ -148,21 +148,21 @@ describe('Iteration Tracker', () => {
     const comparison = await compareIterations(projectDir, iterationId1, iterationId2);
 
     expect(comparison).toBeDefined();
-    expect(comparison.added).toEqual({
+    expect(comparison.added).toStrictEqual({
       agents: ['agent-3'],
       commands: [],
       hooks: ['hook-2'],
       mcps: [],
     });
 
-    expect(comparison.removed).toEqual({
+    expect(comparison.removed).toStrictEqual({
       agents: ['agent-2'],
       commands: [],
       hooks: [],
       mcps: [],
     });
 
-    expect(comparison.unchanged).toEqual({
+    expect(comparison.unchanged).toStrictEqual({
       agents: ['agent-1'],
       commands: ['command-1'],
       hooks: ['hook-1'],

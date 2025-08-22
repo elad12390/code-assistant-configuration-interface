@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import type { ComponentsData, Component } from './index';
 
 /**
@@ -34,16 +33,16 @@ export function parseComponentsFile(filePath: string): ComponentsData {
     // Convert array format to object format if needed
     const componentsData: ComponentsData = {
       agents: Array.isArray(rawComponentsData.agents)
-        ? arrayToObject(rawComponentsData.agents)
+        ? arrayToObject(rawComponentsData.agents as Component[])
         : rawComponentsData.agents || {},
       commands: Array.isArray(rawComponentsData.commands)
-        ? arrayToObject(rawComponentsData.commands)
+        ? arrayToObject(rawComponentsData.commands as Component[])
         : rawComponentsData.commands || {},
       hooks: Array.isArray(rawComponentsData.hooks)
-        ? arrayToObject(rawComponentsData.hooks)
+        ? arrayToObject(rawComponentsData.hooks as Component[])
         : rawComponentsData.hooks || {},
       mcps: Array.isArray(rawComponentsData.mcps)
-        ? arrayToObject(rawComponentsData.mcps)
+        ? arrayToObject(rawComponentsData.mcps as Component[])
         : rawComponentsData.mcps || {},
       settings: rawComponentsData.settings || {},
       templates: rawComponentsData.templates || {},

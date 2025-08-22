@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
-import { createWriteStream } from 'fs';
 
 export interface BackupInfo {
   timestamp: string;
@@ -107,7 +106,7 @@ export async function applyConfiguration(
       const agent = componentsData.agents[agentName];
       if (agent) {
         const agentFilePath = path.join(agentsPath, `${agentName}.md`);
-        await fsPromises.writeFile(agentFilePath, agent.content, 'utf8');
+        await fsPromises.writeFile(agentFilePath, agent.content as string, 'utf8');
       }
     }
   }
@@ -121,7 +120,7 @@ export async function applyConfiguration(
       const command = componentsData.commands[commandName];
       if (command) {
         const commandFilePath = path.join(commandsPath, `${commandName}.md`);
-        await fsPromises.writeFile(commandFilePath, command.content, 'utf8');
+        await fsPromises.writeFile(commandFilePath, command.content as string, 'utf8');
       }
     }
   }
@@ -135,7 +134,7 @@ export async function applyConfiguration(
       const hook = componentsData.hooks[hookName];
       if (hook) {
         const hookFilePath = path.join(hooksPath, `${hookName}.md`);
-        await fsPromises.writeFile(hookFilePath, hook.content, 'utf8');
+        await fsPromises.writeFile(hookFilePath, hook.content as string, 'utf8');
       }
     }
   }
@@ -149,7 +148,7 @@ export async function applyConfiguration(
       const mcp = componentsData.mcps[mcpName];
       if (mcp) {
         const mcpFilePath = path.join(mcpsPath, `${mcpName}.md`);
-        await fsPromises.writeFile(mcpFilePath, mcp.content, 'utf8');
+        await fsPromises.writeFile(mcpFilePath, mcp.content as string, 'utf8');
       }
     }
   }

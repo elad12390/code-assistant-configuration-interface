@@ -1,7 +1,5 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { parseComponentsFile, getComponent, getComponentsByType } from '../../src/analyzer/parser';
-import { ComponentsData } from '../../src/analyzer';
 
 describe('Component Parser', () => {
   const componentsFilePath = path.join(__dirname, '../../../components.json');
@@ -33,14 +31,14 @@ describe('Component Parser', () => {
 
     // Get the first agent as an example
     const agentNames = Object.keys(componentsData.agents);
-    if (agentNames.length > 0) {
-      const firstAgentName = agentNames[0];
-      const agent = getComponent(componentsData, firstAgentName, 'agent');
+    expect(agentNames.length).toBeGreaterThan(0);
 
-      expect(agent).toBeDefined();
-      expect(agent?.name).toBeDefined();
-      expect(agent?.type).toBe('agent');
-    }
+    const firstAgentName = agentNames[0];
+    const agent = getComponent(componentsData, firstAgentName, 'agent');
+
+    expect(agent).toBeDefined();
+    expect(agent?.name).toBeDefined();
+    expect(agent?.type).toBe('agent');
   });
 
   it('should return undefined for non-existent component', () => {
@@ -74,6 +72,6 @@ describe('Component Parser', () => {
     const componentsData = parseComponentsFile(componentsFilePath);
     const invalidTypeComponents = getComponentsByType(componentsData, 'invalid-type');
 
-    expect(invalidTypeComponents).toEqual([]);
+    expect(invalidTypeComponents).toStrictEqual([]);
   });
 });

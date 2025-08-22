@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { PROJECT_REQUIREMENTS_QUESTIONS, Question } from './questions';
+import { PROJECT_REQUIREMENTS_QUESTIONS } from './questions';
 
 export interface UserResponse {
   [key: string]: any;

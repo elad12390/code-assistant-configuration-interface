@@ -1,4 +1,4 @@
-name: "Scheduled Security Scan"
+name: "CACI Package Security Scan"
 
 # This workflow runs comprehensive security scans on a schedule
 # Daily security scanning is now handled by the main CI pipeline (ci.yml)

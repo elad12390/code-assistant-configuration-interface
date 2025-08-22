@@ -131,7 +131,7 @@ describe('Configuration Manager', () => {
   it('should list available backups', async () => {
     // Initially, there should be no backups
     const backups = await listBackups(projectDir);
-    expect(backups).toEqual([]);
+    expect(backups).toStrictEqual([]);
 
     // Create .claude folder with some content
     const claudePath = path.join(projectDir, '.claude');

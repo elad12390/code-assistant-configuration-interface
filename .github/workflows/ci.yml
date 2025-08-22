@@ -1,4 +1,4 @@
-name: "CI Pipeline"
+name: "CACI Package CI Pipeline"
 
 on:
   push:
@@ -6,11 +6,19 @@ on:
     paths:
       - 'caci/**'
       - '.github/workflows/ci.yml'
+      - '!caci/caci-*.tgz'
+      - '!caci/node_modules/**'
+      - '!caci/dist/**'
+      - '!caci/coverage/**'
   pull_request:
     branches: [main, master, develop]
     paths:
       - 'caci/**'
       - '.github/workflows/ci.yml'
+      - '!caci/caci-*.tgz'
+      - '!caci/node_modules/**'
+      - '!caci/dist/**'
+      - '!caci/coverage/**'
   workflow_dispatch:
 
 concurrency:

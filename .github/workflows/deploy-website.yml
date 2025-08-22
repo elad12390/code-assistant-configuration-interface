@@ -1,4 +1,4 @@
-name: Deploy Website to Vercel
+name: Website CI/CD Pipeline
 
 on:
   push:
@@ -6,10 +6,17 @@ on:
     paths:
       - 'packages/website/**'
       - '.github/workflows/deploy-website.yml'
+      - '!packages/website/node_modules/**'
+      - '!packages/website/.next/**'
+      - '!packages/website/coverage/**'
   pull_request:
     branches: [main, master]
     paths:
       - 'packages/website/**'
+      - '.github/workflows/deploy-website.yml'
+      - '!packages/website/node_modules/**'
+      - '!packages/website/.next/**'
+      - '!packages/website/coverage/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

@@ -1,4 +1,4 @@
-name: CACI NPM Publishing
+name: CACI Package NPM Publishing
 
 on:
   push:

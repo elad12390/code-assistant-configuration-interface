@@ -1,4 +1,4 @@
-name: "Scheduled E2E Tests"
+name: "CACI Package E2E Tests"
 
 # This workflow runs comprehensive E2E tests on a schedule
 # Basic E2E testing is now handled by the main CI pipeline (ci.yml)

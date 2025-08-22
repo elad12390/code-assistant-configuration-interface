@@ -464,7 +464,7 @@ jobs:
           # Determine overall release success
           OVERALL_SUCCESS="true"
           CORE_FAILED="false"
-          
+
           # Check core components (NPM and Docker are essential)
           if [ "${{ needs.prepare-release.result }}" != "success" ]; then
             OVERALL_SUCCESS="false"
@@ -477,7 +477,7 @@ jobs:
             OVERALL_SUCCESS="false"
             CORE_FAILED="true"
           fi
-          
+
           # Generate summary header based on success/failure
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             echo "## 🔍 Multi-Platform Release DRY RUN SUMMARY" >> $GITHUB_STEP_SUMMARY

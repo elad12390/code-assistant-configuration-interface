@@ -94,18 +94,18 @@ jobs:
 
           # Get the tarball URL from GitHub releases
           TARBALL_URL="https://github.com/elad12390/claude-code-configurator/archive/refs/tags/${VERSION}.tar.gz"
-          
+
           # Download the tarball to calculate SHA256
           echo "📥 Downloading tarball to calculate SHA256..."
           curl -L -o "caci-${CLEAN_VERSION}.tar.gz" "$TARBALL_URL"
-          
+
           # Calculate SHA256
           TARBALL_SHA256=$(shasum -a 256 "caci-${CLEAN_VERSION}.tar.gz" | cut -d' ' -f1)
-          
+
           echo "✅ GitHub release information:"
           echo "  URL: $TARBALL_URL"
           echo "  SHA256: $TARBALL_SHA256"
-          
+
           # Save for later steps
           echo "TARBALL_URL=$TARBALL_URL" >> $GITHUB_ENV
           echo "TARBALL_SHA256=$TARBALL_SHA256" >> $GITHUB_ENV

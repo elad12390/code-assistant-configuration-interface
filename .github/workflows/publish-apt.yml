@@ -96,37 +96,37 @@ jobs:
             touch "caci_${DEB_VERSION}_all.deb"
             exit 0
           fi
-          
+
           echo "📦 DEB package not found in artifacts, creating it..."
-          
+
           # Install DEB packaging tools
           sudo apt-get update
           sudo apt-get install -y dpkg-dev build-essential fakeroot
-          
+
           # Install dependencies and build
           npm install
           npm run build
-          
+
           VERSION="${{ inputs.version }}"
           DEB_VERSION=${VERSION#v}
-          
+
           # Handle master branch with proper versioning
           if [ "$VERSION" = "master" ]; then
             PACKAGE_VERSION=$(node -p "require('./package.json').version")
             DEB_VERSION="${PACKAGE_VERSION}-$(date +%Y%m%d)-$(git rev-parse --short HEAD)"
             echo "📦 Using development version: $DEB_VERSION"
           fi
-          
+
           echo "📦 Creating DEB package for CACI v$DEB_VERSION..."
-          
+
           # Create package directory structure
           mkdir -p caci_${DEB_VERSION}_all/DEBIAN
           mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci
           mkdir -p caci_${DEB_VERSION}_all/usr/local/bin
-          
+
           # Copy application files
           cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-          
+
           # Copy node_modules (check local first, then root)
           if [ -d "node_modules" ]; then
             echo "📂 Copying local node_modules directory..."
@@ -140,12 +140,12 @@ jobs:
             ls -la
             exit 1
           fi
-          
+
           cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
           cp bin/caci caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/
           chmod +x caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/bin/caci
-          
+
           # Create control file
           cat > caci_${DEB_VERSION}_all/DEBIAN/control << EOF
           Package: caci
@@ -165,25 +165,25 @@ jobs:
            project setup and configuration management.
           Homepage: https://github.com/elad12390/claude-code-configurator
           EOF
-          
+
           # Create postinst script to create symlink
           cat > caci_${DEB_VERSION}_all/DEBIAN/postinst << 'EOF'
           #!/bin/bash
           set -e
-          
+
           # Create symlink
           ln -sf /usr/local/lib/nodejs/caci/bin/caci /usr/local/bin/caci
-          
+
           # Ensure correct permissions
           chmod +x /usr/local/lib/nodejs/caci/bin/caci
           chmod +x /usr/local/bin/caci
-          
+
           echo "CACI installed successfully!"
           echo "Usage: caci configure"
           echo "Help:  caci --help"
           EOF
           chmod 755 caci_${DEB_VERSION}_all/DEBIAN/postinst
-          
+
           # Create prerm script to remove symlink
           cat > caci_${DEB_VERSION}_all/DEBIAN/prerm << 'EOF'
           #!/bin/bash
@@ -191,10 +191,10 @@ jobs:
           rm -f /usr/local/bin/caci
           EOF
           chmod 755 caci_${DEB_VERSION}_all/DEBIAN/prerm
-          
+
           # Build the package
           dpkg-deb --build caci_${DEB_VERSION}_all
-          
+
           echo "✅ DEB package created: caci_${DEB_VERSION}_all.deb"
           ls -la caci_*.deb
 
@@ -206,12 +206,12 @@ jobs:
       - name: Setup GPG for package signing
         run: |
           echo "🔑 Setting up GPG for package signing..."
-          
+
           # Setup GPG home directory with proper permissions
           export GNUPGHOME="$HOME/.gnupg"
           mkdir -p "$GNUPGHOME"
           chmod 700 "$GNUPGHOME"
-          
+
           # Configure GPG for non-interactive use
           echo "use-agent" > "$GNUPGHOME/gpg.conf"
           echo "pinentry-mode loopback" >> "$GNUPGHOME/gpg.conf"
@@ -298,7 +298,7 @@ jobs:
             echo "❌ No GPG secret keys found"
             exit 1
           fi
-          
+
           # Store the signing key ID for later use
           if [ -n "$KEY_ID" ]; then
             echo "GPG_KEY_ID=$KEY_ID" >> $GITHUB_ENV
@@ -307,7 +307,7 @@ jobs:
             echo "❌ No GPG key ID available"
             exit 1
           fi
-          
+
           # Test GPG signing capability
           echo "🧪 Testing GPG signing capability..."
           echo "test" | gpg --batch --yes --armor --detach-sign --default-key "$KEY_ID" > /tmp/test.sig
@@ -324,7 +324,7 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           DEB_VERSION=${VERSION#v}
-          
+
           # Handle master branch with proper versioning
           if [ "$VERSION" = "master" ]; then
             PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -354,7 +354,7 @@ jobs:
             ls -la
             exit 1
           fi
-          
+
           echo "📦 Found DEB package: $DEB_FILE"
           cp "$DEB_FILE" apt-repo/pool/main/c/caci/
 
@@ -418,17 +418,17 @@ jobs:
           cd apt-repo
 
           echo "🔏 Signing APT repository..."
-          
+
           # Verify GPG environment is still available
           export GNUPGHOME="$HOME/.gnupg"
-          
+
           if [ -z "$GPG_KEY_ID" ]; then
             echo "❌ No GPG key ID found in environment"
             echo "🔍 Checking available GPG keys:"
             gpg --list-secret-keys --keyid-format LONG
             exit 1
           fi
-          
+
           echo "🔑 Using GPG key: $GPG_KEY_ID"
 
           # Verify the key exists and is usable
@@ -447,7 +447,7 @@ jobs:
             echo "❌ Failed to create Release.gpg"
             exit 1
           fi
-          
+
           # Create clearsigned InRelease file
           echo "🔏 Creating clearsigned InRelease file..."
           if gpg --batch --yes --clearsign --pinentry-mode loopback --default-key "$GPG_KEY_ID" -o dists/stable/InRelease dists/stable/Release; then
@@ -458,7 +458,7 @@ jobs:
           fi
 
           echo "✅ Repository signed successfully"
-          
+
           # Verify signatures
           echo "🔍 Verifying signatures..."
           if gpg --verify dists/stable/Release.gpg dists/stable/Release; then
@@ -467,7 +467,7 @@ jobs:
             echo "❌ Release.gpg signature verification failed"
             exit 1
           fi
-          
+
           if gpg --verify dists/stable/InRelease; then
             echo "✅ InRelease signature verified"
           else
@@ -484,13 +484,13 @@ jobs:
             echo "❌ Failed to export public key"
             exit 1
           fi
-          
+
           # Verify exported key is not empty
           if [ ! -s "../caci-archive-keyring.gpg" ]; then
             echo "❌ Exported public key file is empty"
             exit 1
           fi
-          
+
           echo "📋 Repository signing completed successfully!"
 
       - name: Create installation assets
@@ -734,7 +734,7 @@ jobs:
         run: |
           VERSION="${{ inputs.version }}"
           DEB_VERSION=${VERSION#v}
-          
+
           # Handle master branch with proper versioning
           if [ "$VERSION" = "master" ]; then
             PACKAGE_VERSION=$(node -p "require('./package.json').version")

@@ -246,14 +246,14 @@ jobs:
         run: |
           # Generate simple changelog content without creating a file that might interfere with prettier checks
           echo "Generating changelog content for version $ACTUAL_VERSION"
-          
+
           # Create changelog content directly in environment variable without creating a problematic file
           CHANGELOG_CONTENT="## Release v$ACTUAL_VERSION - Generated with Claude Code"
-          
+
           # Add recent commits to changelog
           COMMITS=$(git log --oneline --since="$(git log --oneline | head -20 | tail -1 | cut -d' ' -f1)^" --pretty=format:"- %s" | head -10)
           CHANGELOG_CONTENT="${CHANGELOG_CONTENT}${COMMITS}"
-          
+
           echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG_CONTENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -263,7 +263,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "🚀 Publishing code-assistant-config-interface@$ACTUAL_VERSION with tag latest"
-          
+
           # Verify authentication and package info before publishing
           echo "📋 Pre-publish verification:"
           echo "- NPM User: $(npm whoami 2>/dev/null || echo 'Authentication failed')"
@@ -271,11 +271,11 @@ jobs:
           echo "- Package name: $(node -p 'require("./package.json").name')"
           echo "- Publish tag: latest"
           echo ""
-          
+
           # Attempt to publish with retry logic
           MAX_PUBLISH_ATTEMPTS=3
           ATTEMPT=1
-          
+
           while [ $ATTEMPT -le $MAX_PUBLISH_ATTEMPTS ]; do
             echo "📤 Publish attempt $ATTEMPT/$MAX_PUBLISH_ATTEMPTS..."
             
@@ -302,11 +302,11 @@ jobs:
           # Get the actual version from package.json instead of relying on workflow input
           ACTUAL_VERSION=$(node -p "require('./package.json').version")
           echo "🔍 Verifying publication of version $ACTUAL_VERSION"
-          
+
           # Wait for NPM registry to propagate (with exponential backoff)
           MAX_ATTEMPTS=10
           ATTEMPT=1
-          
+
           while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
             echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Checking if version $ACTUAL_VERSION is available..."
             
@@ -332,17 +332,17 @@ jobs:
             sleep $WAIT_TIME
             ATTEMPT=$((ATTEMPT + 1))
           done
-          
+
           echo "❌ Publication verification failed after $MAX_ATTEMPTS attempts"
           echo "Expected version: $ACTUAL_VERSION"
           echo "Expected tag: latest"
-          
+
           # Show current NPM registry state for debugging
           echo ""
           echo "📊 Current NPM registry state:"
           npm view code-assistant-config-interface versions --json 2>/dev/null || echo "Package not found or error querying registry"
           npm view code-assistant-config-interface@latest version 2>/dev/null || echo "Latest tag not found"
-          
+
           exit 1
 
   create-github-release:

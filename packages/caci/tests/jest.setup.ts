@@ -1,17 +1,15 @@
 // Jest setup file for handling timeouts and cleanup
 
-describe('Jest Setup', () => {
-  // Global test setup to prevent hanging
-  beforeEach(() => {
-    // Clear all active timers before each test
-    jest.clearAllTimers();
-  });
+// Global test setup to prevent hanging
+beforeEach(() => {
+  // Clear all active timers before each test
+  jest.clearAllTimers();
+});
 
-  afterEach(() => {
-    // Clean up any remaining timers and handles
-    jest.clearAllTimers();
-    jest.restoreAllMocks();
-  });
+afterEach(() => {
+  // Clean up any remaining timers and handles
+  jest.clearAllTimers();
+  jest.restoreAllMocks();
 });
 
 // Set up proper test environment

@@ -63,7 +63,7 @@ jobs:
       version: ${{ steps.version_bump.outputs.new }}
       current_version: ${{ steps.current_version.outputs.current }}
       should_release: ${{ steps.version_bump.outputs.should_release }}
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -116,7 +116,7 @@ jobs:
       - name: Create release artifacts
         run: |
           echo "📦 Creating release artifacts..."
-          
+
           # Package the CLI
           npm pack
 
@@ -208,7 +208,7 @@ jobs:
     if: inputs.publish_npm && needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -251,7 +251,7 @@ jobs:
     if: inputs.publish_docker && needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -296,7 +296,7 @@ jobs:
     if: inputs.publish_deb && needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -332,19 +332,19 @@ jobs:
           VERSION="${{ needs.prepare-release.outputs.version }}"
           # Remove 'v' prefix if present
           DEB_VERSION=${VERSION#v}
-          
+
           echo "📦 Creating DEB package for version $DEB_VERSION..."
-          
+
           # Create package directory structure
           mkdir -p caci_${DEB_VERSION}_all/DEBIAN
           mkdir -p caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci
           mkdir -p caci_${DEB_VERSION}_all/usr/local/bin
-          
+
           # Copy application files
           cp -r dist/* caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           cp -r node_modules caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
           cp package.json caci_${DEB_VERSION}_all/usr/local/lib/nodejs/caci/
-          
+
           # Create control file
           cat > caci_${DEB_VERSION}_all/DEBIAN/control << EOF
           Package: caci
@@ -363,7 +363,7 @@ jobs:
            project setup and configuration management.
           Homepage: https://github.com/elad12390/claude-code-configurator
           EOF
-          
+
           # Create postinst script to create symlink
           cat > caci_${DEB_VERSION}_all/DEBIAN/postinst << 'EOF'
           #!/bin/bash
@@ -373,7 +373,7 @@ jobs:
           echo "Usage: caci configure"
           EOF
           chmod 755 caci_${DEB_VERSION}_all/DEBIAN/postinst
-          
+
           # Create prerm script to remove symlink
           cat > caci_${DEB_VERSION}_all/DEBIAN/prerm << 'EOF'
           #!/bin/bash
@@ -381,10 +381,10 @@ jobs:
           rm -f /usr/local/bin/caci
           EOF
           chmod 755 caci_${DEB_VERSION}_all/DEBIAN/prerm
-          
+
           # Build the package
           dpkg-deb --build caci_${DEB_VERSION}_all
-          
+
           echo "✅ DEB package created: caci_${DEB_VERSION}_all.deb"
           ls -la caci_*.deb
 
@@ -404,7 +404,7 @@ jobs:
     if: inputs.publish_homebrew && needs.prepare-release.outputs.should_release == 'true'
     runs-on: macos-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -420,17 +420,17 @@ jobs:
       - name: Create macOS DMG installer
         run: |
           cd packages/caci
-          
+
           echo "🍎 Creating macOS DMG installer..."
           VERSION="${{ needs.prepare-release.outputs.version }}"
-          
+
           # Create DMG structure
           mkdir -p dmg-contents
-          
+
           # Copy the packaged CLI
           PKG_FILE=$(ls caci-*.tgz | head -1)
           cp "$PKG_FILE" dmg-contents/
-          
+
           # Create macOS installation script
           cat > dmg-contents/install-caci-macos.sh << 'EOF'
           #!/bin/bash
@@ -438,20 +438,20 @@ jobs:
           set -e
           echo "🍎 Installing CACI for macOS..."
           echo "======================================"
-          
+
           # Check if Node.js is installed
           if ! command -v node &> /dev/null; then
               echo "❌ Node.js is required but not installed."
               echo "📥 Please install Node.js first: https://nodejs.org/"
               exit 1
           fi
-          
+
           # Check if npm is available
           if ! command -v npm &> /dev/null; then
               echo "❌ npm is required but not installed."
               exit 1
           fi
-          
+
           echo "✅ Node.js $(node --version) detected"
           echo "✅ npm $(npm --version) detected"
           echo ""
@@ -465,7 +465,7 @@ jobs:
           echo "🎉 Happy coding with CACI!"
           EOF
           chmod +x dmg-contents/install-caci-macos.sh
-          
+
           # Create DMG using hdiutil (always available on macOS runners)
           hdiutil create -volname "CACI Installer" -srcfolder dmg-contents -ov -format UDZO "CACI-${VERSION}.dmg"
           echo "✅ DMG created: CACI-${VERSION}.dmg"
@@ -473,23 +473,23 @@ jobs:
       - name: Update Homebrew Formula
         run: |
           cd packages/caci
-          
+
           echo "🍺 Creating Homebrew formula..."
           VERSION="${{ needs.prepare-release.outputs.version }}"
           # Remove 'v' prefix if present
           VERSION_NO_V=${VERSION#v}
-          
+
           # Wait for NPM to propagate (needed for Homebrew to fetch)
           echo "⏳ Waiting for NPM propagation..."
           sleep 60
-          
+
           # Get the .tgz file info for Homebrew
           PKG_FILE=$(ls caci-*.tgz | head -1)
           PKG_SHA256=$(shasum -a 256 "$PKG_FILE" | cut -d' ' -f1)
-          
+
           echo "Package: $PKG_FILE"
           echo "SHA256: $PKG_SHA256"
-          
+
           # Create Homebrew formula
           cat > caci.rb << EOF
           class Caci < Formula
@@ -514,7 +514,7 @@ jobs:
             end
           end
           EOF
-          
+
           echo "✅ Homebrew formula created: caci.rb"
 
       - name: Upload Homebrew artifacts
@@ -531,11 +531,18 @@ jobs:
   # ============================================================================
   create-github-release:
     name: 'Create GitHub Release'
-    needs: [prepare-release, publish-npm, publish-docker, publish-deb, publish-homebrew]
+    needs:
+      [
+        prepare-release,
+        publish-npm,
+        publish-docker,
+        publish-deb,
+        publish-homebrew,
+      ]
     if: always() && needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -551,75 +558,75 @@ jobs:
         run: |
           VERSION="${{ needs.prepare-release.outputs.version }}"
           DATE=$(date +"%Y-%m-%d")
-          
+
           cat > changelog_entry.md << EOF
           ## 🚀 CACI ${VERSION} - Multi-Platform Release
-          
+
           **Release Date:** ${DATE}
-          
+
           ### 📦 Installation Options
-          
+
           #### NPM (Recommended)
           \`\`\`bash
           npm install -g caci@${VERSION}
           \`\`\`
-          
+
           #### Docker
           \`\`\`bash
           docker run --rm caci:${VERSION} --help
           \`\`\`
-          
+
           #### Homebrew (macOS/Linux)
           \`\`\`bash
           brew install caci  # (after formula submission)
           \`\`\`
-          
+
           #### Debian/Ubuntu
           \`\`\`bash
           # Download caci_${VERSION#v}_all.deb from this release
           sudo dpkg -i caci_${VERSION#v}_all.deb
           \`\`\`
-          
+
           #### Direct Download
           - **🍎 macOS**: Download CACI-${VERSION}.dmg
           - **🐧 Linux**: Download install-caci.sh
           - **🪟 Windows**: Download install-caci.ps1
-          
+
           ### ✨ What's New in ${VERSION}
-          
+
           - 🔧 Complete CLI tool for Claude Code configuration
           - 🤖 AI-powered component recommendations  
           - 📦 Multi-platform support (npm, Docker, DEB, Homebrew)
           - 🔒 Safe backup and restore functionality
           - 📊 Configuration history and iteration tracking
           - 🎯 Production-ready with comprehensive testing
-          
+
           ### 🚀 Quick Start
-          
+
           \`\`\`bash
           # Install CACI
           npm install -g caci
-          
+
           # Configure your Claude Code project
           caci configure
-          
+
           # View help
           caci --help
           \`\`\`
-          
+
           ### 🔧 Technical Details
-          
+
           - **Node.js**: 18+ required
           - **Platforms**: Linux, macOS, Windows
           - **Package formats**: NPM, Docker, DEB, Homebrew
           - **Size**: ~2MB (compressed)
-          
+
           ---
-          
+
           📖 **Documentation**: https://github.com/elad12390/claude-code-configurator  
           🐛 **Issues**: https://github.com/elad12390/claude-code-configurator/issues  
           💬 **Support**: GitHub Discussions
-          
+
           🤖 Generated with [Claude Code](https://claude.ai/code)
           EOF
 
@@ -644,10 +651,18 @@ jobs:
   # ============================================================================
   release-summary:
     name: 'Release Summary'
-    needs: [prepare-release, publish-npm, publish-docker, publish-deb, publish-homebrew, create-github-release]
+    needs:
+      [
+        prepare-release,
+        publish-npm,
+        publish-docker,
+        publish-deb,
+        publish-homebrew,
+        create-github-release,
+      ]
     if: always()
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Generate Release Summary
         run: |

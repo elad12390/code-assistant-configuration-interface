@@ -1,0 +1,27 @@
+name: Test NPM Minimal
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to package'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode'
+        required: false
+        default: false
+        type: boolean
+    secrets: inherit
+
+jobs:
+  test-npm:
+    name: Test NPM Job
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Test NPM step
+        run: |
+          echo "Version: ${{ inputs.version }}"
+          echo "Dry run: ${{ inputs.dry_run }}"
+          echo "This would be NPM publish logic"

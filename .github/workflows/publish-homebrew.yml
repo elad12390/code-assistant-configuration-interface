@@ -1,4 +1,5 @@
 name: 'Update Homebrew Formula'
+# Test workflow isolation - this change should NOT trigger CI
 
 on:
   workflow_call:

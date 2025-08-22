@@ -81,14 +81,21 @@ jobs:
         working-directory: caci
         run: npm ci
 
-      - name: Check Prettier formatting
+      - name: Check Prettier formatting (caci directory)
         working-directory: caci
         run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}" "*.{json,md,yml,yaml}"
+
+      - name: Check Prettier formatting (workspace root)
+        run: cd caci && npx prettier --check "../*.{json,md,yml,yaml}" "../.github/workflows/*.yml"
 
       - name: Show Prettier diff (if formatting issues found)
         if: failure()
         working-directory: caci
-        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}" "*.{json,md,yml,yaml}" --list-different
+        run: |
+          echo "=== Formatting issues in workspace root ==="
+          npx prettier --list-different "../*.{json,md,yml,yaml}" "../.github/workflows/*.yml" || true
+          echo "=== Formatting issues in caci directory ==="
+          npx prettier --list-different "src/**/*.{ts,tsx,js,jsx,json,md}" "*.{json,md,yml,yaml}" || true
 
   typescript:
     name: CACI TypeScript Type Checking

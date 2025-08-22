@@ -84,29 +84,31 @@ jobs:
           # List available packages
           ls -la code-assistant-config-interface-*.tgz
 
-      - name: Wait for NPM publication
+      - name: Get GitHub release URL and SHA256
         if: inputs.dry_run == false
         run: |
           VERSION="${{ inputs.version }}"
           CLEAN_VERSION=${VERSION#v}
 
-          echo "⏳ Waiting for NPM publication to propagate..."
-          echo "Checking for code-assistant-config-interface@$CLEAN_VERSION on NPM..."
+          echo "🔍 Getting GitHub release information for version $VERSION..."
 
-          # Wait up to 5 minutes for NPM to propagate
-          for i in {1..10}; do
-            if npm view code-assistant-config-interface@$CLEAN_VERSION version >/dev/null 2>&1; then
-              echo "✅ Package code-assistant-config-interface@$CLEAN_VERSION is available on NPM"
-              break
-            else
-              echo "⏳ Attempt $i/10: Package not yet available, waiting 30 seconds..."
-              sleep 30
-            fi
-            
-            if [ $i -eq 10 ]; then
-              echo "⚠️ Package not available on NPM yet, proceeding anyway..."
-            fi
-          done
+          # Get the tarball URL from GitHub releases
+          TARBALL_URL="https://github.com/elad12390/claude-code-configurator/archive/refs/tags/${VERSION}.tar.gz"
+          
+          # Download the tarball to calculate SHA256
+          echo "📥 Downloading tarball to calculate SHA256..."
+          curl -L -o "caci-${CLEAN_VERSION}.tar.gz" "$TARBALL_URL"
+          
+          # Calculate SHA256
+          TARBALL_SHA256=$(shasum -a 256 "caci-${CLEAN_VERSION}.tar.gz" | cut -d' ' -f1)
+          
+          echo "✅ GitHub release information:"
+          echo "  URL: $TARBALL_URL"
+          echo "  SHA256: $TARBALL_SHA256"
+          
+          # Save for later steps
+          echo "TARBALL_URL=$TARBALL_URL" >> $GITHUB_ENV
+          echo "TARBALL_SHA256=$TARBALL_SHA256" >> $GITHUB_ENV
 
       - name: Create macOS DMG installer
         id: create_dmg
@@ -124,11 +126,12 @@ jobs:
           # Create DMG structure
           mkdir -p dmg-contents
 
-          # Copy the packaged CLI
-          PKG_FILE=$(ls code-assistant-config-interface-*.tgz | head -1)
+          # Copy the packaged CLI if available, otherwise create it
+          PKG_FILE=$(ls code-assistant-config-interface-*.tgz 2>/dev/null | head -1)
           if [ ! -f "$PKG_FILE" ]; then
-            echo "❌ No package file found"
-            exit 1
+            echo "📦 Creating package file for DMG..."
+            npm pack
+            PKG_FILE=$(ls code-assistant-config-interface-*.tgz | head -1)
           fi
           cp "$PKG_FILE" dmg-contents/
 
@@ -168,8 +171,8 @@ jobs:
           echo ""
           echo "🚀 Installing CACI globally..."
 
-          # Install CACI
-          npm install -g caci
+          # Install CACI using the correct package name
+          npm install -g code-assistant-config-interface
 
           echo ""
           echo "✅ CACI installed successfully!"
@@ -179,10 +182,10 @@ jobs:
           echo "🔧 Version: caci --version"
           echo ""
           echo "🔄 To update CACI in the future:"
-          echo "   npm update -g caci"
+          echo "   npm update -g code-assistant-config-interface"
           echo ""
           echo "🗑️ To uninstall CACI:"
-          echo "   npm uninstall -g caci"
+          echo "   npm uninstall -g code-assistant-config-interface"
           echo ""
           echo "🎉 Happy coding with CACI!"
           EOF
@@ -207,7 +210,7 @@ jobs:
 
           Option 2 - Global NPM Installation:
           • Open Terminal
-          • Run: npm install -g caci
+          • Run: npm install -g code-assistant-config-interface
 
           Option 3 - From Local Package:
           • Extract the .tgz file included in this DMG
@@ -285,36 +288,33 @@ jobs:
 
           echo "🍺 Creating Homebrew formula for CACI v$CLEAN_VERSION..."
 
-          # Get the .tgz file info for Homebrew
-          PKG_FILE=$(ls code-assistant-config-interface-*.tgz | head -1)
-          if [ ! -f "$PKG_FILE" ]; then
-            echo "❌ No package file found for Homebrew formula"
-            exit 1
-          fi
+          echo "📋 GitHub release information:"
+          echo "  URL: $TARBALL_URL"
+          echo "  SHA256: $TARBALL_SHA256"
 
-          PKG_SHA256=$(shasum -a 256 "$PKG_FILE" | cut -d' ' -f1)
-          PKG_SIZE=$(stat -f%z "$PKG_FILE" 2>/dev/null || echo "unknown")
-
-          echo "📋 Package information:"
-          echo "  File: $PKG_FILE"
-          echo "  Size: $PKG_SIZE bytes"
-          echo "  SHA256: $PKG_SHA256"
-
-          # Create Homebrew formula
+          # Create Homebrew formula using GitHub source
           cat > caci.rb << EOF
           class Caci < Formula
             desc "Code Assistant Configuration Interface - Intelligent Claude Code project configurator"
             homepage "https://github.com/elad12390/claude-code-configurator"
-            url "https://registry.npmjs.org/code-assistant-config-interface/-/code-assistant-config-interface-${CLEAN_VERSION}.tgz"
-            sha256 "${PKG_SHA256}"
+            url "${TARBALL_URL}"
+            sha256 "${TARBALL_SHA256}"
             license "MIT"
             version "${CLEAN_VERSION}"
 
             depends_on "node"
 
             def install
-              system "npm", "install", *Language::Node.std_npm_install_args(libexec)
-              bin.install_symlink Dir["#{libexec}/bin/*"]
+              # Change to the packages/caci directory
+              cd "packages/caci" do
+                # Install dependencies and build
+                system "npm", "install"
+                system "npm", "run", "build"
+                
+                # Install using npm's standard installation
+                system "npm", "install", *Language::Node.std_npm_install_args(libexec)
+                bin.install_symlink Dir["#{libexec}/bin/*"]
+              end
             end
 
             test do

@@ -293,7 +293,7 @@ jobs:
 
   publish-homebrew:
     name: 'Homebrew Formula Update'
-    needs: [prepare-release, publish-npm]
+    needs: [prepare-release]
     if: inputs.publish_homebrew && needs.prepare-release.outputs.should_release == 'true'
     uses: ./.github/workflows/publish-homebrew.yml
     with:

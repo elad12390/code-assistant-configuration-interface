@@ -211,7 +211,9 @@ jobs:
 
           # Verify extracted files
           echo "📁 Extracted package contents:"
-          find test-extract/ -type f | head -20
+          FILE_COUNT=$(find test-extract/ -type f 2>/dev/null | wc -l)
+          echo "Total files extracted: $FILE_COUNT"
+          find test-extract/ -type f 2>/dev/null | head -10 || echo "File listing truncated due to size"
 
           # Verify the binary exists
           if [ -f "test-extract/usr/local/lib/nodejs/caci/bin/caci" ]; then

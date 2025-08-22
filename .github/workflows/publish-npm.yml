@@ -248,17 +248,7 @@ jobs:
           echo "Generating changelog content for version $ACTUAL_VERSION"
           
           # Create changelog content directly in environment variable without creating a problematic file
-          CHANGELOG_CONTENT="## Release v$ACTUAL_VERSION
-
-This release includes various improvements and bug fixes. See the commit history for detailed changes.
-
-### Installation
-\`\`\`bash
-npm install -g code-assistant-config-interface@$ACTUAL_VERSION
-\`\`\`
-
-### Changes
-"
+          CHANGELOG_CONTENT="## Release v$ACTUAL_VERSION - Generated with Claude Code"
           
           # Add recent commits to changelog
           COMMITS=$(git log --oneline --since="$(git log --oneline | head -20 | tail -1 | cut -d' ' -f1)^" --pretty=format:"- %s" | head -10)

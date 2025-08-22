@@ -549,6 +549,10 @@ jobs:
     needs: [format-check, lint-check, type-check, license-check, build, unit-tests, integration-tests, security-scan, multi-platform-tests, performance-benchmarks, e2e-tests]
     if: always()
     
+    defaults:
+      run:
+        working-directory: .
+    
     steps:
       - name: Generate pipeline summary
         run: |

@@ -7,13 +7,13 @@ export const Footer: React.FC = () => {
 
   const quickLinks = [
     { name: 'Documentation', href: '/docs' },
-    { name: 'GitHub', href: 'https://github.com/your-repo/caci' },
+    { name: 'GitHub', href: 'https://github.com/elad12390/claude-code-configurator' },
     { name: 'npm Package', href: 'https://www.npmjs.com/package/caci' },
     { name: 'Changelog', href: '/changelog' }
   ]
 
   const socialLinks = [
-    { name: 'GitHub', icon: Github, href: 'https://github.com/your-repo/caci' },
+    { name: 'GitHub', icon: Github, href: 'https://github.com/elad12390/claude-code-configurator' },
     { name: 'Twitter', icon: Twitter, href: 'https://twitter.com/caci' },
     { name: 'Email', icon: Mail, href: 'mailto:hello@caci.dev' }
   ]

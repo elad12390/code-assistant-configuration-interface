@@ -27,8 +27,8 @@ export const Header: React.FC = () => {
   }, [])
 
   const creators = [
-    { name: 'Creator 1', github: 'https://github.com/creator1' },
-    { name: 'Creator 2', github: 'https://github.com/creator2' }
+    { name: 'Elad Harizy', github: 'https://github.com/elad12390' },
+    { name: 'Arik Liger', github: 'https://github.com/smartari1' }
   ]
 
   return (
@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link 
-              href="https://github.com/your-repo/caci" 
+              href="https://github.com/elad12390/claude-code-configurator" 
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <nav className="flex flex-col space-y-4 mt-8">
                 <Link 
-                  href="https://github.com/your-repo/caci" 
+                  href="https://github.com/elad12390/claude-code-configurator" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"

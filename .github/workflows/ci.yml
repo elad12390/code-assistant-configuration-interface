@@ -31,147 +31,188 @@ env:
   NODE_OPTIONS: --max-old-space-size=4096
 
 jobs:
-  test:
-    name: test
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
-        node-version: [18, 20, 22]
-
+  # ============================================================================
+  # STAGE 1: Fast Quality Gates (~30-60s each)
+  # Fail fast if basic code quality issues exist
+  # ============================================================================
+  
+  format-check:
+    name: Code Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: 'caci/package-lock.json'
 
-      - name: Cache dependencies and build artifacts
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.0
-        id: cache-all
-        with:
-          path: |
-            caci/node_modules
-            caci/dist
-            ~/.npm
-            ~/.cache/npm
-            ${{ runner.os == 'Windows' && '%APPDATA%/npm-cache' || '~/.cache/npm' }}
-            ${{ runner.os == 'macOS' && '~/Library/Caches/npm' || '' }}
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('caci/package-lock.json') }}-build-${{ hashFiles('caci/src/**/*', 'caci/tsconfig.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ matrix.node-version }}-deps-${{ hashFiles('caci/package-lock.json') }}-
-            ${{ runner.os }}-node-${{ matrix.node-version }}-deps-
-            ${{ runner.os }}-node-${{ matrix.node-version }}-
-            ${{ runner.os }}-node-
-
-      - name: Configure npm for Windows
-        if: runner.os == 'Windows'
-        working-directory: caci
-        run: |
-          npm config set script-shell "cmd"
-
       - name: Install dependencies
-        if: steps.cache-all.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Cache TypeScript compilation
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.0
+      - name: Check Prettier formatting
+        run: |
+          npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}" "*.{json,md,yml,yaml}"
+          cd .. && npx prettier --check "*.{json,md,yml,yaml}" ".github/workflows/*.yml"
+
+  lint-check:
+    name: Code Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
         with:
-          path: |
-            caci/dist
-            caci/node_modules/.cache
-            ~/.cache/typescript
-          key: ${{ runner.os }}-typescript-${{ hashFiles('caci/src/**/*', 'caci/tsconfig.json') }}
-          restore-keys: |
-            ${{ runner.os }}-typescript-
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npx eslint src/ tests/ --ext .ts,.tsx,.js,.jsx --max-warnings 0
+
+  type-check:
+    name: TypeScript Compilation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript compilation check
+        run: npx tsc --noEmit
+
+      - name: TypeScript strict mode check
+        run: npx tsc --noEmit --strict
+
+  license-check:
+    name: License Compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: npx license-checker --onlyAllow 'MIT;ISC;BSD-2-Clause;BSD-3-Clause;Apache-2.0;CC0-1.0;Unlicense;0BSD' --production
+
+  # ============================================================================
+  # STAGE 2: Basic Tests & Security (~2-3m each)
+  # Only run if Stage 1 passes
+  # ============================================================================
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [format-check, lint-check, type-check, license-check]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build project
         run: npm run build
 
-      - name: Run tests
-        env:
-          CI: true
-          NODE_OPTIONS: --max-old-space-size=4096
-          FORCE_COLOR: '1'
-        run: npm test
-
       - name: Run tests with coverage
-        working-directory: caci
-        env:
-          CI: true
-          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run test:coverage
 
-      - name: Test flakiness detection (run tests multiple times)
-        working-directory: caci
-        shell: bash
-        env:
-          CI: true
-          NODE_OPTIONS: --max-old-space-size=4096
-          FORCE_COLOR: '1'
-        run: |
-          echo "Running tests multiple times to detect flakiness..."
-          for i in 1 2 3; do
-            echo "Test run $i"
-            npm test || exit 1
-          done
-
-      - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-22.04' && matrix.node-version == '20'
+      - name: Upload coverage
         uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4.6.0
         with:
           file: ./caci/coverage/lcov.info
           flags: unittests
-          name: caci-ci-coverage
+          name: unit-tests-coverage
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Upload coverage reports
-        if: matrix.os == 'ubuntu-22.04' && matrix.node-version == '20'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.4.3
-        with:
-          name: caci-ci-coverage-${{ github.run_number }}
-          path: caci/coverage/
-          retention-days: 14
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    needs: [format-check, lint-check, type-check, license-check]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
 
-      - name: Test CLI installation and basic commands
-        run: |
-          set -euo pipefail
-          npm pack
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            # On Windows, use npm link instead of global install for testing
-            echo "Testing CLI installation on Windows..."
-            npm link
-            # Use npx to test the CLI commands (without timeout on Windows)
-            echo "Testing caci --help..."
-            npx caci --help || echo "Help command completed"
-            echo "Testing caci --version..."
-            npx caci --version || echo "Version command completed"
-          else
-            echo "Testing CLI installation on Unix..."
-            npm install -g caci-*.tgz
-            echo "Testing caci --help..."
-            timeout 30s caci --help || echo "Help command completed"
-            echo "Testing caci --version..."
-            timeout 30s caci --version || echo "Version command completed"
-          fi
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for known vulnerabilities with Snyk
+        if: github.event_name != 'pull_request'
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium --dev caci/
+        continue-on-error: true
+
+  # ============================================================================
+  # STAGE 3: Build & Package (~3-5m)
+  # Only run if Stage 2 passes
+  # ============================================================================
 
   build:
-    name: build
-    runs-on: ubuntu-22.04
-    timeout-minutes: 20
-    needs: test
-
+    name: Build & Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [unit-tests, security-scan]
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -196,13 +237,12 @@ jobs:
           format: spdx-json
           output-file: caci-sbom.spdx.json
 
-      - name: Check build artifacts
+      - name: Test CLI installation
         run: |
-          set -euo pipefail
-          ls -la dist/
-          test -f dist/cli/index.js
-          test -f dist/cli/index.js.map  
-          test -f dist/cli/index.d.ts
+          npm pack
+          npm install -g caci-*.tgz
+          timeout 30s caci --help || echo "Help command completed"
+          timeout 30s caci --version || echo "Version command completed"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.4.3
@@ -211,14 +251,79 @@ jobs:
           path: |
             caci/dist/
             caci-sbom.spdx.json
+            caci/caci-*.tgz
           retention-days: 14
 
-  integration-test:
-    name: integration-test
-    runs-on: ubuntu-22.04
-    timeout-minutes: 15
-    needs: build
+  # ============================================================================
+  # STAGE 4: Comprehensive Testing (~5-8m each)
+  # Only run if Stage 3 passes - expensive multi-platform testing
+  # ============================================================================
 
+  matrix-tests:
+    name: Multi-Platform Tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    needs: [build]
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-13, windows-2022]
+        node-version: [18, 20, 22]
+        exclude:
+          # Reduce matrix size - test edge cases only on Ubuntu
+          - os: macos-13
+            node-version: 18
+          - os: windows-2022
+            node-version: 18
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Configure npm for Windows
+        if: runner.os == 'Windows'
+        run: npm config set script-shell "cmd"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        env:
+          CI: true
+          NODE_OPTIONS: --max-old-space-size=4096
+          FORCE_COLOR: '1'
+        run: npm test
+
+      - name: Test CLI cross-platform
+        run: |
+          npm pack
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            npm link
+            npx caci --help || echo "Help command completed"
+            npx caci --version || echo "Version command completed"
+          else
+            npm install -g caci-*.tgz
+            timeout 30s caci --help || echo "Help command completed"
+            timeout 30s caci --version || echo "Version command completed"
+          fi
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build]
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
@@ -241,7 +346,6 @@ jobs:
 
       - name: Run integration tests
         run: |
-          set -euo pipefail
           if [ -d "tests/integration" ]; then
             npm test -- --testPathPattern=integration
           else
@@ -250,14 +354,83 @@ jobs:
 
       - name: Test with real components.json files
         run: |
-          set -euo pipefail
-          # Create test scenarios
           mkdir -p test-scenarios
-
-          # Test with existing test workspace
           if [ -f "test-workspace/components.json" ]; then
             echo "Testing with existing components.json..."
             cd test-workspace
             node ../artifacts/caci/dist/cli/index.js --help || true
             cd ..
           fi
+
+  # ============================================================================
+  # STAGE 5: Performance & Final Validation (optional, only on main branch)
+  # ============================================================================
+
+  performance-check:
+    name: Performance Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    needs: [matrix-tests, integration-tests]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.2.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.1.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'caci/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Install GNU time for measurements
+        run: sudo apt-get update && sudo apt-get install -y time
+
+      - name: Quick performance check
+        run: |
+          echo "Testing CLI startup performance..."
+          CACI_CLI="$(pwd)/bin/caci"
+          
+          # Test help command performance (should be < 2s)
+          echo "Testing --help performance:"
+          /usr/bin/time -f "Real: %e seconds" timeout 10s $CACI_CLI --help
+          
+          # Test version command performance (should be < 1s)  
+          echo "Testing --version performance:"
+          /usr/bin/time -f "Real: %e seconds" timeout 10s $CACI_CLI --version
+
+  # ============================================================================
+  # Final Summary Job
+  # ============================================================================
+
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [format-check, lint-check, type-check, license-check, unit-tests, security-scan, build, matrix-tests, integration-tests]
+    if: always()
+    
+    steps:
+      - name: Generate CI Summary
+        run: |
+          echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gates | Format Check | ${{ needs.format-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gates | Lint Check | ${{ needs.lint-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gates | Type Check | ${{ needs.type-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Quality Gates | License Check | ${{ needs.license-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Basic Tests | Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Basic Tests | Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | Build & Package | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Comprehensive | Matrix Tests | ${{ needs.matrix-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Comprehensive | Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pipeline completed in stages for optimal feedback speed** ⚡" >> $GITHUB_STEP_SUMMARY

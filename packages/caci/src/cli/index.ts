@@ -79,8 +79,7 @@ async function runConfigurationCommand(projectDir: string) {
     console.error('\n❌ Configuration failed!');
     console.error(`   Error: ${result.error}`);
     console.log('\n💡 Troubleshooting tips:');
-    console.log('   - Make sure components.json exists in your project directory');
-    console.log('   - Ensure GOOGLE_API_KEY environment variable is set for AI recommendations');
+    console.log('   - Ensure Claude Code is installed and you are logged in (`claude /login`)');
     console.log('   - Check that you have write permissions in the project directory');
     throw new Error('Configuration failed');
   }

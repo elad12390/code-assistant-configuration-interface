@@ -24,13 +24,19 @@ export interface SelectedComponents {
 }
 
 export interface UserRequirements {
+  [key: string]: any;
   projectType?: string;
   programmingLanguages?: string[];
   frameworks?: string[];
   features?: string[];
   complexity?: 'simple' | 'medium' | 'complex';
   experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
-  // Add more fields as needed
+  projectStructure?: string;
+  'project-description'?: string;
+  'project-type'?: string;
+  'programming-languages'?: string[];
+  'web-frameworks'?: string[];
+  'experience-level'?: string;
 }
 
 export interface RankedComponent {

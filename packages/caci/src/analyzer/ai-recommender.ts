@@ -1,5 +1,4 @@
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
-import { HumanMessage } from '@langchain/core/messages';
+import { spawn } from 'child_process';
 import { z } from 'zod';
 import type { ComponentsData, UserRequirements } from './index';
 
@@ -13,20 +12,64 @@ const RecommendationSchema = z.object({
 
 type Recommendation = z.infer<typeof RecommendationSchema>;
 
-// Initialize the Google Generative AI client
-let model: ChatGoogleGenerativeAI | null = null;
+/**
+ * Checks if Claude CLI is available and user is logged in
+ */
+async function checkClaudeAvailability(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const claude = spawn('claude', ['--version'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    
+    claude.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+      }
+    });
+    
+    claude.on('error', () => {
+      reject(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
+    });
+  });
+}
 
-function initializeAI() {
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      'GOOGLE_API_KEY environment variable is not set. Please set it to use AI-powered recommendations.'
-    );
-  }
-
-  model = new ChatGoogleGenerativeAI({
-    model: 'gemini-2.5-pro',
-    apiKey,
+/**
+ * Calls Claude CLI in headless mode
+ */
+async function callClaude(prompt: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const args = [
+      '-p', prompt,
+      '--output-format', 'json',
+      '--model', 'sonnet',
+      '--max-turns', '1',
+      '--permission-mode', 'plan',
+      '--append-system-prompt', 'Chat-only; no tools; Output strict JSON matching the exact schema provided.'
+    ];
+    
+    const claude = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    
+    claude.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+    
+    claude.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+    
+    claude.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout.trim());
+      } else {
+        reject(new Error(stderr || `Claude CLI exited with code ${code}`));
+      }
+    });
+    
+    claude.on('error', (error) => {
+      reject(new Error(`Failed to execute Claude CLI: ${error.message}`));
+    });
   });
 }
 
@@ -40,10 +83,18 @@ function generatePrompt(
   userRequirements: UserRequirements,
   componentsData: ComponentsData
 ): string {
-  return `You are an expert AI assistant that helps developers select the most appropriate components for their projects.
+  const projectStructure = userRequirements.projectStructure || 'No project structure available';
+  const projectDescription = userRequirements['project-description'] || 'No project description provided';
+  
+  return `You are an expert AI assistant that helps developers select the most appropriate Claude Code components for their projects.
 
 User Requirements:
 ${JSON.stringify(userRequirements, null, 2)}
+
+Project Description: ${projectDescription}
+
+Project Structure Analysis:
+${projectStructure}
 
 Available Components:
 - Agents: ${Object.keys(componentsData.agents).join(', ')}
@@ -62,10 +113,13 @@ Return your response as a JSON object with the following structure:
 
 Important guidelines:
 1. Only recommend components that actually exist in the provided lists
-2. Prioritize components that are most relevant to the user's project type and requirements
-3. Include a reasonable number of recommendations (3-8 per category)
-4. If a category is not relevant to the user's project, you can return an empty array for that category
-5. Do not include any explanations or markdown formatting, just the JSON object`;
+2. Analyze the project structure to understand the tech stack, frameworks, and architecture
+3. Consider the natural language project description to understand the project's purpose and requirements
+4. Prioritize components that are most relevant to the detected tech stack and project goals
+5. Include a reasonable number of recommendations (3-8 per category)
+6. If a category is not relevant to the user's project, you can return an empty array for that category
+7. Pay special attention to package.json, requirements.txt, or other dependency files in the structure
+8. Do not include any explanations or markdown formatting, just the JSON object`;
 }
 
 /**
@@ -78,29 +132,22 @@ export async function recommendComponents(
   userRequirements: UserRequirements,
   componentsData: ComponentsData
 ): Promise<Recommendation> {
-  // Initialize AI client if not already done
-  if (!model) {
-    initializeAI();
-  }
+  // Check if Claude CLI is available
+  await checkClaudeAvailability();
 
   // Prepare the prompt
   const prompt = generatePrompt(userRequirements, componentsData);
 
   try {
-    // Generate the recommendation
-    const response = await model!.invoke([new HumanMessage(prompt)]);
+    // Generate the recommendation using Claude CLI
+    const response = await callClaude(prompt);
 
     // Parse and validate the response
     let recommendation: unknown;
     try {
-      // Extract content from the response
-      const content =
-        typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
-      recommendation = JSON.parse(content);
+      recommendation = JSON.parse(response);
     } catch (error) {
-      const responseContent =
-        typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
-      throw new Error(`AI returned invalid JSON: ${responseContent}`);
+      throw new Error(`Claude returned invalid JSON: ${response}`);
     }
 
     // Validate the response structure
@@ -117,8 +164,8 @@ export async function recommendComponents(
     return filteredRecommendation;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('API_KEY')) {
-      throw new Error('Invalid GOOGLE_API_KEY. Please check your API key and try again.');
+    if (errorMessage.includes('Claude CLI not found')) {
+      throw new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.');
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }

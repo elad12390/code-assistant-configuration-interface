@@ -24,7 +24,7 @@ export async function runConfigurationWorkflow(projectDir: string): Promise<Work
 
     // Step 1: Parse components.json file
     console.log('🔍 Parsing components.json file...');
-    const componentsFilePath = path.join(projectDir, 'components.json');
+    const componentsFilePath = path.join(__dirname, '../../components.json');
     let componentsData: ComponentsData;
 
     try {
@@ -44,7 +44,7 @@ export async function runConfigurationWorkflow(projectDir: string): Promise<Work
     let userRequirements: UserRequirements;
 
     try {
-      userRequirements = await collectUserRequirements();
+      userRequirements = await collectUserRequirements(projectDir);
       console.log('✅ Successfully collected user requirements');
     } catch (error) {
       return {
@@ -54,16 +54,7 @@ export async function runConfigurationWorkflow(projectDir: string): Promise<Work
     }
 
     // Step 3: Use AI to recommend components
-    console.log('🤖 Using AI to recommend components...');
-
-    // Check if API key is set
-    if (!process.env.GOOGLE_API_KEY) {
-      return {
-        success: false,
-        error:
-          'GOOGLE_API_KEY environment variable is not set. Please set it to use AI-powered recommendations.',
-      };
-    }
+    console.log('🤖 Using Claude to recommend components...');
 
     let selectedComponents: SelectedComponents;
 

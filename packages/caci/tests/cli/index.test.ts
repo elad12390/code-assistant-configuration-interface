@@ -121,7 +121,6 @@ describe('CACI CLI Interface', () => {
     const { command, args } = getCommand();
     const cli = spawn(command, [...args, cliPath, 'init'], {
       cwd: process.cwd(),
-      env: { ...process.env, GOOGLE_API_KEY: 'test' },
       shell: process.platform === 'win32',
     });
 
@@ -135,30 +134,33 @@ describe('CACI CLI Interface', () => {
       output += data.toString();
     });
 
-    await new Promise<number>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        cli.kill('SIGTERM');
-        reject(new Error('Test timed out'));
-      }, 10000);
+    // Kill the process quickly since we just want to test it starts
+    setTimeout(() => {
+      cli.kill('SIGTERM');
+    }, 1000);
 
-      const cleanup = (code: number) => {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Test timed out'));
+      }, 5000);
+
+      const cleanup = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(code);
+        resolve();
       };
 
       cli.on('close', cleanup);
-      cli.on('error', reject);
+      cli.on('error', cleanup);
     });
 
-    // Command will fail due to missing components.json but should show configuration output
+    // Should show CACI header before being killed
     expect(output).toContain('CACI');
-  }, 20000);
+  }, 10000);
 
   it('should handle update command', async () => {
     const { command, args } = getCommand();
     const cli = spawn(command, [...args, cliPath, 'update'], {
       cwd: process.cwd(),
-      env: { ...process.env, GOOGLE_API_KEY: 'test' },
       shell: process.platform === 'win32',
     });
 
@@ -172,30 +174,33 @@ describe('CACI CLI Interface', () => {
       output += data.toString();
     });
 
-    await new Promise<number>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        cli.kill('SIGTERM');
-        reject(new Error('Test timed out'));
-      }, 10000);
+    // Kill the process quickly since we just want to test it starts
+    setTimeout(() => {
+      cli.kill('SIGTERM');
+    }, 1000);
 
-      const cleanup = (code: number) => {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Test timed out'));
+      }, 5000);
+
+      const cleanup = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(code);
+        resolve();
       };
 
       cli.on('close', cleanup);
-      cli.on('error', reject);
+      cli.on('error', cleanup);
     });
 
-    // Command will fail due to missing components.json but should show configuration output
+    // Should show CACI header before being killed
     expect(output).toContain('CACI');
-  }, 20000);
+  }, 10000);
 
   it('should handle configure command', async () => {
     const { command, args } = getCommand();
     const cli = spawn(command, [...args, cliPath, 'configure'], {
       cwd: process.cwd(),
-      env: { ...process.env, GOOGLE_API_KEY: 'test' },
       shell: process.platform === 'win32',
     });
 
@@ -209,24 +214,28 @@ describe('CACI CLI Interface', () => {
       output += data.toString();
     });
 
-    await new Promise<number>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        cli.kill('SIGTERM');
-        reject(new Error('Test timed out'));
-      }, 10000);
+    // Kill the process quickly since we just want to test it starts
+    setTimeout(() => {
+      cli.kill('SIGTERM');
+    }, 1000);
 
-      const cleanup = (code: number) => {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Test timed out'));
+      }, 5000);
+
+      const cleanup = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(code);
+        resolve();
       };
 
       cli.on('close', cleanup);
-      cli.on('error', reject);
+      cli.on('error', cleanup);
     });
 
-    // Command will fail due to missing components.json but should show configuration output
+    // Should show CACI header before being killed
     expect(output).toContain('CACI');
-  }, 20000);
+  }, 10000);
 
   it('should handle history command', async () => {
     const { command, args } = getCommand();

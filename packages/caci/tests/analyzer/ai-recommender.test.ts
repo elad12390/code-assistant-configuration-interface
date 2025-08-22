@@ -1,23 +1,13 @@
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
 import type { ComponentsData, UserRequirements } from '../../src/analyzer';
+import { spawn } from 'child_process';
 
-// Mock the LangChain modules
-jest.mock('@langchain/google-genai', () => {
-  return {
-    ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => {
-      return {
-        invoke: jest.fn().mockResolvedValue({
-          content: JSON.stringify({
-            agents: ['test-agent'],
-            commands: ['test-command'],
-            hooks: ['test-hook'],
-            mcps: ['test-mcp'],
-          }),
-        }),
-      };
-    }),
-  };
-});
+// Mock the child_process spawn
+jest.mock('child_process', () => ({
+  spawn: jest.fn(),
+}));
+
+const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 describe('AI Recommender', () => {
   const mockComponentsData: ComponentsData = {
@@ -72,26 +62,75 @@ describe('AI Recommender', () => {
     experienceLevel: 'intermediate',
   };
 
-  beforeEach(() => {
-    // Set a mock API key
-    process.env.GOOGLE_API_KEY = 'test-api-key';
-  });
+  const mockEventEmitter = {
+    on: jest.fn(),
+    stdout: { on: jest.fn() },
+    stderr: { on: jest.fn() },
+  };
 
-  afterEach(() => {
-    // Clear the mock API key
-    delete process.env.GOOGLE_API_KEY;
+  beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should throw error when GOOGLE_API_KEY is not set', async () => {
-    delete process.env.GOOGLE_API_KEY;
+  it('should throw error when Claude CLI is not available', async () => {
+    // Mock claude --version command to fail
+    mockSpawn.mockReturnValueOnce({
+      ...mockEventEmitter,
+      on: jest.fn((event, callback) => {
+        if (event === 'close') {
+          setTimeout(() => callback(1), 0); // Exit with code 1 (failure)
+        }
+        return mockEventEmitter;
+      }),
+    } as any);
 
     await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
-      'GOOGLE_API_KEY environment variable is not set'
+      'Claude CLI not found'
     );
   });
 
   it('should recommend components based on user requirements', async () => {
+    // Mock claude --version (success)
+    const mockVersionCheck: any = {
+      ...mockEventEmitter,
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0); // Exit with code 0 (success)
+        }
+        return mockVersionCheck;
+      }),
+    };
+
+    // Mock claude command with JSON response
+    const mockClaudeCommand: any = {
+      ...mockEventEmitter,
+      stdout: {
+        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
+          if (event === 'data') {
+            const jsonResponse = JSON.stringify({
+              agents: ['test-agent'],
+              commands: ['test-command'],
+              hooks: ['test-hook'],
+              mcps: ['test-mcp'],
+            });
+            setTimeout(() => callback(Buffer.from(jsonResponse)), 0);
+          }
+          return mockClaudeCommand.stdout;
+        }),
+      },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0); // Exit with code 0 (success)
+        }
+        return mockClaudeCommand;
+      }),
+    };
+
+    mockSpawn
+      .mockReturnValueOnce(mockVersionCheck as any)
+      .mockReturnValueOnce(mockClaudeCommand as any);
+
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 
     expect(recommendation).toBeDefined();
@@ -102,23 +141,46 @@ describe('AI Recommender', () => {
   });
 
   it('should filter out non-existent components', async () => {
-    // Mock the LangChain modules with non-existent components
-    jest.mock('@langchain/google-genai', () => {
-      return {
-        ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => {
-          return {
-            invoke: jest.fn().mockResolvedValue({
-              content: JSON.stringify({
-                agents: ['test-agent', 'non-existent-agent'],
-                commands: ['test-command', 'non-existent-command'],
-                hooks: ['test-hook', 'non-existent-hook'],
-                mcps: ['test-mcp', 'non-existent-mcp'],
-              }),
-            }),
-          };
+    // Mock claude --version (success)
+    const mockVersionCheck: any = {
+      ...mockEventEmitter,
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0);
+        }
+        return mockVersionCheck;
+      }),
+    };
+
+    // Mock claude command with non-existent components in response
+    const mockClaudeCommand: any = {
+      ...mockEventEmitter,
+      stdout: {
+        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
+          if (event === 'data') {
+            const jsonResponse = JSON.stringify({
+              agents: ['test-agent', 'non-existent-agent'],
+              commands: ['test-command', 'non-existent-command'],
+              hooks: ['test-hook', 'non-existent-hook'],
+              mcps: ['test-mcp', 'non-existent-mcp'],
+            });
+            setTimeout(() => callback(Buffer.from(jsonResponse)), 0);
+          }
+          return mockClaudeCommand.stdout;
         }),
-      };
-    });
+      },
+      stderr: { on: jest.fn() },
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0);
+        }
+        return mockClaudeCommand;
+      }),
+    };
+
+    mockSpawn
+      .mockReturnValueOnce(mockVersionCheck as any)
+      .mockReturnValueOnce(mockClaudeCommand as any);
 
     const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 

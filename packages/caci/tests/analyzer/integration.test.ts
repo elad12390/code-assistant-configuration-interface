@@ -1,7 +1,15 @@
 import * as path from 'path';
+import { spawn } from 'child_process';
 import { parseComponentsFile } from '../../src/analyzer/parser';
 import { collectUserRequirements } from '../../src/analyzer/requirementCollector';
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
+
+// Mock child_process spawn
+jest.mock('child_process', () => ({
+  spawn: jest.fn(),
+}));
+
+const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 // Mock inquirer to avoid interactive prompts during testing
 jest.mock('inquirer', () => ({
@@ -11,36 +19,42 @@ jest.mock('inquirer', () => ({
   },
 }));
 
-// Mock the LangChain modules
-jest.mock('@langchain/google-genai', () => {
-  return {
-    ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => {
-      return {
-        invoke: jest.fn().mockResolvedValue({
-          content: JSON.stringify({
-            agents: ['hackathon-ai-strategist'],
-            commands: ['project-init'],
-            hooks: ['pre-commit-hook'],
-            mcps: ['github-mcp'],
-          }),
-        }),
-      };
-    }),
-  };
-});
+// Mock AI recommender to avoid Claude CLI calls
+jest.mock('../../src/analyzer/ai-recommender', () => ({
+  recommendComponents: jest.fn().mockResolvedValue({
+    agents: ['hackathon-ai-strategist'],
+    commands: ['project-init'],
+    hooks: ['pre-commit-hook'],
+    mcps: ['github-mcp'],
+  }),
+}));
 
 describe('Analyzer Integration', () => {
   const componentsFilePath = path.join(__dirname, '../../../../components.json');
 
   beforeEach(() => {
-    // Set a mock API key
-    process.env.GOOGLE_API_KEY = 'test-api-key';
-  });
-
-  afterEach(() => {
-    // Clear the mock API key
-    delete process.env.GOOGLE_API_KEY;
     jest.clearAllMocks();
+    
+    // Mock tree command for project structure analysis
+    const mockTreeProcess: any = {
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0);
+        }
+        return mockTreeProcess;
+      }),
+      stdout: {
+        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
+          if (event === 'data') {
+            setTimeout(() => callback(Buffer.from('test-project/\n├── package.json\n└── src/')), 0);
+          }
+          return mockTreeProcess.stdout;
+        }),
+      },
+      stderr: { on: jest.fn() },
+    };
+
+    mockSpawn.mockReturnValue(mockTreeProcess);
   });
 
   it('should parse components file and recommend components', async () => {
@@ -54,7 +68,7 @@ describe('Analyzer Integration', () => {
     expect(componentsData.mcps).toBeDefined();
 
     // Collect user requirements (mocked)
-    const userRequirements = await collectUserRequirements();
+    const userRequirements = await collectUserRequirements(process.cwd());
 
     expect(userRequirements).toBeDefined();
 

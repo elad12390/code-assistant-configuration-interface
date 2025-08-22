@@ -1,7 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { spawn } from 'child_process';
 import { runConfigurationWorkflow } from '../../src/integration';
+
+// Mock child_process spawn
+jest.mock('child_process', () => ({
+  spawn: jest.fn(),
+}));
+
+const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 // Mock the AI recommender to avoid API calls during testing
 jest.mock('../../src/analyzer/ai-recommender', () => ({
@@ -37,6 +45,29 @@ describe('CACI CLI Integration', () => {
   let projectDir: string;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    
+    // Mock tree/find commands for project structure analysis
+    const mockTreeProcess: any = {
+      on: jest.fn((event: string, callback: (code: number) => void) => {
+        if (event === 'close') {
+          setTimeout(() => callback(0), 0);
+        }
+        return mockTreeProcess;
+      }),
+      stdout: {
+        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
+          if (event === 'data') {
+            setTimeout(() => callback(Buffer.from('test-project/\n├── package.json\n└── src/')), 0);
+          }
+          return mockTreeProcess.stdout;
+        }),
+      },
+      stderr: { on: jest.fn() },
+    };
+
+    mockSpawn.mockReturnValue(mockTreeProcess);
+    
     // Create a temporary directory for testing
     tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'caci-test-'));
     projectDir = tempDir;
@@ -108,85 +139,56 @@ describe('CACI CLI Integration', () => {
   });
 
   it('should run complete configuration workflow', async () => {
-    // Mock process.env for API key
-    const originalEnv = process.env.GOOGLE_API_KEY;
-    process.env.GOOGLE_API_KEY = 'test-api-key';
+    // Run the configuration workflow (no API key needed for Claude CLI)
+    const result = await runConfigurationWorkflow(projectDir);
 
-    try {
-      // Run the configuration workflow
-      const result = await runConfigurationWorkflow(projectDir);
+    // Verify the workflow completed successfully
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
 
-      // Verify the workflow completed successfully
-      expect(result).toBeDefined();
-      expect(result.success).toBe(true);
+    // Verify .claude folder was created
+    const claudePath = path.join(projectDir, '.claude');
+    await expect(fs.promises.access(claudePath, fs.constants.F_OK)).resolves.toBeUndefined();
 
-      // Verify .claude folder was created
-      const claudePath = path.join(projectDir, '.claude');
-      await expect(fs.promises.access(claudePath, fs.constants.F_OK)).resolves.toBeUndefined();
+    // Verify .configurator folder was created
+    const configuratorPath = path.join(projectDir, '.configurator');
+    await expect(
+      fs.promises.access(configuratorPath, fs.constants.F_OK)
+    ).resolves.toBeUndefined();
 
-      // Verify .configurator folder was created
-      const configuratorPath = path.join(projectDir, '.configurator');
-      await expect(
-        fs.promises.access(configuratorPath, fs.constants.F_OK)
-      ).resolves.toBeUndefined();
-
-      // Verify iterations folder was created
-      const iterationsPath = path.join(configuratorPath, 'iterations');
-      await expect(fs.promises.access(iterationsPath, fs.constants.F_OK)).resolves.toBeUndefined();
-    } finally {
-      // Restore original environment
-      if (originalEnv !== undefined) {
-        process.env.GOOGLE_API_KEY = originalEnv;
-      } else {
-        delete process.env.GOOGLE_API_KEY;
-      }
-    }
+    // Verify iterations folder was created
+    const iterationsPath = path.join(configuratorPath, 'iterations');
+    await expect(fs.promises.access(iterationsPath, fs.constants.F_OK)).resolves.toBeUndefined();
   });
 
   it('should handle missing components.json file', async () => {
-    // Remove the components.json file
+    // This test is no longer relevant since components.json is now bundled with the package
+    // Instead test that the workflow succeeds even without components.json in project directory
     await fs.promises.rm(path.join(projectDir, 'components.json'));
 
-    // Mock process.env for API key
-    const originalEnv = process.env.GOOGLE_API_KEY;
-    process.env.GOOGLE_API_KEY = 'test-api-key';
+    // Run the configuration workflow (should work with bundled components.json)
+    const result = await runConfigurationWorkflow(projectDir);
 
-    try {
-      // Run the configuration workflow
-      const result = await runConfigurationWorkflow(projectDir);
-
-      // Verify the workflow failed due to missing components.json
-      expect(result).toBeDefined();
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-    } finally {
-      // Restore original environment
-      if (originalEnv !== undefined) {
-        process.env.GOOGLE_API_KEY = originalEnv;
-      } else {
-        delete process.env.GOOGLE_API_KEY;
-      }
-    }
+    // Verify the workflow completed successfully using bundled components.json
+    expect(result).toBeDefined();
+    expect(result.success).toBe(true);
   });
 
-  it('should handle missing API key', async () => {
-    // Remove the API key
-    const originalEnv = process.env.GOOGLE_API_KEY;
-    delete process.env.GOOGLE_API_KEY;
+  it('should handle Claude CLI unavailable', async () => {
+    // This test is no longer about missing API key since we use Claude CLI
+    // Instead test that the workflow gracefully handles Claude CLI being unavailable
+    
+    // Mock AI recommender to throw Claude CLI error
+    const { recommendComponents } = require('../../src/analyzer/ai-recommender');
+    recommendComponents.mockRejectedValueOnce(new Error('Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'));
 
-    try {
-      // Run the configuration workflow
-      const result = await runConfigurationWorkflow(projectDir);
+    // Run the configuration workflow
+    const result = await runConfigurationWorkflow(projectDir);
 
-      // Verify the workflow failed due to missing API key
-      expect(result).toBeDefined();
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-    } finally {
-      // Restore original environment
-      if (originalEnv !== undefined) {
-        process.env.GOOGLE_API_KEY = originalEnv;
-      }
-    }
+    // Verify the workflow failed due to Claude CLI unavailability
+    expect(result).toBeDefined();
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain('Claude CLI not found');
   });
 });

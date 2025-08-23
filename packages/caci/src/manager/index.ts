@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
+import { spawn } from 'child_process';
+import type { ComponentsData, SelectedComponents } from '../analyzer';
 
 export interface BackupInfo {
   timestamp: string;
@@ -152,13 +154,13 @@ export async function applyConfiguration(
           let mcpCommand = '';
 
           try {
-            const mcpConfig = JSON.parse(mcpContent);
+            const mcpConfig = JSON.parse(mcpContent) as { mcpServers?: Record<string, any> };
             const mcpServers = mcpConfig.mcpServers;
 
             if (mcpServers) {
               // Get the first server configuration
               const serverName = Object.keys(mcpServers)[0];
-              const serverConfig = mcpServers[serverName];
+              const serverConfig = mcpServers[serverName] as any;
 
               if (serverConfig.command && serverConfig.args) {
                 // Stdio MCP with command and args
@@ -206,8 +208,7 @@ export async function applyConfiguration(
           console.log(`🔗 Adding MCP: ${mcpCommand}`);
 
           // Execute the claude mcp add command
-          const { spawn } = require('child_process');
-          await new Promise((resolve, reject) => {
+          await new Promise((resolve, _reject) => {
             const [command, ...args] = mcpCommand.split(' ');
             const proc = spawn(command, args, { stdio: 'inherit' });
             proc.on('close', (code: number | null) => {

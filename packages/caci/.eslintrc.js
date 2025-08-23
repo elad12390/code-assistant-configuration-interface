@@ -77,6 +77,7 @@ module.exports = {
     'node/no-missing-import': 'off', // TypeScript handles this better
     'node/no-unsupported-features/es-syntax': 'off', // We use TypeScript
     'node/no-unsupported-features/node-builtins': 'off', // We target Node.js 18+
+    'node/no-unsupported-features/es-builtins': 'off', // We target Node.js 18+ (allows Object.fromEntries)
     'node/no-unpublished-import': 'off', // Allow dev dependencies in tests
     'node/shebang': 'off', // Handled by build process
     'node/prefer-global/buffer': 'error',

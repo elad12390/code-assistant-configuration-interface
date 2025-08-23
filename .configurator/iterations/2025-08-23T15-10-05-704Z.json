@@ -1,0 +1,87 @@
+{
+  "id": "2025-08-23T15-10-05-704Z",
+  "timestamp": "2025-08-23T15:10:05.704Z",
+  "selectedComponents": {
+    "agents": [
+      "task-decomposition-expert",
+      "business-analyst",
+      "frontend-developer",
+      "backend-architect",
+      "api-documenter",
+      "mlops-engineer",
+      "react-performance-optimization",
+      "security-auditor",
+      "project-supervisor-orchestrator",
+      "performance-engineer",
+      "test-automator",
+      "cloud-architect",
+      "deployment-engineer",
+      "data-engineer",
+      "command-expert"
+    ],
+    "commands": [
+      "ci-setup",
+      "generate-api-documentation",
+      "migrate-to-typescript",
+      "setup-linting",
+      "setup-monitoring-observability",
+      "optimize-build",
+      "setup-comprehensive-testing",
+      "add-mutation-testing",
+      "generate-test-cases",
+      "setup-development-environment",
+      "create-architecture-documentation",
+      "hotfix-deploy",
+      "rollback-deploy",
+      "optimize-database-performance",
+      "test-coverage"
+    ],
+    "hooks": [
+      "lint-on-save",
+      "smart-commit",
+      "format-javascript-files",
+      "run-tests-after-changes",
+      "auto-git-add",
+      "git-add-changes",
+      "security-scanner",
+      "test-runner",
+      "performance-monitor",
+      "build-on-change",
+      "slack-notifications",
+      "discord-notifications",
+      "telegram-notifications",
+      "dependency-checker",
+      "smart-formatting"
+    ],
+    "mcps": [
+      "deepgraph-nextjs",
+      "deepgraph-react",
+      "deepgraph-typescript",
+      "github-integration",
+      "filesystem-access",
+      "mysql-integration",
+      "postgresql-integration",
+      "context7",
+      "circleci",
+      "mcp-server-atlassian-bitbucket",
+      "mcp-server-trello",
+      "web-fetch",
+      "playwright-mcp",
+      "mcp-server-playwright",
+      "browser-use-mcp-server"
+    ]
+  },
+  "userRequirements": {
+    "project-type": "Other",
+    "programming-languages": [
+      "JavaScript/TypeScript"
+    ],
+    "web-frameworks": [
+      "React",
+      "Next.js"
+    ],
+    "experience-level": "Advanced - Extensive experience",
+    "project-description": "CLI Tool to provide users ease of use with claude code to setup agents hooks etc for them",
+    "projectStructure": "/home/eladbenhaim/dev/personal/claude-code-configurator\n├── .bmad-core\n│   ├── agents\n│   │   ├── analyst.md\n│   │   ├── architect.md\n│   │   ├── bmad-master.md\n│   │   ├── bmad-orchestrator.md\n│   │   ├── dev.md\n│   │   ├── pm.md\n│   │   ├── po.md\n│   │   ├── qa.md\n│   │   ├── sm.md\n│   │   └── ux-expert.md\n│   ├── agent-teams\n│   │   ├── team-all.yaml\n│   │   ├── team-fullstack.yaml\n│   │   ├── team-ide-minimal.yaml\n│   │   └── team-no-ui.yaml\n│   ├── checklists\n│   │   ├── architect-checklist.md\n│   │   ├── change-checklist.md\n│   │   ├── pm-checklist.md\n│   │   ├── po-master-checklist.md\n│   │   ├── story-dod-checklist.md\n│   │   └── story-draft-checklist.md\n│   ├── data\n│   │   ├── bmad-kb.md\n│   │   ├── brainstorming-techniques.md\n│   │   ├── elicitation-methods.md\n│   │   ├── technical-preferences.md\n│   │   ├── test-levels-framework.md\n│   │   └── test-priorities-matrix.md\n│   ├── tasks\n│   │   ├── advanced-elicitation.md\n│   │   ├── apply-qa-fixes.md\n│   │   ├── brownfield-create-epic.md\n│   │   ├── brownfield-create-story.md\n│   │   ├── correct-course.md\n│   │   ├── create-brownfield-story.md\n│   │   ├── create-deep-research-prompt.md\n│   │   ├── create-doc.md\n│   │   ├── create-next-story.md\n│   │   ├── document-project.md\n│   │   ├── execute-checklist.md\n│   │   ├── facilitate-brainstorming-session.md\n│   │   ├── generate-ai-frontend-prompt.md\n│   │   ├── index-docs.md\n│   │   ├── kb-mode-interaction.md\n│   │   ├── nfr-assess.md\n│   │   ├── qa-gate.md\n│   │   ├── review-story.md\n│   │   ├── risk-profile.md\n│   │   ├── shard-doc.md\n│   │   ├── test-design.md\n│   │   ├── trace-requirements.md\n│   │   └── validate-next-story.md\n│   ├── templates\n│   │   ├── architecture-tmpl.yaml\n│   │   ├── brainstorming-output-tmpl.yaml\n│   │   ├── brownfield-architecture-tmpl.yaml\n│   │   ├── brownfield-prd-tmpl.yaml\n│   │   ├── competitor-analysis-tmpl.yaml\n│   │   ├── front-end-architecture-tmpl.yaml\n│   │   ├── front-end-spec-tmpl.yaml\n│   │   ├── fullstack-architecture-tmpl.yaml\n│   │   ├── market-research-tmpl.yaml\n│   │   ├── prd-tmpl.yaml\n│   │   ├── project-brief-tmpl.yaml\n│   │   ├── qa-gate-tmpl.yaml\n│   │   └── story-tmpl.yaml\n│   ├── utils\n│   │   ├── bmad-doc-template.md\n│   │   └── workflow-management.md\n│   ├── workflows\n│   │   ├── brownfield-fullstack.yaml\n│   │   ├── brownfield-service.yaml\n│   │   ├── brownfield-ui.yaml\n│   │   ├── greenfield-fullstack.yaml\n│   │   ├── greenfield-service.yaml\n│   │   └── greenfield-ui.yaml\n│   ├── core-config.yaml\n│   ├── enhanced-ide-development-workflow.md\n│   ├── install-manifest.yaml\n│   ├── user-guide.md\n│   └── working-in-the-brownfield.md\n├── .claude\n│   ├── agents\n│   │   ├── api-documenter.md\n│   │   ├── backend-architect.md\n│   │   ├── business-analyst.md\n│   │   ├── cloud-architect.md\n│   │   ├── command-expert.md\n│   │   ├── data-engineer.md\n│   │   ├── deployment-engineer.md\n│   │   ├── devops-deployment-manager.md\n│   │   ├── devops-troubleshooter.md\n│   │   ├── frontend-developer.md\n│   │   ├── mlops-engineer.md\n│   │   ├── performance-engineer.md\n│   │   ├── project-supervisor-orchestrator.md\n│   │   ├── react-performance-optimization.md\n│   │   ├── security-auditor.md\n│   │   ├── task-decomposition-expert.md\n│   │   └── test-automator.md\n│   ├── commands\n│   │   ├── BMad\n│   │   ├── add-mutation-testing.md\n│   │   ├── add-property-based-testing.md\n│   │   ├── ci-setup.md\n│   │   ├── create-architecture-documentation.md\n│   │   ├── generate-api-documentation.md\n│   │   ├── generate-test-cases.md\n│   │   ├── hotfix-deploy.md\n│   │   ├── migrate-to-typescript.md\n│   │   ├── optimize-build.md\n│   │   ├── optimize-database-performance.md\n│   │   ├── rollback-deploy.md\n│   │   ├── setup-comprehensive-testing.md\n│   │   ├── setup-development-environment.md\n│   │   ├── setup-linting.md\n│   │   ├── setup-monitoring-observability.md\n│   │   ├── test-coverage.md\n│   │   └── write-tests.md\n│   ├── hooks\n│   │   ├── auto-git-add.md\n│   │   ├── build-on-change.md\n│   │   ├── dependency-checker.md\n│   │   ├── discord-notifications.md\n│   │   ├── format-javascript-files.md\n│   │   ├── git-add-changes.md\n│   │   ├── lint-on-save.md\n│   │   ├── performance-monitor.md\n│   │   ├── run-tests-after-changes.md\n│   │   ├── sanity-stop.sh\n│   │   ├── security-scanner.md\n│   │   ├── slack-notifications.md\n│   │   ├── smart-commit.md\n│   │   ├── smart-formatting.md\n│   │   ├── telegram-notifications.md\n│   │   └── test-runner.md\n│   ├── mcps\n│   │   ├── deepgraph-nextjs.md\n│   │   ├── deepgraph-react.md\n│   │   ├── deepgraph-typescript.md\n│   │   └── github-integration.md\n│   └── settings.local.json\n├── .configurator\n│   ├── backups\n│   │   ├── claude-backup-2025-08-23T11-06-36-914Z\n│   │   ├── claude-backup-2025-08-23T14-30-48-992Z\n│   │   └── claude-backup-2025-08-23T14-51-41-033Z\n│   └── iterations\n│       ├── 2025-08-23T11-06-36-922Z.json\n│       ├── 2025-08-23T14-30-50-005Z.json\n│       └── 2025-08-23T14-51-50-749Z.json\n├── docs\n│   ├── epic-cli-configurator\n│   │   ├── architecture\n│   │   ├── prd\n│   │   ├── specs\n│   │   ├── stories\n│   │   ├── 01-project-brief.md\n│   │   ├── 02-product-requirements-document.md\n│   │   ├── 03-system-architecture.md\n│   │   ├── 04-user-experience-spec.md\n│   │   ├── 05-po-validation-checklist.md\n│   │   ├── 06-sharding-validation.md\n│   │   └── 07-analytics-prd.md\n│   ├── Landing page\n│   │   ├── architecture-and-dev-plan.md\n│   │   ├── content.md\n│   │   ├── insperationui.md\n│   │   └── ui.md\n│   ├── 00-implementation-guide.md\n│   ├── 00-standardized-naming-system.md\n│   ├── 01-project-validation.md\n│   ├── 02-project-infrastructure.md\n│   ├── 03-requirements-verification.md\n│   ├── 04-tdd-approach.md\n│   ├── 05-workflow-validation.md\n│   ├── gh-cli-cheatsheet.md\n│   └── next-phase-prd.md\n├── e2e-test\n│   ├── components.json\n│   ├── test-e2e.js\n│   └── test-real-workflow.js\n├── .github\n│   ├── issues\n│   │   ├── claude-md-support.md\n│   │   └── predefined-workflows.md\n│   ├── scripts\n│   │   ├── check-dependencies.sh\n│   │   ├── docker-health-check.sh\n│   │   ├── setup-test-env.sh\n│   │   └── validate-cicd-separation.sh\n│   ├── workflows\n│   │   ├── benchmark.yml\n│   │   ├── ci.yml\n│   │   ├── deploy-website.yml\n│   │   ├── e2e.yml\n│   │   ├── lint.yml\n│   │   ├── publish-apt.yml\n│   │   ├── publish-deb.yml\n│   │   ├── publish-docker.yml\n│   │   ├── publish-homebrew.yml\n│   │   ├── publish-npm.yml\n│   │   ├── release-caci-main-clean.yml\n│   │   ├── release-caci-main.yml\n│   │   ├── security.yml\n│   │   └── website-ci.yml\n│   ├── CICD-SEPARATION.md\n│   ├── dependabot.yml\n│   └── SECURITY.md\n├── packages\n│   ├── caci\n│   │   ├── bin\n│   │   ├── src\n│   │   ├── test-cli\n│   │   ├── test-history\n│   │   ├── tests\n│   │   ├── test-workspace\n│   │   ├── components.json\n│   │   ├── docker-compose.yml\n│   │   ├── Dockerfile\n│   │   ├── .dockerignore\n│   │   ├── DOCKER.md\n│   │   ├── .env.example\n│   │   ├── .eslintrc.js\n│   │   ├── install-caci.sh\n│   │   ├── jest.config.js\n│   │   ├── package.json\n│   │   ├── package-lock.json\n│   │   ├── .prettierignore\n│   │   ├── .prettierrc.js\n│   │   ├── README.md\n│   │   ├── sonar-project.properties\n│   │   ├── tsconfig.json\n│   │   └── tsconfig.lint.json\n│   └── website\n│       ├── app\n│       ├── components\n│       ├── hooks\n│       ├── lib\n│       ├── templates\n│       ├── tests\n│       ├── workflows\n│       ├── components.json\n│       ├── .gitignore\n│       ├── jest.config.js\n│       ├── jest.setup.js\n│       ├── next.config.js\n│       ├── next-env.d.ts\n│       ├── package.json\n│       ├── package-lock.json\n│       ├── postcss.config.js\n│       ├── README.md\n│       ├── tailwind.config.js\n│       └── tsconfig.json\n├── .qwen\n│   ├── agent\n│   │   └── grug-code-debugger.md\n│   └── bmad-method\n│       └── QWEN.md\n├── scripts\n│   └── monitor-release.sh\n├── test-benchmark-workspace\n│   └── small\n│       └── components.json\n├── web-bundles\n│   ├── agents\n│   │   ├── analyst.txt\n│   │   ├── architect.txt\n│   │   ├── bmad-master.txt\n│   │   ├── bmad-orchestrator.txt\n│   │   ├── dev.txt\n│   │   ├── pm.txt\n│   │   ├── po.txt\n│   │   ├── qa.txt\n│   │   ├── sm.txt\n│   │   └── ux-expert.txt\n│   ├── expansion-packs\n│   │   ├── bmad-2d-phaser-game-dev\n│   │   ├── bmad-2d-unity-game-dev\n│   │   ├── bmad-creative-writing\n│   │   └── bmad-infrastructure-devops\n│   └── teams\n│       ├── team-all.txt\n│       ├── team-fullstack.txt\n│       ├── team-ide-minimal.txt\n│       └── team-no-ui.txt\n├── CHANGELOG.md\n├── CLAUDE.md\n├── CODE-OF-CONDUCT.md\n├── components.json\n├── CONTRIBUTING.md\n├── debug-claude.js\n├── DEVELOPMENT_PROGRESS.md\n├─�� .editorconfig\n├── GH-ACTIONS-STANDARDS.md\n├── .gitignore\n├── .gitleaks.toml\n├── LICENSE\n├── .npmrc\n├── package.json\n├── .prettierrc.json\n├── README.md\n├── test-mcp-parsing.js\n├── test-providers.js\n├── test-real-api.js\n├── test-usage-stats.js\n└── vercel.json\n\n63 directories, 247 files\n"
+  }
+}

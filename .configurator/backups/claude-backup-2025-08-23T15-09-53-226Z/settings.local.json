@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__get",
+      "Bash",
+      "Python",
+      "NodeJS",
+      "WebSearch",
+      "FileRead"
+
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/sanity-stop.sh",
+        "timeout": 60
+      }
+    ],
+    "SubagentStop": [
+      {
+        "type": "command",
+        "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/sanity-stop.sh",
+        "timeout": 60
+      }
+    ]
+  }
+}

@@ -64,6 +64,9 @@ program
   });
 
 async function runConfigurationCommand(projectDir: string) {
+  // Clear terminal for clean display
+  console.clear();
+  
   console.log('🔧 CACI (Code Assistant Configuration Interface)');
   console.log('===============================================\n');
   console.log(`📁 Project directory: ${projectDir}\n`);

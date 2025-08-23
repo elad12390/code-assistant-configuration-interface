@@ -105,12 +105,22 @@ async function generateProjectStructure(projectDir: string): Promise<string> {
 export async function collectUserRequirements(projectDir: string): Promise<UserResponse> {
   const responses: UserResponse = {};
 
-  // Process each question
+  // Ensure clean terminal state
+  console.log('\n'); // Add some spacing
+
+  // Process each question with clean formatting
   for (const question of PROJECT_REQUIREMENTS_QUESTIONS) {
     let answer: { value: unknown };
+    
+    // Add spacing between questions for better readability
+    if (question.type !== 'text') {
+      console.log('');
+    }
 
     switch (question.type) {
       case 'text':
+        // Add spacing before text input questions for better readability
+        console.log('');
         answer = await inquirer.prompt([
           {
             type: 'input',

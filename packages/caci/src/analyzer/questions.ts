@@ -73,7 +73,7 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
   },
   {
     id: 'project-description',
-    text: 'Please describe your project in natural language (what problem does it solve, who is it for, key features, goals, etc.). Be as detailed as you like - this helps Claude understand your needs better:',
+    text: 'Describe your project (problem, audience, features, goals):',
     type: 'text',
   },
 ];

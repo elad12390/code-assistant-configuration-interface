@@ -87,6 +87,34 @@ npm run test --workspaces
 claude /login
 ```
 
+**IMPORTANT: Release and Publishing Rules:**
+
+```bash
+# ❌ NEVER publish manually to npm
+npm publish  # DON'T DO THIS
+
+# ✅ ALWAYS use GitHub release workflows
+gh workflow run "CACI Multi-Platform Release (Main)" -f tag_name=v1.x.x -f environment=production
+
+# ✅ Alternative: Use clean release workflow  
+gh workflow run "CACI Multi-Platform Release (Main) - Clean" -f tag_name=v1.x.x -f environment=production
+
+# ✅ Available automated workflows:
+# - CACI Multi-Platform Release (Main): Complete release with all platforms
+# - CACI Package NPM Publishing: NPM-only publishing
+# - CACI Package Docker Publishing: Docker image publishing  
+# - Publish to APT Repository: Debian package publishing
+# - Update Homebrew Formula: Homebrew package publishing
+
+# The automated workflows handle:
+# - Version validation and tagging
+# - Cross-platform testing (Linux, macOS, Windows)
+# - Automated npm publishing with proper validation
+# - Docker image building and pushing
+# - Release asset generation and distribution
+# - Proper CI/CD validation before publishing
+```
+
 ## Architecture Overview
 
 The project follows a modular architecture with clear separation of concerns:

@@ -79,8 +79,9 @@ async function runConfigurationCommand(projectDir: string) {
     console.error('\n❌ Configuration failed!');
     console.error(`   Error: ${result.error}`);
     console.log('\n💡 Troubleshooting tips:');
-    console.log('   - Ensure Claude Code is installed and you are logged in (`claude /login`)');
+    console.log('   - Set an AI provider API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY');
     console.log('   - Check that you have write permissions in the project directory');
+    console.log('   - Get free API keys: Gemini (console.cloud.google.com), Anthropic (console.anthropic.com), OpenAI (platform.openai.com)');
     throw new Error('Configuration failed');
   }
 }

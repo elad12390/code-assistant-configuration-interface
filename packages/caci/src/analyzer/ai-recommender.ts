@@ -1,6 +1,19 @@
-import { spawn } from 'child_process';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ChatOpenAI } from '@langchain/openai';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { ComponentsData, UserRequirements } from './index';
+
+// Define available AI providers
+type AIProvider = 'anthropic' | 'gemini' | 'openai';
+
+// Environment variable mapping for each provider
+const ENV_VARS = {
+  anthropic: 'ANTHROPIC_API_KEY',
+  gemini: 'GOOGLE_API_KEY', 
+  openai: 'OPENAI_API_KEY'
+} as const;
 
 // Define the schema for AI response
 const RecommendationSchema = z.object({
@@ -13,78 +26,93 @@ const RecommendationSchema = z.object({
 type Recommendation = z.infer<typeof RecommendationSchema>;
 
 /**
- * Checks if Claude CLI is available and user is logged in
+ * Detect which AI provider to use based on available API keys
  */
-async function checkClaudeAvailability(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const claude = spawn('claude', ['--version'], { stdio: ['ignore', 'pipe', 'pipe'] });
-
-    claude.on('close', code => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(
-          new Error(
-            'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
-          )
-        );
-      }
-    });
-
-    claude.on('error', () => {
-      reject(
-        new Error(
-          'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
-        )
-      );
-    });
-  });
+function detectAvailableProvider(): AIProvider {
+  // Check in order of preference: Anthropic > Gemini > OpenAI
+  if (process.env.ANTHROPIC_API_KEY) {
+    return 'anthropic';
+  }
+  if (process.env.GOOGLE_API_KEY) {
+    return 'gemini';
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return 'openai';
+  }
+  
+  throw new Error(`No API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY`);
 }
 
 /**
- * Calls Claude CLI in headless mode
+ * Initialize the appropriate chat model based on provider
  */
-async function callClaude(prompt: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const args = [
-      '-p',
-      prompt,
-      '--output-format',
-      'text',
-      '--model',
-      'sonnet',
-      '--max-turns',
-      '1',
-      '--permission-mode',
-      'plan',
-      '--append-system-prompt',
-      'You are a component recommendation API. Respond ONLY with valid JSON. No explanations, no questions, no markdown. Just output the JSON object exactly as specified in the prompt.',
-    ];
+function initializeChatModel(provider: AIProvider) {
+  const apiKey = process.env[ENV_VARS[provider]];
+  
+  if (!apiKey) {
+    throw new Error(`${ENV_VARS[provider]} environment variable is not set.`);
+  }
 
-    const claude = spawn('claude', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    let stdout = '';
-    let stderr = '';
+  switch (provider) {
+    case 'anthropic':
+      return new ChatAnthropic({
+        apiKey,
+        model: 'claude-3-5-sonnet-20241022',
+        temperature: 0,
+        maxTokens: 2000,
+      });
+    case 'gemini':
+      return new ChatGoogleGenerativeAI({
+        apiKey,
+        model: 'gemini-1.5-pro',
+        temperature: 0,
+        maxOutputTokens: 2000,
+      });
+    case 'openai':
+      return new ChatOpenAI({
+        apiKey,
+        model: 'gpt-4o',
+        temperature: 0,
+        maxTokens: 2000,
+      });
+    default:
+      throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
 
-    claude.stdout.on('data', (data: Buffer) => {
-      stdout += data.toString();
-    });
+/**
+ * Calls AI provider using LangChain with structured output
+ */
+async function callAI(prompt: string): Promise<string> {
+  const provider = detectAvailableProvider();
+  const model = initializeChatModel(provider);
+  
+  try {
+    const systemPrompt = `You are a component recommendation API. You must respond with ONLY a valid JSON object matching this exact schema:
 
-    claude.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
-    });
+{
+  "agents": ["array", "of", "component", "names"],
+  "commands": ["array", "of", "component", "names"],
+  "hooks": ["array", "of", "component", "names"],
+  "mcps": ["array", "of", "component", "names"]
+}
 
-    claude.on('close', code => {
-      if (code === 0) {
-        resolve(stdout.trim());
-      } else {
-        reject(new Error(stderr || `Claude CLI exited with code ${code}`));
-      }
-    });
+Rules:
+- Output ONLY the JSON object
+- No explanations, no markdown, no additional text
+- All component names must exist in the provided lists
+- Include 3-8 components per category
+- Use empty arrays [] if no relevant components exist for a category`;
 
-    claude.on('error', error => {
-      reject(new Error(`Failed to execute Claude CLI: ${error.message}`));
-    });
-  });
+    const response = await model.invoke([
+      new SystemMessage(systemPrompt),
+      new HumanMessage(prompt)
+    ]);
+
+    return response.content as string;
+  } catch (error) {
+    throw new Error(`Failed to query ${provider}: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 /**
@@ -151,20 +179,17 @@ export async function recommendComponents(
   userRequirements: UserRequirements,
   componentsData: ComponentsData
 ): Promise<Recommendation> {
-  // Check if Claude CLI is available
-  await checkClaudeAvailability();
-
   // Prepare the prompt
   const prompt = generatePrompt(userRequirements, componentsData);
 
   try {
-    // Generate the recommendation using Claude CLI
-    const response = await callClaude(prompt);
+    // Generate the recommendation using available AI provider
+    const response = await callAI(prompt);
 
     // Parse and validate the response
     let recommendation: unknown;
     try {
-      // With --output-format text, Claude should return just the text response
+      // LangChain providers may return JSON in markdown blocks
       let jsonText = response.trim();
 
       // Remove any markdown code blocks if present
@@ -176,7 +201,7 @@ export async function recommendComponents(
       // Try to parse as JSON
       recommendation = JSON.parse(jsonText);
     } catch (error) {
-      throw new Error(`Claude returned invalid JSON: ${response}`);
+      throw new Error(`AI provider returned invalid JSON: ${response}`);
     }
 
     // Validate the response structure
@@ -193,9 +218,9 @@ export async function recommendComponents(
     return filteredRecommendation;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    if (errorMessage.includes('Claude CLI not found')) {
+    if (errorMessage.includes('No API key found')) {
       throw new Error(
-        'Claude CLI not found. Please install Claude Code and run `claude /login` to authenticate.'
+        'No AI provider API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY'
       );
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);

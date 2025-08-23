@@ -73,6 +73,11 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@langchain/anthropic": "^0.3.26",
+    "@langchain/core": "^0.3.72",
+    "@langchain/google-genai": "^0.2.16",
+    "@langchain/openai": "^0.6.9",
     "chalk": "^4.1.2",
     "commander": "^14.0.0",
     "inquirer": "^8.2.0",

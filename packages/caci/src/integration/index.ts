@@ -54,7 +54,7 @@ export async function runConfigurationWorkflow(projectDir: string): Promise<Work
     }
 
     // Step 3: Use AI to recommend components
-    console.log('🤖 Using Claude to recommend components...');
+    console.log('🤖 Using AI to recommend components...');
 
     let selectedComponents: SelectedComponents;
 

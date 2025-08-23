@@ -163,11 +163,11 @@ export async function applyConfiguration(
               if (serverConfig.command && serverConfig.args) {
                 // Stdio MCP with command and args
                 const args = Array.isArray(serverConfig.args) ? serverConfig.args.join(' ') : serverConfig.args;
-                mcpCommand = `claude mcp add ${mcpName} -- ${serverConfig.command} ${args}`;
+                mcpCommand = `claude mcp add --scope project ${mcpName} -- ${serverConfig.command} ${args}`;
               } else if (serverConfig.url) {
                 // Remote MCP with URL
                 const transport = serverConfig.transport || 'http';
-                mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${serverConfig.url}`;
+                mcpCommand = `claude mcp add --transport ${transport} --scope project ${mcpName} ${serverConfig.url}`;
               } else {
                 console.log(`⚠️  Skipping ${mcpName}: Unsupported MCP configuration format`);
                 continue;
@@ -188,13 +188,13 @@ export async function applyConfiguration(
             const transportMatch = mcpContent.match(/transport:\s*(.+)/);
             
             if (commandMatch) {
-              mcpCommand = `claude mcp add ${mcpName} -- ${commandMatch[1]}`;
+              mcpCommand = `claude mcp add --scope project ${mcpName} -- ${commandMatch[1]}`;
             } else if (urlMatch && transportMatch) {
               const transport = transportMatch[1].trim();
               const url = urlMatch[1].trim();
-              mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${url}`;
+              mcpCommand = `claude mcp add --transport ${transport} --scope project ${mcpName} ${url}`;
             } else if (mcpName === 'context7') {
-              mcpCommand = `claude mcp add --transport http ${mcpName} https://context7.com/mcp`;
+              mcpCommand = `claude mcp add --transport http --scope project ${mcpName} https://context7.com/mcp`;
             } else {
               console.log(`⚠️  Skipping ${mcpName}: Could not parse MCP configuration`);
               continue;

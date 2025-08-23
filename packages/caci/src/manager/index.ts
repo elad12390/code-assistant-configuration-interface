@@ -147,27 +147,56 @@ export async function applyConfiguration(
       const mcp = componentsData.mcps[mcpName];
       if (mcp) {
         try {
-          // Parse MCP content to extract command information
+          // Parse MCP content - it's a JSON string containing mcpServers configuration
           const mcpContent = mcp.content as string;
-          const commandMatch = mcpContent.match(/command:\s*(.+)/);
-          const urlMatch = mcpContent.match(/url:\s*(.+)/);
-          const transportMatch = mcpContent.match(/transport:\s*(.+)/);
-          
           let mcpCommand = '';
-          if (commandMatch) {
-            // Stdio MCP
-            mcpCommand = `claude mcp add ${mcpName} -- ${commandMatch[1]}`;
-          } else if (urlMatch && transportMatch) {
-            // Remote MCP
-            const transport = transportMatch[1].trim();
-            const url = urlMatch[1].trim();
-            mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${url}`;
-          } else {
-            // Default context7 or other HTTP MCPs
-            if (mcpName === 'context7') {
+          
+          try {
+            const mcpConfig = JSON.parse(mcpContent);
+            const mcpServers = mcpConfig.mcpServers;
+            
+            if (mcpServers) {
+              // Get the first server configuration
+              const serverName = Object.keys(mcpServers)[0];
+              const serverConfig = mcpServers[serverName];
+              
+              if (serverConfig.command && serverConfig.args) {
+                // Stdio MCP with command and args
+                const args = Array.isArray(serverConfig.args) ? serverConfig.args.join(' ') : serverConfig.args;
+                mcpCommand = `claude mcp add ${mcpName} -- ${serverConfig.command} ${args}`;
+              } else if (serverConfig.url) {
+                // Remote MCP with URL
+                const transport = serverConfig.transport || 'http';
+                mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${serverConfig.url}`;
+              } else {
+                console.log(`⚠️  Skipping ${mcpName}: Unsupported MCP configuration format`);
+                continue;
+              }
+            } else {
+              // Fallback: Special handling for known MCPs
+              if (mcpName === 'context7') {
+                mcpCommand = `claude mcp add --transport http ${mcpName} https://context7.com/mcp`;
+              } else {
+                console.log(`⚠️  Skipping ${mcpName}: No mcpServers configuration found`);
+                continue;
+              }
+            }
+          } catch (jsonError) {
+            // If JSON parsing fails, try legacy format or defaults
+            const commandMatch = mcpContent.match(/command:\s*(.+)/);
+            const urlMatch = mcpContent.match(/url:\s*(.+)/);
+            const transportMatch = mcpContent.match(/transport:\s*(.+)/);
+            
+            if (commandMatch) {
+              mcpCommand = `claude mcp add ${mcpName} -- ${commandMatch[1]}`;
+            } else if (urlMatch && transportMatch) {
+              const transport = transportMatch[1].trim();
+              const url = urlMatch[1].trim();
+              mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${url}`;
+            } else if (mcpName === 'context7') {
               mcpCommand = `claude mcp add --transport http ${mcpName} https://context7.com/mcp`;
             } else {
-              console.log(`⚠️  Skipping ${mcpName}: No command or URL found in content`);
+              console.log(`⚠️  Skipping ${mcpName}: Could not parse MCP configuration`);
               continue;
             }
           }

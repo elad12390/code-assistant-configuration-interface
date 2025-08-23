@@ -96,13 +96,13 @@ npm publish  # DON'T DO THIS
 # ✅ ALWAYS use GitHub release workflows
 gh workflow run "CACI Multi-Platform Release (Main)" -f tag_name=v1.x.x -f environment=production
 
-# ✅ Alternative: Use clean release workflow  
+# ✅ Alternative: Use clean release workflow
 gh workflow run "CACI Multi-Platform Release (Main) - Clean" -f tag_name=v1.x.x -f environment=production
 
 # ✅ Available automated workflows:
 # - CACI Multi-Platform Release (Main): Complete release with all platforms
 # - CACI Package NPM Publishing: NPM-only publishing
-# - CACI Package Docker Publishing: Docker image publishing  
+# - CACI Package Docker Publishing: Docker image publishing
 # - Publish to APT Repository: Debian package publishing
 # - Update Homebrew Formula: Homebrew package publishing
 

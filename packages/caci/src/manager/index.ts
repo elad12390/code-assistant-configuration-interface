@@ -142,7 +142,7 @@ export async function applyConfiguration(
   // Apply MCPs via claude mcp add commands
   if (selectedComponents.mcps.length > 0) {
     console.log('🔗 Configuring MCPs via Claude CLI...');
-    
+
     for (const mcpName of selectedComponents.mcps) {
       const mcp = componentsData.mcps[mcpName];
       if (mcp) {
@@ -150,19 +150,21 @@ export async function applyConfiguration(
           // Parse MCP content - it's a JSON string containing mcpServers configuration
           const mcpContent = mcp.content as string;
           let mcpCommand = '';
-          
+
           try {
             const mcpConfig = JSON.parse(mcpContent);
             const mcpServers = mcpConfig.mcpServers;
-            
+
             if (mcpServers) {
               // Get the first server configuration
               const serverName = Object.keys(mcpServers)[0];
               const serverConfig = mcpServers[serverName];
-              
+
               if (serverConfig.command && serverConfig.args) {
                 // Stdio MCP with command and args
-                const args = Array.isArray(serverConfig.args) ? serverConfig.args.join(' ') : serverConfig.args;
+                const args = Array.isArray(serverConfig.args)
+                  ? serverConfig.args.join(' ')
+                  : serverConfig.args;
                 mcpCommand = `claude mcp add --scope project ${mcpName} -- ${serverConfig.command} ${args}`;
               } else if (serverConfig.url) {
                 // Remote MCP with URL
@@ -186,7 +188,7 @@ export async function applyConfiguration(
             const commandMatch = mcpContent.match(/command:\s*(.+)/);
             const urlMatch = mcpContent.match(/url:\s*(.+)/);
             const transportMatch = mcpContent.match(/transport:\s*(.+)/);
-            
+
             if (commandMatch) {
               mcpCommand = `claude mcp add --scope project ${mcpName} -- ${commandMatch[1]}`;
             } else if (urlMatch && transportMatch) {
@@ -200,9 +202,9 @@ export async function applyConfiguration(
               continue;
             }
           }
-          
+
           console.log(`🔗 Adding MCP: ${mcpCommand}`);
-          
+
           // Execute the claude mcp add command
           const { spawn } = require('child_process');
           await new Promise((resolve, reject) => {
@@ -221,9 +223,10 @@ export async function applyConfiguration(
               resolve(null); // Continue with other MCPs
             });
           });
-          
         } catch (error) {
-          console.log(`⚠️  Error processing MCP ${mcpName}: ${error instanceof Error ? error.message : String(error)}`);
+          console.log(
+            `⚠️  Error processing MCP ${mcpName}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     }

@@ -111,7 +111,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
   // Process each question with clean formatting
   for (const question of PROJECT_REQUIREMENTS_QUESTIONS) {
     let answer: { value: unknown };
-    
+
     // Add spacing between questions for better readability
     if (question.type !== 'text') {
       console.log('');

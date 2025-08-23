@@ -97,12 +97,17 @@ async function callAI(prompt: string): Promise<string> {
   "mcps": ["array", "of", "component", "names"]
 }
 
-Rules:
-- Output ONLY the JSON object
-- No explanations, no markdown, no additional text
+CRITICAL RULES:
+- Output ONLY the JSON object, no explanations or markdown
 - All component names must exist in the provided lists
-- Include 3-8 components per category
-- Use empty arrays [] if no relevant components exist for a category`;
+- Think HOLISTICALLY about the entire project lifecycle and team needs
+- Include 8-15 components per category for comprehensive coverage
+- Consider technical AND non-technical needs (PMs, POs, analysts, etc.)
+- Include both development tools AND project management components
+- Think about what a COMPLETE professional development setup needs
+- Default recommendations should cover: coding, testing, deployment, project management, documentation, code quality
+- Select components that work together as a cohesive development environment`;
+
 
     const response = await model.invoke([
       new SystemMessage(systemPrompt),
@@ -145,28 +150,36 @@ Available Components:
 - Hooks: ${Object.keys(componentsData.hooks).join(', ')}
 - MCPs: ${Object.keys(componentsData.mcps).join(', ')}
 
-Based on the user's requirements, recommend the most relevant components from each category.
+ANALYZE the project requirements and recommend a COMPREHENSIVE development environment setup.
 
 YOU ARE A JSON API. OUTPUT ONLY JSON. NO QUESTIONS. NO EXPLANATIONS.
 
+Think about the COMPLETE project lifecycle and recommend components for:
+- Technical development (developers, architects, specialists)
+- Project management (PMs, POs, scrum masters, analysts)  
+- Code quality (linting, testing, formatting, security)
+- Development workflow (building, deploying, monitoring)
+- Documentation and collaboration tools
+- Database and API integrations
+
 Return ONLY this JSON structure with real component names from the available lists:
 {
-  "agents": ["agent-name-1", "agent-name-2"],
-  "commands": ["command-name-1", "command-name-2"], 
-  "hooks": ["hook-name-1", "hook-name-2"],
-  "mcps": ["mcp-name-1", "mcp-name-2"]
+  "agents": ["comprehensive-list-of-8-to-15-agents"],
+  "commands": ["comprehensive-list-of-8-to-15-commands"], 
+  "hooks": ["comprehensive-list-of-8-to-15-hooks"],
+  "mcps": ["comprehensive-list-of-8-to-15-mcps"]
 }
 
-Important guidelines:
-1. Only recommend components that actually exist in the provided lists
-2. Analyze the project structure to understand the tech stack, frameworks, and architecture
-3. Consider the natural language project description to understand the project's purpose and requirements
-4. Prioritize components that are most relevant to the detected tech stack and project goals
-5. Include a reasonable number of recommendations (3-8 per category)
-6. If a category is not relevant to the user's project, you can return an empty array for that category
-7. Pay special attention to package.json, requirements.txt, or other dependency files in the structure
+CRITICAL REQUIREMENTS:
+1. All component names must exist in the provided lists above
+2. Include 8-15 components per category for a COMPLETE professional setup
+3. Mix technical AND non-technical roles (include PM, PO, QA, analyst agents)
+4. Consider the ENTIRE team and project needs, not just immediate coding
+5. Include project management, documentation, testing, deployment, monitoring tools
+6. Analyze project structure to understand tech stack and customize accordingly
+7. Build a COHESIVE environment that supports the full development lifecycle
 
-RESPOND WITH ONLY THE JSON OBJECT - NO OTHER TEXT OR FORMATTING`;
+RESPOND WITH ONLY THE JSON OBJECT`;
 }
 
 /**
@@ -215,7 +228,23 @@ export async function recommendComponents(
       mcps: validatedRecommendation.mcps.filter(name => componentsData.mcps[name]),
     };
 
-    return filteredRecommendation;
+    // Add essential defaults for all projects
+    const defaults = {
+      mcps: ['context7'], // Essential for documentation lookup
+      agents: ['business-analyst', 'task-decomposition-expert'], // Project management roles always useful
+      commands: ['setup-linting', 'optimize-build'], // Basic development commands
+      hooks: [] // Will be determined by AI based on project needs
+    };
+
+    // Merge defaults with AI recommendations (avoid duplicates)
+    const finalRecommendation: Recommendation = {
+      agents: [...new Set([...filteredRecommendation.agents, ...defaults.agents.filter(name => componentsData.agents[name])])],
+      commands: [...new Set([...filteredRecommendation.commands, ...defaults.commands.filter(name => componentsData.commands[name])])],
+      hooks: [...new Set([...filteredRecommendation.hooks, ...defaults.hooks.filter(name => componentsData.hooks[name])])],
+      mcps: [...new Set([...filteredRecommendation.mcps, ...defaults.mcps.filter(name => componentsData.mcps[name])])],
+    };
+
+    return finalRecommendation;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('No API key found')) {

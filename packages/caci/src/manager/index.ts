@@ -139,16 +139,63 @@ export async function applyConfiguration(
     }
   }
 
-  // Apply MCPs
+  // Apply MCPs via claude mcp add commands
   if (selectedComponents.mcps.length > 0) {
-    const mcpsPath = path.join(claudePath, 'mcps');
-    await fsPromises.mkdir(mcpsPath, { recursive: true });
-
+    console.log('🔗 Configuring MCPs via Claude CLI...');
+    
     for (const mcpName of selectedComponents.mcps) {
       const mcp = componentsData.mcps[mcpName];
       if (mcp) {
-        const mcpFilePath = path.join(mcpsPath, `${mcpName}.md`);
-        await fsPromises.writeFile(mcpFilePath, mcp.content as string, 'utf8');
+        try {
+          // Parse MCP content to extract command information
+          const mcpContent = mcp.content as string;
+          const commandMatch = mcpContent.match(/command:\s*(.+)/);
+          const urlMatch = mcpContent.match(/url:\s*(.+)/);
+          const transportMatch = mcpContent.match(/transport:\s*(.+)/);
+          
+          let mcpCommand = '';
+          if (commandMatch) {
+            // Stdio MCP
+            mcpCommand = `claude mcp add ${mcpName} -- ${commandMatch[1]}`;
+          } else if (urlMatch && transportMatch) {
+            // Remote MCP
+            const transport = transportMatch[1].trim();
+            const url = urlMatch[1].trim();
+            mcpCommand = `claude mcp add --transport ${transport} ${mcpName} ${url}`;
+          } else {
+            // Default context7 or other HTTP MCPs
+            if (mcpName === 'context7') {
+              mcpCommand = `claude mcp add --transport http ${mcpName} https://context7.com/mcp`;
+            } else {
+              console.log(`⚠️  Skipping ${mcpName}: No command or URL found in content`);
+              continue;
+            }
+          }
+          
+          console.log(`🔗 Adding MCP: ${mcpCommand}`);
+          
+          // Execute the claude mcp add command
+          const { spawn } = require('child_process');
+          await new Promise((resolve, reject) => {
+            const [command, ...args] = mcpCommand.split(' ');
+            const proc = spawn(command, args, { stdio: 'inherit' });
+            proc.on('close', (code: number | null) => {
+              if (code === 0) {
+                resolve(code);
+              } else {
+                console.log(`⚠️  MCP ${mcpName} installation may have failed (exit code: ${code})`);
+                resolve(code); // Continue with other MCPs even if one fails
+              }
+            });
+            proc.on('error', (error: Error) => {
+              console.log(`⚠️  Failed to install MCP ${mcpName}: ${error.message}`);
+              resolve(null); // Continue with other MCPs
+            });
+          });
+          
+        } catch (error) {
+          console.log(`⚠️  Error processing MCP ${mcpName}: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
     }
   }

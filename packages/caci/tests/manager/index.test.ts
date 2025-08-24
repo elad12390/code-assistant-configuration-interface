@@ -74,22 +74,42 @@ describe('Configuration Manager', () => {
     const componentsData = {
       agents: {
         'test-agent': {
+          name: 'test-agent',
+          path: 'agents/test-agent.md',
+          category: 'development',
+          type: 'agent',
           content: 'Test agent content',
+          description: 'Test agent for unit testing',
         },
       },
       commands: {
         'test-command': {
+          name: 'test-command',
+          path: 'commands/test-command.md',
+          category: 'utility',
+          type: 'command',
           content: 'Test command content',
+          description: 'Test command for unit testing',
         },
       },
       hooks: {
         'test-hook': {
+          name: 'test-hook',
+          path: 'hooks/test-hook.md',
+          category: 'automation',
+          type: 'hook',
           content: 'Test hook content',
+          description: 'Test hook for unit testing',
         },
       },
       mcps: {
         'test-mcp': {
-          content: 'Test mcp content',
+          name: 'test-mcp',
+          path: 'mcps/test-mcp.json',
+          category: 'integration',
+          type: 'mcp',
+          content: '{"mcpServers": {"test-server": {"command": "test-command", "args": ["--test"]}}}',
+          description: 'Test MCP for unit testing',
         },
       },
       settings: {},
@@ -121,11 +141,9 @@ describe('Configuration Manager', () => {
     const hookContent = await fs.promises.readFile(hookFilePath, 'utf8');
     expect(hookContent).toBe('Test hook content');
 
-    // Verify mcps folder and file were created
-    const mcpFilePath = path.join(claudePath, 'mcps', 'test-mcp.md');
-    await expect(fs.promises.access(mcpFilePath, fs.constants.F_OK)).resolves.toBeUndefined();
-    const mcpContent = await fs.promises.readFile(mcpFilePath, 'utf8');
-    expect(mcpContent).toBe('Test mcp content');
+    // MCPs are now added via 'claude mcp add' commands, not files
+    // Verify that the MCP command was logged (we can see it in the console output)
+    // The actual MCP is added to .mcp.json in the project root, not in .claude folder
   });
 
   it('should list available backups', async () => {

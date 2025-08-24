@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "test-mcp": {
+      "type": "stdio",
+      "command": "test-command",
+      "args": [
+        "--test"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,14 +1,27 @@
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
 import type { ComponentsData, UserRequirements } from '../../src/analyzer';
-import type { ChildProcess } from 'child_process';
-import { spawn } from 'child_process';
 
-// Mock the child_process spawn
-jest.mock('child_process', () => ({
-  spawn: jest.fn(),
+// Mock LangChain providers
+jest.mock('@langchain/google-genai', () => ({
+  ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => ({
+    invoke: jest.fn().mockResolvedValue({
+      content: JSON.stringify({
+        agents: ['test-agent'],
+        commands: ['test-command'],
+        hooks: ['test-hook'],
+        mcps: ['test-mcp'],
+      }),
+    }),
+  })),
 }));
 
-const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
+jest.mock('@langchain/anthropic', () => ({
+  ChatAnthropic: jest.fn(),
+}));
+
+jest.mock('@langchain/openai', () => ({
+  ChatOpenAI: jest.fn(),
+}));
 
 describe('AI Recommender', () => {
   const mockComponentsData: ComponentsData = {
@@ -20,6 +33,14 @@ describe('AI Recommender', () => {
         type: 'agent',
         content: 'Test agent content',
         description: 'Test agent description',
+      },
+      'business-analyst': {
+        name: 'business-analyst',
+        path: 'agents/business-analyst.md',
+        category: 'business',
+        type: 'agent',
+        content: 'Business analyst content',
+        description: 'Business analyst agent',
       },
     },
     commands: {
@@ -51,6 +72,14 @@ describe('AI Recommender', () => {
         content: 'Test mcp content',
         description: 'Test mcp description',
       },
+      'context7': {
+        name: 'context7',
+        path: 'mcps/context7.json',
+        category: 'documentation',
+        type: 'mcp',
+        content: '{"mcpServers": {"context7": {"command": "npx", "args": ["@upstash/context7-mcp"]}}}',
+        description: 'Documentation lookup MCP',
+      },
     },
     settings: {},
     templates: {},
@@ -63,134 +92,81 @@ describe('AI Recommender', () => {
     experienceLevel: 'intermediate',
   };
 
-  const mockEventEmitter = {
-    on: jest.fn(),
-    stdout: { on: jest.fn() },
-    stderr: { on: jest.fn() },
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should throw error when Claude CLI is not available', async () => {
-    // Mock claude --version command to fail
-    const mockFailProcess: any = {
-      ...mockEventEmitter,
-      on: jest.fn((event: string, callback: (code: number) => void) => {
-        if (event === 'close') {
-          setTimeout(() => callback(1), 0); // Exit with code 1 (failure)
-        }
-        return mockFailProcess;
-      }),
-    };
+  it('should throw error when no API key is available', async () => {
+    // Clear all API keys to trigger "no provider" error
+    const originalAnthropicKey = process.env.ANTHROPIC_API_KEY;
+    const originalGoogleKey = process.env.GOOGLE_API_KEY; 
+    const originalOpenAIKey = process.env.OPENAI_API_KEY;
+    
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+    delete process.env.OPENAI_API_KEY;
 
-    mockSpawn.mockReturnValueOnce(mockFailProcess as ChildProcess);
-
-    await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
-      'Claude CLI not found'
-    );
+    try {
+      await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
+        'No AI provider API key found'
+      );
+    } finally {
+      // Restore original environment
+      if (originalAnthropicKey) process.env.ANTHROPIC_API_KEY = originalAnthropicKey;
+      if (originalGoogleKey) process.env.GOOGLE_API_KEY = originalGoogleKey;
+      if (originalOpenAIKey) process.env.OPENAI_API_KEY = originalOpenAIKey;
+    }
   });
 
   it('should recommend components based on user requirements', async () => {
-    // Mock claude --version (success)
-    const mockVersionCheck: any = {
-      ...mockEventEmitter,
-      on: jest.fn((event: string, callback: (code: number) => void) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 0); // Exit with code 0 (success)
-        }
-        return mockVersionCheck;
-      }),
-    };
+    // Set a mock API key for testing
+    process.env.GOOGLE_API_KEY = 'test-api-key';
 
-    // Mock claude command with JSON response
-    const mockClaudeCommand: any = {
-      ...mockEventEmitter,
-      stdout: {
-        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
-            const jsonResponse = JSON.stringify({
-              agents: ['test-agent'],
-              commands: ['test-command'],
-              hooks: ['test-hook'],
-              mcps: ['test-mcp'],
-            });
-            setTimeout(() => callback(Buffer.from(jsonResponse)), 0);
-          }
-          return mockClaudeCommand.stdout;
-        }),
-      },
-      stderr: { on: jest.fn() },
-      on: jest.fn((event: string, callback: (code: number) => void) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 0); // Exit with code 0 (success)
-        }
-        return mockClaudeCommand;
-      }),
-    };
+    try {
+      const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 
-    mockSpawn
-      .mockReturnValueOnce(mockVersionCheck as ChildProcess)
-      .mockReturnValueOnce(mockClaudeCommand as ChildProcess);
-
-    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
-
-    expect(recommendation).toBeDefined();
-    expect(Array.isArray(recommendation.agents)).toBe(true);
-    expect(Array.isArray(recommendation.commands)).toBe(true);
-    expect(Array.isArray(recommendation.hooks)).toBe(true);
-    expect(Array.isArray(recommendation.mcps)).toBe(true);
+      expect(recommendation).toBeDefined();
+      expect(Array.isArray(recommendation.agents)).toBe(true);
+      expect(Array.isArray(recommendation.commands)).toBe(true);
+      expect(Array.isArray(recommendation.hooks)).toBe(true);
+      expect(Array.isArray(recommendation.mcps)).toBe(true);
+      
+      // Should include defaults
+      expect(recommendation.mcps).toContain('context7');
+      expect(recommendation.agents).toContain('business-analyst');
+    } finally {
+      // Clean up
+      delete process.env.GOOGLE_API_KEY;
+    }
   });
 
   it('should filter out non-existent components', async () => {
-    // Mock claude --version (success)
-    const mockVersionCheck: any = {
-      ...mockEventEmitter,
-      on: jest.fn((event: string, callback: (code: number) => void) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 0);
-        }
-        return mockVersionCheck;
-      }),
-    };
-
-    // Mock claude command with non-existent components in response
-    const mockClaudeCommand: any = {
-      ...mockEventEmitter,
-      stdout: {
-        on: jest.fn((event: string, callback: (data: Buffer) => void) => {
-          if (event === 'data') {
-            const jsonResponse = JSON.stringify({
-              agents: ['test-agent', 'non-existent-agent'],
-              commands: ['test-command', 'non-existent-command'],
-              hooks: ['test-hook', 'non-existent-hook'],
-              mcps: ['test-mcp', 'non-existent-mcp'],
-            });
-            setTimeout(() => callback(Buffer.from(jsonResponse)), 0);
-          }
-          return mockClaudeCommand.stdout;
+    // Mock LangChain to return components including non-existent ones
+    const mockGemini = require('@langchain/google-genai').ChatGoogleGenerativeAI;
+    mockGemini.mockImplementationOnce(() => ({
+      invoke: jest.fn().mockResolvedValue({
+        content: JSON.stringify({
+          agents: ['test-agent', 'non-existent-agent'],
+          commands: ['test-command', 'non-existent-command'],
+          hooks: ['test-hook', 'non-existent-hook'],
+          mcps: ['test-mcp', 'non-existent-mcp'],
         }),
-      },
-      stderr: { on: jest.fn() },
-      on: jest.fn((event: string, callback: (code: number) => void) => {
-        if (event === 'close') {
-          setTimeout(() => callback(0), 0);
-        }
-        return mockClaudeCommand;
       }),
-    };
+    }));
 
-    mockSpawn
-      .mockReturnValueOnce(mockVersionCheck as ChildProcess)
-      .mockReturnValueOnce(mockClaudeCommand as ChildProcess);
+    // Set API key for test
+    process.env.GOOGLE_API_KEY = 'test-api-key';
 
-    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
+    try {
+      const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
 
-    // Should only include existing components
-    expect(recommendation.agents).toContain('test-agent');
-    expect(recommendation.agents).not.toContain('non-existent-agent');
-    expect(recommendation.commands).toContain('test-command');
-    expect(recommendation.commands).not.toContain('non-existent-command');
+      // Should only include existing components
+      expect(recommendation.agents).toContain('test-agent');
+      expect(recommendation.agents).not.toContain('non-existent-agent');
+      expect(recommendation.commands).toContain('test-command');
+      expect(recommendation.commands).not.toContain('non-existent-command');
+    } finally {
+      delete process.env.GOOGLE_API_KEY;
+    }
   });
 });

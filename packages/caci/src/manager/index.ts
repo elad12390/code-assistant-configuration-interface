@@ -12,11 +12,11 @@ const MCPServerConfigSchema = z.object({
   url: z.string().optional(),
   transport: z.string().optional(),
   type: z.string().optional(),
-  env: z.record(z.string()).optional(),
+  env: z.record(z.string(), z.string()).optional(),
 });
 
 const MCPConfigSchema = z.object({
-  mcpServers: z.record(MCPServerConfigSchema).optional(),
+  mcpServers: z.record(z.string(), MCPServerConfigSchema).optional(),
 });
 
 // Types are inferred from schemas when needed
@@ -181,13 +181,13 @@ export async function applyConfiguration(
               const serverName = Object.keys(mcpServers)[0];
               const serverConfig = mcpServers[serverName];
 
-              if (serverConfig?.command && serverConfig?.args) {
+              if (serverConfig && 'command' in serverConfig && 'args' in serverConfig && serverConfig.command && serverConfig.args) {
                 // Stdio MCP with command and args
                 const args = serverConfig.args.join(' ');
                 mcpCommand = `claude mcp add --scope project ${mcpName} -- ${serverConfig.command} ${args}`;
-              } else if (serverConfig?.url) {
+              } else if (serverConfig && 'url' in serverConfig && serverConfig.url) {
                 // Remote MCP with URL
-                const transport = serverConfig.transport || 'http';
+                const transport = ('transport' in serverConfig && serverConfig.transport) ?? 'http';
                 mcpCommand = `claude mcp add --transport ${transport} --scope project ${mcpName} ${serverConfig.url}`;
               } else {
                 console.log(`⚠️  Skipping ${mcpName}: Unsupported MCP configuration format`);

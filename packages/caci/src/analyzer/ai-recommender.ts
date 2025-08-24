@@ -134,8 +134,10 @@ function getCoreUsageScore(name: string, _content: string, _description: string)
   if (name.includes('business-analyst') || name.includes('task-decomposition')) return 85;
 
   // Core development tools
-  if (name.includes('react') || name.includes('typescript') || name.includes('javascript')) score += 35;
-  if (name.includes('frontend') || name.includes('backend') || name.includes('fullstack')) score += 30;
+  if (name.includes('react') || name.includes('typescript') || name.includes('javascript'))
+    score += 35;
+  if (name.includes('frontend') || name.includes('backend') || name.includes('fullstack'))
+    score += 30;
   if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 25;
   if (name.includes('git') || name.includes('commit') || name.includes('build')) score += 25;
 

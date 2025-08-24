@@ -181,7 +181,13 @@ export async function applyConfiguration(
               const serverName = Object.keys(mcpServers)[0];
               const serverConfig = mcpServers[serverName];
 
-              if (serverConfig && 'command' in serverConfig && 'args' in serverConfig && serverConfig.command && serverConfig.args) {
+              if (
+                serverConfig &&
+                'command' in serverConfig &&
+                'args' in serverConfig &&
+                serverConfig.command &&
+                serverConfig.args
+              ) {
                 // Stdio MCP with command and args
                 const args = serverConfig.args.join(' ');
                 mcpCommand = `claude mcp add --scope project ${mcpName} -- ${serverConfig.command} ${args}`;

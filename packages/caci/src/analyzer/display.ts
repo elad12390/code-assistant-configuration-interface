@@ -5,16 +5,16 @@ import type { Component, ComponentsData } from './index';
 // This is a simplified version for display purposes
 function getSimpleUsageScore(component: Component): number {
   const name = component.name.toLowerCase();
-  
+
   // High-value defaults
   if (name.includes('context7')) return 95;
   if (name.includes('business-analyst') || name.includes('task-decomposition')) return 85;
-  
-  // Core development patterns  
+
+  // Core development patterns
   if (name.includes('react') || name.includes('typescript')) return 80;
   if (name.includes('test') || name.includes('lint') || name.includes('git')) return 75;
   if (name.includes('build') || name.includes('deploy')) return 70;
-  
+
   // Default moderate usage
   return 60;
 }

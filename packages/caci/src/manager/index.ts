@@ -2,7 +2,24 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
 import { spawn } from 'child_process';
+import { z } from 'zod';
 import type { ComponentsData, SelectedComponents } from '../analyzer';
+
+// Zod schemas for MCP configuration validation
+const MCPServerConfigSchema = z.object({
+  command: z.string().optional(),
+  args: z.array(z.string()).optional(),
+  url: z.string().optional(),
+  transport: z.string().optional(),
+  type: z.string().optional(),
+  env: z.record(z.string()).optional(),
+});
+
+const MCPConfigSchema = z.object({
+  mcpServers: z.record(MCPServerConfigSchema).optional(),
+});
+
+// Types are inferred from schemas when needed
 
 export interface BackupInfo {
   timestamp: string;
@@ -91,8 +108,8 @@ async function copyFolder(source: string, destination: string): Promise<void> {
  */
 export async function applyConfiguration(
   projectDir: string,
-  selectedComponents: { agents: string[]; commands: string[]; hooks: string[]; mcps: string[] },
-  componentsData: any
+  selectedComponents: SelectedComponents,
+  componentsData: ComponentsData
 ): Promise<void> {
   const claudePath = path.join(projectDir, '.claude');
 
@@ -108,7 +125,7 @@ export async function applyConfiguration(
       const agent = componentsData.agents[agentName];
       if (agent) {
         const agentFilePath = path.join(agentsPath, `${agentName}.md`);
-        await fsPromises.writeFile(agentFilePath, agent.content as string, 'utf8');
+        await fsPromises.writeFile(agentFilePath, agent.content, 'utf8');
       }
     }
   }
@@ -122,7 +139,7 @@ export async function applyConfiguration(
       const command = componentsData.commands[commandName];
       if (command) {
         const commandFilePath = path.join(commandsPath, `${commandName}.md`);
-        await fsPromises.writeFile(commandFilePath, command.content as string, 'utf8');
+        await fsPromises.writeFile(commandFilePath, command.content, 'utf8');
       }
     }
   }
@@ -136,7 +153,7 @@ export async function applyConfiguration(
       const hook = componentsData.hooks[hookName];
       if (hook) {
         const hookFilePath = path.join(hooksPath, `${hookName}.md`);
-        await fsPromises.writeFile(hookFilePath, hook.content as string, 'utf8');
+        await fsPromises.writeFile(hookFilePath, hook.content, 'utf8');
       }
     }
   }
@@ -150,25 +167,25 @@ export async function applyConfiguration(
       if (mcp) {
         try {
           // Parse MCP content - it's a JSON string containing mcpServers configuration
-          const mcpContent = mcp.content as string;
+          const mcpContent = mcp.content;
           let mcpCommand = '';
 
           try {
-            const mcpConfig = JSON.parse(mcpContent) as { mcpServers?: Record<string, any> };
+            // Parse and validate MCP configuration with Zod
+            const rawConfig = JSON.parse(mcpContent);
+            const mcpConfig = MCPConfigSchema.parse(rawConfig);
             const mcpServers = mcpConfig.mcpServers;
 
             if (mcpServers) {
               // Get the first server configuration
               const serverName = Object.keys(mcpServers)[0];
-              const serverConfig = mcpServers[serverName] as any;
+              const serverConfig = mcpServers[serverName];
 
-              if (serverConfig.command && serverConfig.args) {
+              if (serverConfig?.command && serverConfig?.args) {
                 // Stdio MCP with command and args
-                const args = Array.isArray(serverConfig.args)
-                  ? serverConfig.args.join(' ')
-                  : serverConfig.args;
+                const args = serverConfig.args.join(' ');
                 mcpCommand = `claude mcp add --scope project ${mcpName} -- ${serverConfig.command} ${args}`;
-              } else if (serverConfig.url) {
+              } else if (serverConfig?.url) {
                 // Remote MCP with URL
                 const transport = serverConfig.transport || 'http';
                 mcpCommand = `claude mcp add --transport ${transport} --scope project ${mcpName} ${serverConfig.url}`;

@@ -3,7 +3,7 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
-import type { ComponentsData, UserRequirements } from './index';
+import type { ComponentsData, UserRequirements, Component } from './index';
 
 // Define available AI providers
 type AIProvider = 'anthropic' | 'gemini' | 'openai';
@@ -124,89 +124,75 @@ CRITICAL RULES:
 }
 
 /**
- * Calculate realistic usage statistics based on component characteristics and real-world patterns
+ * Calculate core usage score for a component
+ */
+function getCoreUsageScore(name: string, _content: string, _description: string): number {
+  let score = 30; // Conservative base score
+
+  // Universal high-usage patterns
+  if (name.includes('context7')) return 95;
+  if (name.includes('business-analyst') || name.includes('task-decomposition')) return 85;
+
+  // Core development tools
+  if (name.includes('react') || name.includes('typescript') || name.includes('javascript')) score += 35;
+  if (name.includes('frontend') || name.includes('backend') || name.includes('fullstack')) score += 30;
+  if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 25;
+  if (name.includes('git') || name.includes('commit') || name.includes('build')) score += 25;
+
+  return score;
+}
+
+/**
+ * Calculate category-specific usage adjustments
+ */
+function getCategoryUsageAdjustments(name: string, category: string, baseScore: number): number {
+  let score = baseScore;
+
+  // Popular frameworks and tools
+  if (name.includes('next') || name.includes('vue') || name.includes('angular')) score += 20;
+  if (name.includes('node') || name.includes('express') || name.includes('api')) score += 20;
+  if (name.includes('docker') || name.includes('deploy') || name.includes('ci')) score += 15;
+
+  // Category-specific adjustments
+  if (category === 'mcps') {
+    score = Math.max(score - 20, 20);
+    if (name.includes('github') || name.includes('file') || name.includes('database')) score += 15;
+  }
+
+  if (category === 'hooks') {
+    if (name.includes('commit') || name.includes('push') || name.includes('save')) score += 20;
+    if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 15;
+  }
+
+  return Math.min(score, 100);
+}
+
+/**
+ * Calculate realistic usage statistics based on component characteristics
  */
 function calculateUsageStats(componentsData: ComponentsData) {
-  const getUsageScore = (component: any, category: string): number => {
+  const getUsageScore = (component: Component, category: string): number => {
     const content = component.content || '';
     const description = component.description || '';
     const name = component.name.toLowerCase();
 
-    let score = 30; // Conservative base score
+    const coreScore = getCoreUsageScore(name, content, description);
+    return getCategoryUsageAdjustments(name, category, coreScore);
+  };
 
-    // Universal high-usage patterns (essential for most projects)
-    if (name.includes('context7')) score = 95; // Default MCP
-    if (name.includes('business-analyst') || name.includes('task-decomposition')) score = 85; // Default agents
-
-    // Core development tools (very high usage)
-    if (name.includes('react') || name.includes('typescript') || name.includes('javascript'))
-      score += 35;
-    if (name.includes('frontend') || name.includes('backend') || name.includes('fullstack'))
-      score += 30;
-    if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 25;
-    if (name.includes('git') || name.includes('commit') || name.includes('build')) score += 25;
-
-    // Popular frameworks and tools
-    if (name.includes('next') || name.includes('vue') || name.includes('angular')) score += 20;
-    if (name.includes('node') || name.includes('express') || name.includes('api')) score += 20;
-    if (name.includes('docker') || name.includes('deploy') || name.includes('ci')) score += 15;
-
-    // Project management and collaboration (moderate but important)
-    if (name.includes('analyst') || name.includes('manager') || name.includes('expert'))
-      score += 15;
-    if (name.includes('scrum') || name.includes('product') || name.includes('business'))
-      score += 10;
-
-    // Documentation and quality (essential but not daily)
-    if (content.includes('PROACTIVELY') || description.includes('Use PROACTIVELY')) score += 15;
-    if (name.includes('doc') || name.includes('readme') || name.includes('wiki')) score += 10;
-    if (name.includes('security') || name.includes('performance') || name.includes('monitor'))
-      score += 8;
-
-    // Well-documented components tend to be more used
-    if (content.length > 3000) score += 8;
-    if (content.length > 1500) score += 5;
-
-    // Category-specific adjustments
-    if (category === 'mcps') {
-      // MCPs are newer, generally lower baseline usage
-      score = Math.max(score - 20, 20);
-      if (name.includes('github') || name.includes('file') || name.includes('database'))
-        score += 15;
+  const createUsageMap = (components: Record<string, Component>, category: string) => {
+    const entries: [string, number][] = [];
+    for (const [name, comp] of Object.entries(components)) {
+      entries.push([name, getUsageScore(comp, category)]);
     }
-
-    if (category === 'hooks') {
-      // Hooks are automation, moderate baseline usage
-      if (name.includes('commit') || name.includes('push') || name.includes('save')) score += 20;
-      if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 15;
-    }
-
-    // Cap at 100
-    return Math.min(score, 100);
+    return Object.fromEntries(entries);
   };
 
   return {
-    agents: Object.fromEntries(
-      Object.entries(componentsData.agents).map(([name, comp]) => [
-        name,
-        getUsageScore(comp, 'agents'),
-      ])
-    ),
-    commands: Object.fromEntries(
-      Object.entries(componentsData.commands).map(([name, comp]) => [
-        name,
-        getUsageScore(comp, 'commands'),
-      ])
-    ),
-    hooks: Object.fromEntries(
-      Object.entries(componentsData.hooks).map(([name, comp]) => [
-        name,
-        getUsageScore(comp, 'hooks'),
-      ])
-    ),
-    mcps: Object.fromEntries(
-      Object.entries(componentsData.mcps).map(([name, comp]) => [name, getUsageScore(comp, 'mcps')])
-    ),
+    agents: createUsageMap(componentsData.agents, 'agents'),
+    commands: createUsageMap(componentsData.commands, 'commands'),
+    hooks: createUsageMap(componentsData.hooks, 'hooks'),
+    mcps: createUsageMap(componentsData.mcps, 'mcps'),
   };
 }
 

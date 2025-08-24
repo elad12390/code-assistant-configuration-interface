@@ -6,10 +6,10 @@ jest.mock('@langchain/google-genai', () => ({
   ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => ({
     invoke: jest.fn().mockResolvedValue({
       content: JSON.stringify({
-        agents: ['test-agent'],
-        commands: ['test-command'],
-        hooks: ['test-hook'],
-        mcps: ['test-mcp'],
+        agents: ['test-agent', 'non-existent-agent'],
+        commands: ['test-command', 'non-existent-command'],
+        hooks: ['test-hook', 'non-existent-hook'],
+        mcps: ['test-mcp', 'non-existent-mcp'],
       }),
     }),
   })),
@@ -72,12 +72,13 @@ describe('AI Recommender', () => {
         content: 'Test mcp content',
         description: 'Test mcp description',
       },
-      'context7': {
+      context7: {
         name: 'context7',
         path: 'mcps/context7.json',
         category: 'documentation',
         type: 'mcp',
-        content: '{"mcpServers": {"context7": {"command": "npx", "args": ["@upstash/context7-mcp"]}}}',
+        content:
+          '{"mcpServers": {"context7": {"command": "npx", "args": ["@upstash/context7-mcp"]}}}',
         description: 'Documentation lookup MCP',
       },
     },
@@ -99,9 +100,9 @@ describe('AI Recommender', () => {
   it('should throw error when no API key is available', async () => {
     // Clear all API keys to trigger "no provider" error
     const originalAnthropicKey = process.env.ANTHROPIC_API_KEY;
-    const originalGoogleKey = process.env.GOOGLE_API_KEY; 
+    const originalGoogleKey = process.env.GOOGLE_API_KEY;
     const originalOpenAIKey = process.env.OPENAI_API_KEY;
-    
+
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.GOOGLE_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -130,7 +131,7 @@ describe('AI Recommender', () => {
       expect(Array.isArray(recommendation.commands)).toBe(true);
       expect(Array.isArray(recommendation.hooks)).toBe(true);
       expect(Array.isArray(recommendation.mcps)).toBe(true);
-      
+
       // Should include defaults
       expect(recommendation.mcps).toContain('context7');
       expect(recommendation.agents).toContain('business-analyst');
@@ -141,18 +142,8 @@ describe('AI Recommender', () => {
   });
 
   it('should filter out non-existent components', async () => {
-    // Mock LangChain to return components including non-existent ones
-    const mockGemini = require('@langchain/google-genai').ChatGoogleGenerativeAI;
-    mockGemini.mockImplementationOnce(() => ({
-      invoke: jest.fn().mockResolvedValue({
-        content: JSON.stringify({
-          agents: ['test-agent', 'non-existent-agent'],
-          commands: ['test-command', 'non-existent-command'],
-          hooks: ['test-hook', 'non-existent-hook'],
-          mcps: ['test-mcp', 'non-existent-mcp'],
-        }),
-      }),
-    }));
+    // The global mock will return the default response which includes non-existent components
+    // This test verifies filtering works correctly
 
     // Set API key for test
     process.env.GOOGLE_API_KEY = 'test-api-key';

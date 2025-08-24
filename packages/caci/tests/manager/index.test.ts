@@ -108,7 +108,8 @@ describe('Configuration Manager', () => {
           path: 'mcps/test-mcp.json',
           category: 'integration',
           type: 'mcp',
-          content: '{"mcpServers": {"test-server": {"command": "test-command", "args": ["--test"]}}}',
+          content:
+            '{"mcpServers": {"test-server": {"command": "test-command", "args": ["--test"]}}}',
           description: 'Test MCP for unit testing',
         },
       },

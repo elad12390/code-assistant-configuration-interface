@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import http from 'http';
-import open from 'open';
 import chalk from 'chalk';
 
 // Conditionally import keytar to handle environments without libsecret
@@ -259,6 +258,7 @@ async function performSimpleOAuth(): Promise<string> {
   console.log(chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`));
 
   // Open browser
+  const { default: open } = await import('open');
   await open(authUrl.toString());
 
   // Wait for callback with timeout
@@ -329,6 +329,7 @@ async function performPKCEOAuth(): Promise<string> {
     console.log(chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`));
 
     // Open browser
+    const { default: open } = await import('open');
     await open(authUrl.toString());
 
     // Wait for callback with timeout

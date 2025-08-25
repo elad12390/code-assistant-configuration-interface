@@ -214,23 +214,40 @@ describe('CACI CLI Interface', () => {
       output += data.toString();
     });
 
-    // Give time for output, then kill
-    setTimeout(() => {
-      cli.kill('SIGTERM');
-    }, 2000);
+    // Give time for output, then kill - more aggressive for CI
+    const killTimer = setTimeout(() => {
+      if (!cli.killed) {
+        cli.kill('SIGKILL'); // More forceful kill for CI
+      }
+    }, 1500);
 
     await new Promise<void>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
+        if (!cli.killed) {
+          cli.kill('SIGKILL');
+        }
+        clearTimeout(killTimer);
         reject(new Error('Test timed out'));
-      }, 3000);
+      }, 2500);
 
       const cleanup = () => {
-        if (timeoutId) clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
+        clearTimeout(killTimer);
+        
+        // Ensure process is fully cleaned up
+        if (!cli.killed && cli.pid) {
+          cli.kill('SIGKILL');
+        }
+        
+        // Remove all listeners
+        cli.removeAllListeners();
+        
         resolve();
       };
 
       cli.on('close', cleanup);
       cli.on('error', cleanup);
+      cli.on('exit', cleanup);
     });
 
     // Should show CACI header or be empty if killed too early (acceptable on slower platforms)

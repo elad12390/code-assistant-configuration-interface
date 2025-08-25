@@ -1,8 +1,19 @@
 import crypto from 'crypto';
 import http from 'http';
 import open from 'open';
-import keytar from 'keytar';
 import chalk from 'chalk';
+
+// Conditionally import keytar to handle environments without libsecret
+let keytar: any = null;
+try {
+  keytar = require('keytar');
+} catch (error) {
+  // keytar not available in this environment (e.g., CI without libsecret)
+  // Only warn in non-test environments to avoid test noise
+  if (!process.env.NODE_ENV?.includes('test') && !process.env.JEST_WORKER_ID) {
+    console.warn('Keytar not available - keychain storage disabled');
+  }
+}
 
 const KEYCHAIN_SERVICE = 'caci-configurator';
 const KEYCHAIN_ACCOUNT = 'openrouter-api-key';
@@ -170,6 +181,10 @@ async function exchangeCodeForToken(code: string, codeVerifier: string): Promise
  * Store API key securely in system keychain
  */
 export async function storeApiKey(apiKey: string): Promise<void> {
+  if (!keytar) {
+    throw new Error('Keychain storage not available in this environment');
+  }
+  
   try {
     await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, apiKey);
   } catch (error) {
@@ -181,6 +196,10 @@ export async function storeApiKey(apiKey: string): Promise<void> {
  * Retrieve API key from system keychain
  */
 export async function getStoredApiKey(): Promise<string | null> {
+  if (!keytar) {
+    return null; // Keytar not available
+  }
+  
   try {
     return await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
   } catch (error) {
@@ -193,6 +212,10 @@ export async function getStoredApiKey(): Promise<string | null> {
  * Clear stored API key (for logout)
  */
 export async function clearStoredApiKey(): Promise<void> {
+  if (!keytar) {
+    return; // Nothing to clear if keytar not available
+  }
+  
   try {
     await keytar.deletePassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
   } catch (error) {

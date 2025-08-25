@@ -235,7 +235,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
 
           // Try to store in keychain
           try {
-            await storeApiKey(manualAnswer.apiKey);
+            await storeApiKey(manualAnswer.apiKey as string);
             console.log('✅ API key stored securely!');
           } catch (error) {
             console.log('⚠️  Could not store API key in keychain, but continuing...');
@@ -296,7 +296,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
         responses[question.id] = answer.value;
         break;
 
-      case 'multiple-choice':
+      case 'multiple-choice': {
         // For intermediate users, pre-select smart defaults
         let defaultChoices: string[] = [];
         if (experienceLevel.includes('Intermediate')) {
@@ -327,6 +327,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
         
         responses[question.id] = answer.value;
         break;
+      }
 
       default:
         answer = await inquirer.prompt([

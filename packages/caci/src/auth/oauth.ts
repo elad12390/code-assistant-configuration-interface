@@ -14,7 +14,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
     const server = http.createServer();
     
     server.listen(startPort, '127.0.0.1', () => {
-      const port = (server.address() as any)?.port;
+      const port = (server.address() as any)?.port as number;
       server.close(() => resolve(port));
     });
     
@@ -365,12 +365,12 @@ export async function promptForManualApiKey(): Promise<string> {
 
   try {
     // Store in keychain
-    await storeApiKey(apiKey);
+    await storeApiKey(apiKey as string);
     console.log(chalk.green('✅ API key stored securely!'));
-    return apiKey;
+    return apiKey as string;
   } catch (error) {
     console.log(chalk.yellow('⚠️  Could not store API key in keychain, but continuing...'));
-    return apiKey;
+    return apiKey as string;
   }
 }
 

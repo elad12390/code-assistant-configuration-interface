@@ -9,7 +9,7 @@ CACI (Code Assistant Configuration Interface) is an npm package that provides an
 ## Features
 
 - **Interactive CLI Interface**: Easy-to-use command-line interface similar to the BMAD-method installer
-- **AI-Powered Component Selection**: Uses Google Generative AI (Gemini 2.5 Pro) to intelligently recommend components based on project requirements
+- **AI-Powered Component Selection**: Uses Claude Code headless mode to intelligently recommend components based on project requirements
 - **Component Analysis**: Parses a large pool of components (102+ agents) and recommends the most relevant ones
 - **Colorful Output**: User-friendly interface with colored output for better readability
 - **Comprehensive Testing**: Full test coverage for all functionality
@@ -17,7 +17,7 @@ CACI (Code Assistant Configuration Interface) is an npm package that provides an
 ## Installation
 
 ```bash
-npm install -g caci
+npm install -g code-assistant-config-interface
 ```
 
 ## Usage
@@ -45,17 +45,14 @@ caci --help
 
 ## Requirements
 
-To use the AI-powered component recommendation feature, you'll need a Google API key:
+To use the AI-powered component recommendation feature, you'll need Claude Code installed and authenticated:
 
-1. Go to https://aistudio.google.com/
-2. Sign in with a Google account
-3. Navigate to "API Keys" in the sidebar
-4. Create a new API key
-5. Set the key as an environment variable:
-
-```bash
-export GOOGLE_API_KEY=your_api_key_here
-```
+1. Install Claude Code from https://claude.ai/code
+2. Authenticate with Claude Code:
+   ```bash
+   claude /login
+   ```
+3. The tool will automatically use Claude Code's headless mode for AI recommendations
 
 ## Development
 
@@ -123,8 +120,8 @@ MIT
 
 ## Acknowledgements
 
-- Uses Google Generative AI (Gemini) for AI-powered recommendations
+- Uses Claude Code headless mode for AI-powered recommendations
 - Built with Commander.js for CLI interface
 - Uses Chalk for colorful terminal output
-- Inspired by the BMAD-method installer# Test CI trigger
+- Integrates with Claude Code project configuration system
 

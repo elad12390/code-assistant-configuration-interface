@@ -12,11 +12,12 @@ module.exports = {
   verbose: true,
   // Transform node_modules that contain ES modules
   transformIgnorePatterns: [
-    '/node_modules/(?!(chalk)/)'
+    '/node_modules/(?!(chalk|open|keytar)/)'
   ],
-  // Fix module resolution for chalk 4.x CommonJS
+  // Fix module resolution for chalk 4.x CommonJS and OAuth modules
   moduleNameMapper: {
-    '^chalk$': 'chalk'
+    '^chalk$': 'chalk',
+    '^../auth/oauth$': '<rootDir>/tests/__mocks__/auth/oauth.ts',
   },
   // Reduce timeout for faster CI feedback
   testTimeout: 30000,

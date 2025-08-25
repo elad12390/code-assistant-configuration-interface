@@ -1,4 +1,4 @@
-// File: /home/eladbenhaim/dev/personal/claude-code-configurator/packages/website/app/page.tsx
+// File: /Users/arikliger/cacitest/claude-code-configurator/packages/website/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -20,7 +20,16 @@ jest.mock('@langchain/anthropic', () => ({
 }));
 
 jest.mock('@langchain/openai', () => ({
-  ChatOpenAI: jest.fn(),
+  ChatOpenAI: jest.fn().mockImplementation(() => ({
+    invoke: jest.fn().mockResolvedValue({
+      content: JSON.stringify({
+        agents: ['test-agent', 'non-existent-agent'],
+        commands: ['test-command', 'non-existent-command'],
+        hooks: ['test-hook', 'non-existent-hook'],
+        mcps: ['test-mcp', 'non-existent-mcp'],
+      }),
+    }),
+  })),
 }));
 
 describe('AI Recommender', () => {
@@ -97,67 +106,49 @@ describe('AI Recommender', () => {
     jest.clearAllMocks();
   });
 
-  it('should throw error when no API key is available', async () => {
-    // Clear all API keys to trigger "no provider" error
-    const originalAnthropicKey = process.env.ANTHROPIC_API_KEY;
-    const originalGoogleKey = process.env.GOOGLE_API_KEY;
-    const originalOpenAIKey = process.env.OPENAI_API_KEY;
-
-    delete process.env.ANTHROPIC_API_KEY;
-    delete process.env.GOOGLE_API_KEY;
-    delete process.env.OPENAI_API_KEY;
-
-    try {
-      await expect(recommendComponents(mockUserRequirements, mockComponentsData)).rejects.toThrow(
-        'No AI provider API key found'
-      );
-    } finally {
-      // Restore original environment
-      if (originalAnthropicKey) process.env.ANTHROPIC_API_KEY = originalAnthropicKey;
-      if (originalGoogleKey) process.env.GOOGLE_API_KEY = originalGoogleKey;
-      if (originalOpenAIKey) process.env.OPENAI_API_KEY = originalOpenAIKey;
-    }
+  it('should return default recommendations when no API key is provided', async () => {
+    // Test with no API key - should return default recommendations
+    const result = await recommendComponents(mockUserRequirements, mockComponentsData);
+    
+    expect(result).toBeDefined();
+    expect(result.agents).toBeDefined();
+    expect(result.commands).toBeDefined();
+    expect(result.hooks).toBeDefined();
+    expect(result.mcps).toBeDefined();
+    
+    // Should contain some default recommendations
+    expect(result.agents.length).toBeGreaterThan(0);
+    expect(result.commands.length).toBeGreaterThan(0);
   });
 
   it('should recommend components based on user requirements', async () => {
-    // Set a mock API key for testing
-    process.env.GOOGLE_API_KEY = 'test-api-key';
+    // Test with mock API key
+    const mockApiKey = 'sk-test-api-key';
 
-    try {
-      const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
+    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData, mockApiKey);
 
-      expect(recommendation).toBeDefined();
-      expect(Array.isArray(recommendation.agents)).toBe(true);
-      expect(Array.isArray(recommendation.commands)).toBe(true);
-      expect(Array.isArray(recommendation.hooks)).toBe(true);
-      expect(Array.isArray(recommendation.mcps)).toBe(true);
+    expect(recommendation).toBeDefined();
+    expect(Array.isArray(recommendation.agents)).toBe(true);
+    expect(Array.isArray(recommendation.commands)).toBe(true);
+    expect(Array.isArray(recommendation.hooks)).toBe(true);
+    expect(Array.isArray(recommendation.mcps)).toBe(true);
 
-      // Should include defaults
-      expect(recommendation.mcps).toContain('context7');
-      expect(recommendation.agents).toContain('business-analyst');
-    } finally {
-      // Clean up
-      delete process.env.GOOGLE_API_KEY;
-    }
+    // Should include defaults
+    expect(recommendation.mcps).toContain('context7');
+    expect(recommendation.agents).toContain('business-analyst');
   });
 
   it('should filter out non-existent components', async () => {
     // The global mock will return the default response which includes non-existent components
     // This test verifies filtering works correctly
 
-    // Set API key for test
-    process.env.GOOGLE_API_KEY = 'test-api-key';
+    const mockApiKey = 'sk-test-api-key';
+    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData, mockApiKey);
 
-    try {
-      const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData);
-
-      // Should only include existing components
-      expect(recommendation.agents).toContain('test-agent');
-      expect(recommendation.agents).not.toContain('non-existent-agent');
-      expect(recommendation.commands).toContain('test-command');
-      expect(recommendation.commands).not.toContain('non-existent-command');
-    } finally {
-      delete process.env.GOOGLE_API_KEY;
-    }
+    // Should only include existing components
+    expect(recommendation.agents).toContain('test-agent');
+    expect(recommendation.agents).not.toContain('non-existent-agent');
+    expect(recommendation.commands).toContain('test-command');
+    expect(recommendation.commands).not.toContain('non-existent-command');
   });
 });

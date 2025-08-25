@@ -10,6 +10,15 @@ jest.mock('child_process', () => ({
   spawn: jest.fn(),
 }));
 
+// Mock OAuth module to avoid ES module issues in tests
+jest.mock('../../src/auth/oauth', () => ({
+  getStoredApiKey: jest.fn().mockResolvedValue(null),
+  isAuthenticated: jest.fn().mockResolvedValue(false),
+  performOAuthFlow: jest.fn().mockResolvedValue('mock-api-key'),
+  getApiKey: jest.fn().mockResolvedValue(null),
+  clearStoredApiKey: jest.fn().mockResolvedValue(undefined),
+}));
+
 const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 
 // Mock inquirer to avoid interactive prompts during testing

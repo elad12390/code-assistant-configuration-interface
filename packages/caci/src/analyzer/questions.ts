@@ -4,9 +4,34 @@ export interface Question {
   type: 'text' | 'single-choice' | 'multiple-choice';
   options?: string[];
   required?: boolean;
+  showForLevels?: ('beginner' | 'intermediate' | 'advanced')[];
 }
 
 export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
+  {
+    id: 'enable-ai-auth',
+    text: 'How would you like to enable AI-powered recommendations?',
+    type: 'single-choice',
+    options: [
+      'Browser OAuth (recommended)',
+      'Manual API key entry', 
+      'Skip AI recommendations'
+    ],
+    required: false,
+    showForLevels: ['beginner', 'intermediate', 'advanced'],
+  },
+  {
+    id: 'experience-level',
+    text: 'What is your experience level with AI-assisted development tools?',
+    type: 'single-choice',
+    options: [
+      'Beginner - New to AI-assisted development',
+      'Intermediate - Some experience',
+      'Advanced - Extensive experience',
+    ],
+    required: true,
+    showForLevels: ['beginner', 'intermediate', 'advanced'],
+  },
   {
     id: 'project-type',
     text: 'What type of project are you working on?',
@@ -22,6 +47,7 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'Other',
     ],
     required: true,
+    showForLevels: ['beginner', 'intermediate', 'advanced'],
   },
   {
     id: 'programming-languages',
@@ -39,6 +65,7 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'Ruby',
       'Other',
     ],
+    showForLevels: ['intermediate', 'advanced'],
   },
   {
     id: 'web-frameworks',
@@ -60,20 +87,12 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
       'Other',
       'Not Applicable',
     ],
-  },
-  {
-    id: 'experience-level',
-    text: 'What is your experience level with AI-assisted development tools?',
-    type: 'single-choice',
-    options: [
-      'Beginner - New to AI-assisted development',
-      'Intermediate - Some experience',
-      'Advanced - Extensive experience',
-    ],
+    showForLevels: ['advanced'],
   },
   {
     id: 'project-description',
     text: 'Describe your project (problem, audience, features, goals):',
     type: 'text',
+    showForLevels: ['beginner', 'intermediate', 'advanced'],
   },
 ];

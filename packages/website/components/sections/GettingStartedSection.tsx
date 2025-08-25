@@ -37,7 +37,7 @@ export const GettingStartedSection: React.FC = () => {
   const [copiedCommand, setCopiedCommand] = useState(false)
 
   const handleCopyCommand = () => {
-    navigator.clipboard.writeText('npx caci init')
+    navigator.clipboard.writeText('npx code-assistant-config-interface configure')
     setCopiedCommand(true)
     setTimeout(() => setCopiedCommand(false), 2000)
   }
@@ -110,8 +110,8 @@ export const GettingStartedSection: React.FC = () => {
         >
           <Terminal showCopy={false}>
             <div className="flex items-center justify-between">
-              <div className="font-mono text-lg">
-                <span className="text-green-500">$</span> npx caci init
+              <div className="font-mono text-lg text-green-400">
+                <span className="text-green-500">$</span> npx code-assistant-config-interface configure
               </div>
               <Button
                 variant="ghost"
@@ -130,6 +130,75 @@ export const GettingStartedSection: React.FC = () => {
           <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-4">
             That's it. Answer a few questions, and CACI handles the rest.
           </p>
+        </motion.div>
+
+        {/* Installation Options */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="max-w-4xl mx-auto mb-16"
+        >
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              Choose Your Installation Method
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Pick the option that works best for your workflow
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Quick Start */}
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <Rocket className="w-6 h-6 text-green-600 dark:text-green-400" />
+                </div>
+                <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">Quick Start</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  Try it now, no installation
+                </p>
+                <code className="block p-2 bg-gray-900 dark:bg-gray-800 rounded text-xs font-mono text-green-400 dark:text-green-400">
+                  npx code-assistant-config-interface configure
+                </code>
+              </div>
+            </Card>
+
+            {/* Global Install */}
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <TerminalIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h4 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">Global Install</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  For regular use across projects
+                </p>
+                <code className="block p-2 bg-gray-900 dark:bg-gray-800 rounded text-xs font-mono text-green-400 dark:text-green-400 leading-relaxed">
+                  npm i -g code-assistant-config-interface<br/>
+                  caci configure
+                </code>
+              </div>
+            </Card>
+
+            {/* Project Dependency */}
+            <Card className="p-4 hover:shadow-md transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto mb-3 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h4 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">Team Projects</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                  Share configurations with your team
+                </p>
+                <code className="block p-2 bg-gray-900 dark:bg-gray-800 rounded text-xs font-mono text-green-400 dark:text-green-400 leading-relaxed">
+                  npm i -D code-assistant-config-interface<br/>
+                  npx caci configure
+                </code>
+              </div>
+            </Card>
+          </div>
         </motion.div>
 
         {/* Process Steps */}

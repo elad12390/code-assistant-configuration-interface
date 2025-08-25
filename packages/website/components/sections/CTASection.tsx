@@ -96,8 +96,9 @@ export const CTASection: React.FC = () => {
         >
           <Terminal title="Get Started">
             <div className="font-mono text-sm">
-              <span className="text-green-500">$</span> npx caci init
-              <br />
+              <div className="text-green-400">
+                <span className="text-green-500">$</span> npx code-assistant-config-interface configure
+              </div>
               <br />
               <span className="text-gray-500">
                 ✨ Welcome to CACI!

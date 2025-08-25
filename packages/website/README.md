@@ -2,7 +2,37 @@
 
 The official landing page for CACI (Code Assistant Configuration Interface).
 
-## 🚀 Quick Start
+## 📦 About CACI
+
+CACI is available as an npm package: **[code-assistant-config-interface](https://www.npmjs.com/package/code-assistant-config-interface)**
+
+### Installation & Usage
+
+```bash
+# Quick start - try it now (no installation required)
+npx code-assistant-config-interface configure
+
+# Global installation for regular use
+npm install -g code-assistant-config-interface
+caci configure
+
+# As a project dev dependency (for teams)
+npm install --save-dev code-assistant-config-interface
+npx caci configure
+```
+
+### Available Commands
+
+```bash
+# After global installation
+caci configure  # Main configuration workflow
+caci init      # Initialize new project  
+caci update    # Update existing configuration
+caci reset     # Reset to defaults
+caci history   # View configuration history
+```
+
+## 🚀 Website Development
 
 ```bash
 # Install dependencies

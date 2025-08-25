@@ -139,32 +139,9 @@ export const HeroSection: React.FC = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 1 }}
+                  className="text-green-400"
                 >
-                  <span className="text-green-500">$</span> npx caci configure
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 1.5 }}
-                  className="text-gray-500 mt-2"
-                >
-                  🎨 Analyzing your project structure...
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 2 }}
-                  className="text-gray-500"
-                >
-                  🤖 AI recommending optimal configuration...
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 2.5 }}
-                  className="text-gray-500"
-                >
-                  ✨ Ready to transform your development experience!
+                  <span className="text-green-500">$</span> npx code-assistant-config-interface configure
                 </motion.div>
               </div>
             </Terminal>

@@ -1,19 +1,7 @@
-import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { ComponentsData, UserRequirements, Component } from './index';
-
-// Define available AI providers
-type AIProvider = 'anthropic' | 'gemini' | 'openai';
-
-// Environment variable mapping for each provider
-const ENV_VARS = {
-  anthropic: 'ANTHROPIC_API_KEY',
-  gemini: 'GOOGLE_API_KEY',
-  openai: 'OPENAI_API_KEY',
-} as const;
 
 // Define the schema for AI response
 const RecommendationSchema = z.object({
@@ -26,68 +14,29 @@ const RecommendationSchema = z.object({
 type Recommendation = z.infer<typeof RecommendationSchema>;
 
 /**
- * Detect which AI provider to use based on available API keys
+ * Initialize OpenRouter chat model
  */
-function detectAvailableProvider(): AIProvider {
-  // Check in order of preference: Anthropic > Gemini > OpenAI
-  if (process.env.ANTHROPIC_API_KEY) {
-    return 'anthropic';
-  }
-  if (process.env.GOOGLE_API_KEY) {
-    return 'gemini';
-  }
-  if (process.env.OPENAI_API_KEY) {
-    return 'openai';
-  }
-
-  throw new Error(
-    `No API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY`
-  );
-}
-
-/**
- * Initialize the appropriate chat model based on provider
- */
-function initializeChatModel(provider: AIProvider) {
-  const apiKey = process.env[ENV_VARS[provider]];
-
+function initializeOpenRouterModel(apiKey: string) {
   if (!apiKey) {
-    throw new Error(`${ENV_VARS[provider]} environment variable is not set.`);
+    throw new Error('OpenRouter API key is required');
   }
 
-  switch (provider) {
-    case 'anthropic':
-      return new ChatAnthropic({
-        apiKey,
-        model: 'claude-3-5-sonnet-20241022',
-        temperature: 0,
-        maxTokens: 2000,
-      });
-    case 'gemini':
-      return new ChatGoogleGenerativeAI({
-        apiKey,
-        model: 'gemini-1.5-pro',
-        temperature: 0,
-        maxOutputTokens: 2000,
-      });
-    case 'openai':
-      return new ChatOpenAI({
-        apiKey,
-        model: 'gpt-4o',
-        temperature: 0,
-        maxTokens: 2000,
-      });
-    default:
-      throw new Error(`Unsupported provider: ${provider}`);
-  }
+  return new ChatOpenAI({
+    apiKey,
+    model: 'anthropic/claude-3.5-sonnet',
+    temperature: 0,
+    maxTokens: 2000,
+    configuration: {
+      baseURL: 'https://openrouter.ai/api/v1',
+    },
+  });
 }
 
 /**
- * Calls AI provider using LangChain with structured output
+ * Calls OpenRouter using LangChain with structured output
  */
-async function callAI(prompt: string): Promise<string> {
-  const provider = detectAvailableProvider();
-  const model = initializeChatModel(provider);
+async function callAI(prompt: string, apiKey: string): Promise<string> {
+  const model = initializeOpenRouterModel(apiKey);
 
   try {
     const systemPrompt = `You are a component recommendation API. You must respond with ONLY a valid JSON object matching this exact schema:
@@ -118,7 +67,7 @@ CRITICAL RULES:
     return response.content as string;
   } catch (error) {
     throw new Error(
-      `Failed to query ${provider}: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to query OpenRouter: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -222,6 +171,42 @@ function generatePrompt(
       .join(', ');
   };
 
+  // Extract experience level and adjust recommendations accordingly
+  const experienceLevel = userRequirements['experience-level'] as string || '';
+  const isBeginnerLevel = experienceLevel.includes('Beginner');
+  const isIntermediateLevel = experienceLevel.includes('Intermediate');
+  const isAdvancedLevel = experienceLevel.includes('Advanced');
+
+  let experienceGuidance = '';
+  let componentCountGuidance = '';
+  
+  if (isBeginnerLevel) {
+    experienceGuidance = `
+CRITICAL: This is a BEGINNER user. Focus on:
+- Easy-to-use, well-documented components with high usage scores (70%+)
+- Components with clear, simple workflows
+- Avoid complex or specialized tools
+- Prioritize components that "just work" out of the box
+- Include components with good error messages and helpful guides`;
+    componentCountGuidance = '6-10 components per category (simpler setup)';
+  } else if (isIntermediateLevel) {
+    experienceGuidance = `
+IMPORTANT: This is an INTERMEDIATE user. Focus on:
+- Balance of ease-of-use and capability
+- Include some advanced tools but ensure good documentation
+- Mix high-usage components (60%+) with some specialized ones
+- Components that can grow with their skills`;
+    componentCountGuidance = '8-12 components per category (balanced setup)';
+  } else if (isAdvancedLevel) {
+    experienceGuidance = `
+NOTE: This is an ADVANCED user. Focus on:
+- Include powerful, specialized components even if complex
+- Prioritize capability over ease-of-use
+- Include cutting-edge tools and advanced workflows
+- Mix proven high-usage components with innovative/specialized ones`;
+    componentCountGuidance = '10-15 components per category (comprehensive setup)';
+  }
+
   return `You are an expert AI assistant that helps developers select the most appropriate Claude Code components for their projects.
 
 User Requirements:
@@ -238,6 +223,8 @@ Available Components with Usage Statistics:
 - Hooks: ${formatComponentList(componentsData.hooks, usageStats.hooks)}
 - MCPs: ${formatComponentList(componentsData.mcps, usageStats.mcps)}
 
+${experienceGuidance}
+
 ANALYZE the project requirements and recommend a COMPREHENSIVE development environment setup.
 
 YOU ARE A JSON API. OUTPUT ONLY JSON. NO QUESTIONS. NO EXPLANATIONS.
@@ -252,43 +239,97 @@ Think about the COMPLETE project lifecycle and recommend components for:
 
 Return ONLY this JSON structure with real component names from the available lists:
 {
-  "agents": ["comprehensive-list-of-8-to-15-agents"],
-  "commands": ["comprehensive-list-of-8-to-15-commands"], 
-  "hooks": ["comprehensive-list-of-8-to-15-hooks"],
-  "mcps": ["comprehensive-list-of-8-to-15-mcps"]
+  "agents": ["list-appropriate-for-experience-level"],
+  "commands": ["list-appropriate-for-experience-level"], 
+  "hooks": ["list-appropriate-for-experience-level"],
+  "mcps": ["list-appropriate-for-experience-level"]
 }
 
 CRITICAL REQUIREMENTS:
 1. All component names must exist in the provided lists above
-2. Include 8-15 components per category for a COMPLETE professional setup
-3. USE USAGE STATISTICS as guidance - prioritize high-usage components (70%+) for core functionality
+2. ${componentCountGuidance}
+3. USE USAGE STATISTICS as guidance and MATCH TO EXPERIENCE LEVEL:
+   - Beginners: Prioritize 70%+ usage components, avoid <50% usage
+   - Intermediate: Focus on 60%+ usage, include some specialized tools
+   - Advanced: Mix high-usage with cutting-edge/specialized components
 4. Mix technical AND non-technical roles (include business analysts, project managers)
 5. Consider the ENTIRE team and project needs, not just immediate coding
 6. Balance popular components with project-specific specialized ones
 7. Include project management, documentation, testing, deployment, monitoring tools
 8. Analyze project structure to understand tech stack and customize accordingly
 9. Build a COHESIVE environment that supports the full development lifecycle
-10. Higher usage % = more proven/essential for most projects
+10. EXPERIENCE LEVEL IS THE PRIMARY FILTER - match complexity to user capability
 
 RESPOND WITH ONLY THE JSON OBJECT`;
+}
+
+/**
+ * Provides default component recommendations when no API key is available
+ */
+function getDefaultRecommendations(componentsData: ComponentsData, userRequirements?: UserRequirements): Recommendation {
+  const experienceLevel = userRequirements?.['experience-level'] as string || '';
+  const isBeginnerLevel = experienceLevel.includes('Beginner');
+  const isIntermediateLevel = experienceLevel.includes('Intermediate');
+  
+  // Adjust count based on experience level
+  let agentCount = 10, commandCount = 10, hookCount = 8, mcpCount = 8;
+  
+  if (isBeginnerLevel) {
+    agentCount = 6; commandCount = 6; hookCount = 4; mcpCount = 4;
+  } else if (isIntermediateLevel) {
+    agentCount = 8; commandCount = 8; hookCount = 6; mcpCount = 6;
+  }
+
+  const getTopComponents = (components: Record<string, Component>, count: number) => {
+    // For beginners, prioritize high-usage components
+    if (isBeginnerLevel) {
+      const essentialComponents = Object.keys(components).filter(name => {
+        const usage = getCoreUsageScore(name, components[name].content, components[name].description);
+        return usage >= 70; // High usage only
+      }).slice(0, count);
+      
+      // If not enough high-usage components, fill with the most popular ones
+      if (essentialComponents.length < count) {
+        const remaining = Object.keys(components).slice(0, count - essentialComponents.length);
+        return [...essentialComponents, ...remaining.filter(c => !essentialComponents.includes(c))];
+      }
+      return essentialComponents;
+    }
+    
+    return Object.keys(components).slice(0, count);
+  };
+
+  return {
+    agents: getTopComponents(componentsData.agents, agentCount),
+    commands: getTopComponents(componentsData.commands, commandCount),
+    hooks: getTopComponents(componentsData.hooks, hookCount),
+    mcps: getTopComponents(componentsData.mcps, mcpCount),
+  };
 }
 
 /**
  * Recommends components based on user requirements using AI
  * @param userRequirements User's project requirements
  * @param componentsData Available components
+ * @param apiKey OpenRouter API key (optional)
  * @returns Recommended components
  */
 export async function recommendComponents(
   userRequirements: UserRequirements,
-  componentsData: ComponentsData
+  componentsData: ComponentsData,
+  apiKey?: string
 ): Promise<Recommendation> {
+  // If no API key provided, return default recommendations
+  if (!apiKey) {
+    return getDefaultRecommendations(componentsData, userRequirements);
+  }
+
   // Prepare the prompt
   const prompt = generatePrompt(userRequirements, componentsData);
 
   try {
-    // Generate the recommendation using available AI provider
-    const response = await callAI(prompt);
+    // Generate the recommendation using OpenRouter
+    const response = await callAI(prompt, apiKey);
 
     // Parse and validate the response
     let recommendation: unknown;

@@ -3,7 +3,8 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Terminal, Github, ExternalLink, FileText, Package, MessageSquare, Users, Heart, Sparkles } from 'lucide-react'
+import { Terminal, Github, ExternalLink, FileText, Package, MessageSquare, Users, Heart, Sparkles, Twitter } from 'lucide-react'
+import { NewsletterSignup } from '@/components/ui/newsletter-signup'
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
@@ -16,7 +17,7 @@ export const Footer: React.FC = () => {
         { name: 'Features', href: '#features' },
         { name: 'Documentation', href: 'https://github.com/elad12390/claude-code-configurator/blob/main/README.md', external: true },
         { name: 'Changelog', href: 'https://github.com/elad12390/claude-code-configurator/releases', external: true },
-        { name: 'npm Package', href: 'https://www.npmjs.com/package/caci', external: true }
+        { name: 'npm Package', href: 'https://www.npmjs.com/package/code-assistant-config-interface', external: true }
       ]
     },
     developers: {
@@ -32,9 +33,9 @@ export const Footer: React.FC = () => {
       title: 'Community',
       links: [
         { name: 'Discord', href: '#', external: true },
-        { name: 'Twitter', href: '#', external: true },
+        { name: 'X (Twitter)', href: 'https://x.com/DevCaci1', external: true },
         { name: 'Blog', href: '#', external: true },
-        { name: 'Newsletter', href: '#', external: true }
+        { name: 'Newsletter', href: '#newsletter', external: false }
       ]
     }
   }
@@ -57,6 +58,29 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200/50 dark:border-gray-800/50">
       <div className="max-w-7xl mx-auto px-4 py-16">
+        {/* Newsletter Section */}
+        <motion.div
+          id="newsletter"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-16 text-center"
+        >
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-2xl font-bold text-foreground mb-2">
+              Stay Updated with CACI
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Get notified about new features, updates, and improvements. No spam, just valuable updates.
+            </p>
+            <NewsletterSignup 
+              variant="default"
+              placeholder="Enter your email for CACI updates"
+              buttonText="Get Updates"
+            />
+          </div>
+        </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-12">
           {/* Brand Section - Larger column */}
           <motion.div 
@@ -93,7 +117,7 @@ export const Footer: React.FC = () => {
                 <Github className="w-6 h-6" />
               </motion.a>
               <motion.a
-                href="https://www.npmjs.com/package/caci"
+                href="https://www.npmjs.com/package/code-assistant-config-interface"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.1 }}
@@ -101,6 +125,16 @@ export const Footer: React.FC = () => {
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Package className="w-6 h-6" />
+              </motion.a>
+              <motion.a
+                href="https://x.com/DevCaci1"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Twitter className="w-6 h-6" />
               </motion.a>
             </div>
           </motion.div>
@@ -173,7 +207,7 @@ export const Footer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors font-medium"
               >
-                Elad Harizy
+                Elad Ben Haim
               </Link>
               <span>&</span>
               <Link 
@@ -182,7 +216,7 @@ export const Footer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="hover:text-primary transition-colors font-medium"
               >
-                Arik Liger
+                Ari Kliger
               </Link>
             </motion.div>
           </div>

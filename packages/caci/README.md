@@ -9,12 +9,20 @@ CACI (Code Assistant Configuration Interface) is an npm package that provides an
 ## Features
 
 - **Interactive CLI Interface**: Easy-to-use command-line interface similar to the BMAD-method installer
-- **AI-Powered Component Selection**: Uses Claude Code headless mode to intelligently recommend components based on project requirements
+- **AI-Powered Component Selection**: Uses OpenRouter API with automatic key creation to intelligently recommend components based on project requirements
 - **Component Analysis**: Parses a large pool of components (102+ agents) and recommends the most relevant ones
 - **Colorful Output**: User-friendly interface with colored output for better readability
 - **Comprehensive Testing**: Full test coverage for all functionality
 
 ## Installation
+
+No installation required! Run directly with npx:
+
+```bash
+npx code-assistant-config-interface configure
+```
+
+Or install globally:
 
 ```bash
 npm install -g code-assistant-config-interface
@@ -23,17 +31,17 @@ npm install -g code-assistant-config-interface
 ## Usage
 
 ```bash
-# Initialize a new configuration
+# Run configuration (recommended)
+npx code-assistant-config-interface configure
+
+# Or if installed globally:
 caci configure
 
-# Update existing configuration
-caci update
-
-# Reset to previous configuration
-caci reset
-
-# Display help
-caci --help
+# Other commands
+caci update      # Update existing configuration
+caci reset       # Reset to previous configuration
+caci history     # View configuration history
+caci --help      # Display help
 ```
 
 ## Commands
@@ -45,14 +53,11 @@ caci --help
 
 ## Requirements
 
-To use the AI-powered component recommendation feature, you'll need Claude Code installed and authenticated:
+To use the AI-powered component recommendation feature:
 
-1. Install Claude Code from https://claude.ai/code
-2. Authenticate with Claude Code:
-   ```bash
-   claude /login
-   ```
-3. The tool will automatically use Claude Code's headless mode for AI recommendations
+1. The tool will automatically prompt you to authenticate with OpenRouter when needed
+2. It uses OpenRouter's auto-create key format for seamless authentication
+3. No manual API key setup required - authentication is handled through OAuth flow
 
 ## Development
 
@@ -120,8 +125,8 @@ MIT
 
 ## Acknowledgements
 
-- Uses Claude Code headless mode for AI-powered recommendations
-- Built with Commander.js for CLI interface
+- Uses OpenRouter API for AI-powered recommendations
+- Built with Commander.js for CLI interface  
 - Uses Chalk for colorful terminal output
 - Integrates with Claude Code project configuration system
 

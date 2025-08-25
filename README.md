@@ -29,7 +29,7 @@ _Intelligent AI-powered Claude Code configuration made effortless_
 
 <!-- Version & Release Badges -->
 
-[![npm version](https://badge.fury.io/js/caci.svg)](https://badge.fury.io/js/caci)
+[![npm version](https://badge.fury.io/js/code-assistant-config-interface.svg)](https://badge.fury.io/js/code-assistant-config-interface)
 [![Docker Hub](https://img.shields.io/docker/v/elad12390/caci?label=docker&logo=docker&logoColor=white)](https://hub.docker.com/r/elad12390/caci)
 [![GitHub Release](https://img.shields.io/github/v/release/elad12390/claude-code-configurator?logo=github&logoColor=white)](https://github.com/elad12390/claude-code-configurator/releases)
 [![Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success?logo=checkmarx&logoColor=white)](https://github.com/elad12390/claude-code-configurator)
@@ -125,7 +125,7 @@ Native installation via NPM or containerized execution with Docker support
 <tr>
 <td align="center">✅</td>
 <td><strong>AI Integration</strong></td>
-<td>Google Gemini recommendations fully functional</td>
+<td>OpenRouter API recommendations fully functional</td>
 </tr>
 <tr>
 <td align="center">✅</td>
@@ -187,13 +187,13 @@ export GOOGLE_API_KEY="your_google_api_key_here"
 </div>
 
 ```bash
-# Install globally
-npm install -g caci
+# Recommended: Use directly without installation
+npx code-assistant-config-interface configure
 
-# Or use directly without installation
-npx caci configure
+# Or install globally
+npm install -g code-assistant-config-interface
 
-# Verify installation
+# Verify installation (if installed globally)
 caci --version
 ```
 
@@ -212,15 +212,15 @@ docker pull elad12390/caci:latest
 # Run CACI with your project mounted
 docker run --rm \
   -v $(pwd):/workspace \
-  -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+  -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
   elad12390/caci:latest configure
 
 # Or build locally
 docker build -t caci ./caci
 docker run --rm \
   -v $(pwd):/workspace \
-  -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
-  caci configure
+  -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
+  code-assistant-config-interface configure
 ```
 
 ## 📖 Quick Start
@@ -236,7 +236,7 @@ docker run --rm \
 cd /path/to/your/project
 
 # 2. Configure your Claude Code environment
-caci configure
+npx code-assistant-config-interface configure
 
 # 3. That's it! Your project is now optimally configured 🎉
 ```
@@ -259,7 +259,7 @@ caci configure
 </thead>
 <tbody>
 <tr>
-<td><code>caci configure</code></td>
+<td><code>npx code-assistant-config-interface configure</code></td>
 <td>Run the complete AI-powered configuration workflow</td>
 <td>✅ Ready</td>
 </tr>
@@ -299,11 +299,11 @@ caci configure
 ### ⚙️ Advanced Usage
 
 ```bash
-# Specify custom project directory
+# Specify custom project directory (if installed globally)
 caci configure --project-dir /path/to/project
 
 # View help for specific commands
-caci configure --help
+npx code-assistant-config-interface configure --help
 caci history --help
 
 # Check your configuration history
@@ -368,10 +368,10 @@ caci reset
 
 ## 📋 Example Workflow
 
-Here's what happens when you run `caci configure`:
+Here's what happens when you run `npx code-assistant-config-interface configure`:
 
 ```bash
-$ caci configure
+$ npx code-assistant-config-interface configure
 
 🔧 CACI (Code Assistant Configuration Interface) v1.0.0
 =======================================================
@@ -596,7 +596,7 @@ npm run docker:build   # Build container
 npm run docker:run     # Run in container
 
 # Test different environments
-docker run --rm -v $(pwd):/workspace -e GOOGLE_API_KEY="$GOOGLE_API_KEY" caci configure
+docker run --rm -v $(pwd):/workspace -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" code-assistant-config-interface configure
 ```
 
 ## 🤝 Contributing

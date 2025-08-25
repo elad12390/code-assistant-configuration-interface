@@ -81,9 +81,11 @@
     "chalk": "^4.1.2",
     "commander": "^14.0.0",
     "inquirer": "^8.2.0",
-    "keytar": "^7.9.0",
     "open": "^10.2.0",
     "zod": "^4.0.17"
+  },
+  "optionalDependencies": {
+    "keytar": "^7.9.0"
   },
   "files": [
     "dist/",

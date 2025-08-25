@@ -214,15 +214,15 @@ describe('CACI CLI Interface', () => {
       output += data.toString();
     });
 
-    // Give more time for output on slower platforms, then kill
+    // Give time for output, then kill
     setTimeout(() => {
       cli.kill('SIGTERM');
-    }, 2500);
+    }, 2000);
 
     await new Promise<void>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error('Test timed out'));
-      }, 5000);
+      }, 3000);
 
       const cleanup = () => {
         if (timeoutId) clearTimeout(timeoutId);

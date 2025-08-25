@@ -9,14 +9,11 @@ function getSimpleUsageScore(component: Component): number {
   // High-value defaults
   if (name.includes('context7')) return 95;
   if (name.includes('business-analyst') || name.includes('task-decomposition')) return 85;
-
-  // Core development patterns
   if (name.includes('react') || name.includes('typescript')) return 80;
   if (name.includes('test') || name.includes('lint') || name.includes('git')) return 75;
   if (name.includes('build') || name.includes('deploy')) return 70;
-
-  // Default moderate usage
-  return 60;
+  
+  return 60; // Default moderate usage
 }
 
 /**
@@ -46,6 +43,48 @@ function truncateString(str: string, maxLength: number): string {
   return `${str.substring(0, maxLength - 3)}...`;
 }
 
+/**
+ * Get component from appropriate category
+ */
+function getComponentFromCategory(componentName: string, title: string, componentsData: ComponentsData): Component | undefined {
+  if (title.includes('Agent')) return componentsData.agents[componentName];
+  if (title.includes('Command')) return componentsData.commands[componentName];
+  if (title.includes('Hook')) return componentsData.hooks[componentName];
+  if (title.includes('MCP')) return componentsData.mcps[componentName];
+  return undefined;
+}
+
+/**
+ * Get usage color based on percentage
+ */
+function getUsageColor(usage?: number) {
+  if (!usage) return chalk.gray;
+  if (usage >= 80) return chalk.green;
+  if (usage >= 60) return chalk.yellow;
+  return chalk.gray;
+}
+
+/**
+ * Display single component information
+ */
+function displaySingleComponent(component: Component, componentName: string, index: number, usageStats?: Record<string, number>): void {
+  const usage = usageStats?.[componentName];
+  const usageColor = getUsageColor(usage);
+  const usageText = usage ? `${usage}% avg usage` : 'usage data n/a';
+
+  console.log(chalk.cyan(`  ${index + 1}. ${component.name}`));
+  console.log(`${chalk.gray(`     Category: ${component.category}`)} • ${usageColor(usageText)}`);
+
+  const description = component.description?.trim()
+    ? component.description
+    : component.content.split('\n').find(line => line.trim() && !line.startsWith('---'));
+  
+  if (description) {
+    console.log(chalk.white(`     Description: ${truncateString(description, 80)}`));
+  }
+  console.log();
+}
+
 export function displayComponents(
   components: string[],
   title: string,
@@ -61,47 +100,10 @@ export function displayComponents(
   console.log(chalk.gray('='.repeat(50)));
 
   components.forEach((componentName, index) => {
-    let component: Component | undefined;
-
-    if (title.includes('Agent')) {
-      component = componentsData.agents[componentName];
-    } else if (title.includes('Command')) {
-      component = componentsData.commands[componentName];
-    } else if (title.includes('Hook')) {
-      component = componentsData.hooks[componentName];
-    } else if (title.includes('MCP')) {
-      component = componentsData.mcps[componentName];
-    }
-
+    const component = getComponentFromCategory(componentName, title, componentsData);
+    
     if (component) {
-      const usage = usageStats?.[componentName];
-      const usageColor = usage
-        ? usage >= 80
-          ? chalk.green
-          : usage >= 60
-            ? chalk.yellow
-            : chalk.gray
-        : chalk.gray;
-      const usageText = usage ? `${usage}% avg usage` : 'usage data n/a';
-
-      console.log(chalk.cyan(`  ${index + 1}. ${component.name}`));
-      console.log(
-        `${chalk.gray(`     Category: ${component.category}`)} • ${usageColor(usageText)}`
-      );
-
-      if (component.description && component.description.trim() !== '') {
-        console.log(chalk.white(`     Description: ${truncateString(component.description, 80)}`));
-      } else {
-        const contentLines = component.content.split('\n');
-        const firstNonEmptyLine = contentLines.find(
-          line => line.trim() !== '' && !line.startsWith('---')
-        );
-        if (firstNonEmptyLine) {
-          console.log(chalk.white(`     Description: ${truncateString(firstNonEmptyLine, 80)}`));
-        }
-      }
-
-      console.log();
+      displaySingleComponent(component, componentName, index, usageStats);
     } else {
       console.log(chalk.red(`  ${index + 1}. ${componentName} (Component not found)`));
     }

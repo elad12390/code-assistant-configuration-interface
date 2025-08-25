@@ -94,25 +94,45 @@ function getCoreUsageScore(name: string, _content: string, _description: string)
 }
 
 /**
- * Calculate category-specific usage adjustments
+ * Apply framework-specific score adjustments
  */
-function getCategoryUsageAdjustments(name: string, category: string, baseScore: number): number {
+function applyFrameworkAdjustments(name: string, baseScore: number): number {
   let score = baseScore;
-
-  // Popular frameworks and tools
   if (name.includes('next') || name.includes('vue') || name.includes('angular')) score += 20;
   if (name.includes('node') || name.includes('express') || name.includes('api')) score += 20;
   if (name.includes('docker') || name.includes('deploy') || name.includes('ci')) score += 15;
+  return score;
+}
 
-  // Category-specific adjustments
+/**
+ * Apply MCP category adjustments
+ */
+function applyMcpAdjustments(name: string, baseScore: number): number {
+  let score = Math.max(baseScore - 20, 20);
+  if (name.includes('github') || name.includes('file') || name.includes('database')) score += 15;
+  return score;
+}
+
+/**
+ * Apply hooks category adjustments
+ */
+function applyHooksAdjustments(name: string, baseScore: number): number {
+  let score = baseScore;
+  if (name.includes('commit') || name.includes('push') || name.includes('save')) score += 20;
+  if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 15;
+  return score;
+}
+
+/**
+ * Calculate category-specific usage adjustments
+ */
+function getCategoryUsageAdjustments(name: string, category: string, baseScore: number): number {
+  let score = applyFrameworkAdjustments(name, baseScore);
+
   if (category === 'mcps') {
-    score = Math.max(score - 20, 20);
-    if (name.includes('github') || name.includes('file') || name.includes('database')) score += 15;
-  }
-
-  if (category === 'hooks') {
-    if (name.includes('commit') || name.includes('push') || name.includes('save')) score += 20;
-    if (name.includes('test') || name.includes('lint') || name.includes('format')) score += 15;
+    score = applyMcpAdjustments(name, score);
+  } else if (category === 'hooks') {
+    score = applyHooksAdjustments(name, score);
   }
 
   return Math.min(score, 100);
@@ -165,7 +185,7 @@ function generatePrompt(
   const usageStats = calculateUsageStats(componentsData);
 
   // Create component lists with usage information
-  const formatComponentList = (components: Record<string, any>, usage: Record<string, number>) => {
+  const formatComponentList = (components: Record<string, Component>, usage: Record<string, number>) => {
     return Object.keys(components)
       .map(name => `${name} (avg usage: ${usage[name] || 50}%)`)
       .join(', ');
@@ -308,101 +328,80 @@ function getDefaultRecommendations(componentsData: ComponentsData, userRequireme
 }
 
 /**
+ * Parse AI response and handle markdown code blocks
+ */
+function parseAIResponse(response: string): unknown {
+  let jsonText = response.trim();
+  
+  // Remove any markdown code blocks if present
+  const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if (jsonMatch) {
+    jsonText = jsonMatch[1];
+  }
+  
+  try {
+    return JSON.parse(jsonText);
+  } catch (error) {
+    throw new Error(`AI provider returned invalid JSON: ${response}`);
+  }
+}
+
+/**
+ * Filter out non-existent components from recommendations
+ */
+function filterValidComponents(recommendation: Recommendation, componentsData: ComponentsData): Recommendation {
+  return {
+    agents: recommendation.agents.filter(name => componentsData.agents[name]),
+    commands: recommendation.commands.filter(name => componentsData.commands[name]),
+    hooks: recommendation.hooks.filter(name => componentsData.hooks[name]),
+    mcps: recommendation.mcps.filter(name => componentsData.mcps[name]),
+  };
+}
+
+/**
+ * Merge default components with AI recommendations
+ */
+function mergeWithDefaults(recommendation: Recommendation, componentsData: ComponentsData): Recommendation {
+  const defaults = {
+    mcps: ['context7'],
+    agents: ['business-analyst', 'task-decomposition-expert'],
+    commands: ['setup-linting', 'optimize-build'],
+    hooks: [],
+  };
+
+  return {
+    agents: [...new Set([...recommendation.agents, ...defaults.agents.filter(name => componentsData.agents[name])])],
+    commands: [...new Set([...recommendation.commands, ...defaults.commands.filter(name => componentsData.commands[name])])],
+    hooks: [...new Set([...recommendation.hooks, ...defaults.hooks.filter(name => componentsData.hooks[name])])],
+    mcps: [...new Set([...recommendation.mcps, ...defaults.mcps.filter(name => componentsData.mcps[name])])],
+  };
+}
+
+/**
  * Recommends components based on user requirements using AI
- * @param userRequirements User's project requirements
- * @param componentsData Available components
- * @param apiKey OpenRouter API key (optional)
- * @returns Recommended components
  */
 export async function recommendComponents(
   userRequirements: UserRequirements,
   componentsData: ComponentsData,
   apiKey?: string
 ): Promise<Recommendation> {
-  // If no API key provided, return default recommendations
   if (!apiKey) {
     return getDefaultRecommendations(componentsData, userRequirements);
   }
 
-  // Prepare the prompt
   const prompt = generatePrompt(userRequirements, componentsData);
 
   try {
-    // Generate the recommendation using OpenRouter
     const response = await callAI(prompt, apiKey);
-
-    // Parse and validate the response
-    let recommendation: unknown;
-    try {
-      // LangChain providers may return JSON in markdown blocks
-      let jsonText = response.trim();
-
-      // Remove any markdown code blocks if present
-      const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-      if (jsonMatch) {
-        jsonText = jsonMatch[1];
-      }
-
-      // Try to parse as JSON
-      recommendation = JSON.parse(jsonText);
-    } catch (error) {
-      throw new Error(`AI provider returned invalid JSON: ${response}`);
-    }
-
-    // Validate the response structure
-    const validatedRecommendation = RecommendationSchema.parse(recommendation);
-
-    // Filter out any non-existent components
-    const filteredRecommendation: Recommendation = {
-      agents: validatedRecommendation.agents.filter(name => componentsData.agents[name]),
-      commands: validatedRecommendation.commands.filter(name => componentsData.commands[name]),
-      hooks: validatedRecommendation.hooks.filter(name => componentsData.hooks[name]),
-      mcps: validatedRecommendation.mcps.filter(name => componentsData.mcps[name]),
-    };
-
-    // Add essential defaults for all projects
-    const defaults = {
-      mcps: ['context7'], // Essential for documentation lookup
-      agents: ['business-analyst', 'task-decomposition-expert'], // Project management roles always useful
-      commands: ['setup-linting', 'optimize-build'], // Basic development commands
-      hooks: [], // Will be determined by AI based on project needs
-    };
-
-    // Merge defaults with AI recommendations (avoid duplicates)
-    const finalRecommendation: Recommendation = {
-      agents: [
-        ...new Set([
-          ...filteredRecommendation.agents,
-          ...defaults.agents.filter(name => componentsData.agents[name]),
-        ]),
-      ],
-      commands: [
-        ...new Set([
-          ...filteredRecommendation.commands,
-          ...defaults.commands.filter(name => componentsData.commands[name]),
-        ]),
-      ],
-      hooks: [
-        ...new Set([
-          ...filteredRecommendation.hooks,
-          ...defaults.hooks.filter(name => componentsData.hooks[name]),
-        ]),
-      ],
-      mcps: [
-        ...new Set([
-          ...filteredRecommendation.mcps,
-          ...defaults.mcps.filter(name => componentsData.mcps[name]),
-        ]),
-      ],
-    };
-
-    return finalRecommendation;
+    const parsedRecommendation = parseAIResponse(response);
+    const validatedRecommendation = RecommendationSchema.parse(parsedRecommendation);
+    const filteredRecommendation = filterValidComponents(validatedRecommendation, componentsData);
+    
+    return mergeWithDefaults(filteredRecommendation, componentsData);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('No API key found')) {
-      throw new Error(
-        'No AI provider API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY'
-      );
+      throw new Error('No AI provider API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY');
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }

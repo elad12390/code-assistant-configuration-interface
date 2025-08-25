@@ -83,11 +83,11 @@ async function runConfigurationCommand(projectDir: string) {
     console.error(`   Error: ${result.error}`);
     console.log('\n💡 Troubleshooting tips:');
     console.log(
-      '   - Set an AI provider API key: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY'
+      '   - Use OAuth authentication or provide an OpenRouter API key when prompted'
     );
     console.log('   - Check that you have write permissions in the project directory');
     console.log(
-      '   - Get free API keys: Gemini (console.cloud.google.com), Anthropic (console.anthropic.com), OpenAI (platform.openai.com)'
+      '   - Get your OpenRouter API key from: https://openrouter.ai/keys'
     );
     throw new Error('Configuration failed');
   }

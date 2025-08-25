@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import http from 'http';
-import { promisify } from 'util';
 import open from 'open';
 import keytar from 'keytar';
 import chalk from 'chalk';

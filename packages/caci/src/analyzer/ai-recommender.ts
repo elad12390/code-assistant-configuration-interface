@@ -401,7 +401,7 @@ export async function recommendComponents(
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('No API key found')) {
-      throw new Error('No AI provider API key found. Please set one of: ANTHROPIC_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY');
+      throw new Error('OpenRouter API key required. Please use OAuth authentication or provide an OpenRouter API key.');
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }

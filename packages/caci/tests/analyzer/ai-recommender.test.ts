@@ -1,24 +1,7 @@
 import { recommendComponents } from '../../src/analyzer/ai-recommender';
 import type { ComponentsData, UserRequirements } from '../../src/analyzer';
 
-// Mock LangChain providers
-jest.mock('@langchain/google-genai', () => ({
-  ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-    invoke: jest.fn().mockResolvedValue({
-      content: JSON.stringify({
-        agents: ['test-agent', 'non-existent-agent'],
-        commands: ['test-command', 'non-existent-command'],
-        hooks: ['test-hook', 'non-existent-hook'],
-        mcps: ['test-mcp', 'non-existent-mcp'],
-      }),
-    }),
-  })),
-}));
-
-jest.mock('@langchain/anthropic', () => ({
-  ChatAnthropic: jest.fn(),
-}));
-
+// Mock OpenRouter via OpenAI-compatible API
 jest.mock('@langchain/openai', () => ({
   ChatOpenAI: jest.fn().mockImplementation(() => ({
     invoke: jest.fn().mockResolvedValue({

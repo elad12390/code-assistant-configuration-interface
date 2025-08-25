@@ -12,7 +12,7 @@ function getSimpleUsageScore(component: Component): number {
   if (name.includes('react') || name.includes('typescript')) return 80;
   if (name.includes('test') || name.includes('lint') || name.includes('git')) return 75;
   if (name.includes('build') || name.includes('deploy')) return 70;
-  
+
   return 60; // Default moderate usage
 }
 
@@ -46,7 +46,11 @@ function truncateString(str: string, maxLength: number): string {
 /**
  * Get component from appropriate category
  */
-function getComponentFromCategory(componentName: string, title: string, componentsData: ComponentsData): Component | undefined {
+function getComponentFromCategory(
+  componentName: string,
+  title: string,
+  componentsData: ComponentsData
+): Component | undefined {
   if (title.includes('Agent')) return componentsData.agents[componentName];
   if (title.includes('Command')) return componentsData.commands[componentName];
   if (title.includes('Hook')) return componentsData.hooks[componentName];
@@ -67,7 +71,12 @@ function getUsageColor(usage?: number) {
 /**
  * Display single component information
  */
-function displaySingleComponent(component: Component, componentName: string, index: number, usageStats?: Record<string, number>): void {
+function displaySingleComponent(
+  component: Component,
+  componentName: string,
+  index: number,
+  usageStats?: Record<string, number>
+): void {
   const usage = usageStats?.[componentName];
   const usageColor = getUsageColor(usage);
   const usageText = usage ? `${usage}% avg usage` : 'usage data n/a';
@@ -78,7 +87,7 @@ function displaySingleComponent(component: Component, componentName: string, ind
   const description = component.description?.trim()
     ? component.description
     : component.content.split('\n').find(line => line.trim() && !line.startsWith('---'));
-  
+
   if (description) {
     console.log(chalk.white(`     Description: ${truncateString(description, 80)}`));
   }
@@ -101,7 +110,7 @@ export function displayComponents(
 
   components.forEach((componentName, index) => {
     const component = getComponentFromCategory(componentName, title, componentsData);
-    
+
     if (component) {
       displaySingleComponent(component, componentName, index, usageStats);
     } else {

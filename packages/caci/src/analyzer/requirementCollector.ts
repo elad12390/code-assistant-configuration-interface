@@ -101,13 +101,16 @@ async function generateProjectStructure(projectDir: string): Promise<string> {
 /**
  * Gets default selections based on experience level
  */
-function getDefaultSelectionsForExperience(experienceLevel: string, projectType?: string): Partial<UserResponse> {
+function getDefaultSelectionsForExperience(
+  experienceLevel: string,
+  projectType?: string
+): Partial<UserResponse> {
   const defaults: Partial<UserResponse> = {};
 
   if (experienceLevel.includes('Beginner')) {
     // Auto-select popular choices for beginners
     defaults['programming-languages'] = ['JavaScript/TypeScript'];
-    
+
     // Add framework defaults based on project type
     if (projectType === 'Web Application') {
       defaults['web-frameworks'] = ['React', 'Next.js'];
@@ -151,23 +154,32 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
       // Always ask the experience level question first
     } else if (experienceLevel && question.showForLevels) {
       // Skip questions not appropriate for this experience level
-      const userLevel = experienceLevel.includes('Beginner') ? 'beginner' 
-        : experienceLevel.includes('Intermediate') ? 'intermediate'
-        : 'advanced';
-      
+      const userLevel = experienceLevel.includes('Beginner')
+        ? 'beginner'
+        : experienceLevel.includes('Intermediate')
+          ? 'intermediate'
+          : 'advanced';
+
       if (!question.showForLevels.includes(userLevel)) {
         // Apply defaults for skipped questions if user is beginner
         if (userLevel === 'beginner') {
-          const defaults = getDefaultSelectionsForExperience(experienceLevel, responses['project-type'] as string);
+          const defaults = getDefaultSelectionsForExperience(
+            experienceLevel,
+            responses['project-type'] as string
+          );
           if (defaults[question.id as keyof typeof defaults]) {
             responses[question.id] = defaults[question.id as keyof typeof defaults];
-            
+
             // Show what was auto-selected for beginners
             if (question.id === 'programming-languages' || question.id === 'web-frameworks') {
               console.log(`\n✨ Auto-selected for you: ${question.text}`);
-              console.log(`   ${Array.isArray(responses[question.id]) 
-                ? (responses[question.id] as string[]).join(', ')
-                : responses[question.id]}`);
+              console.log(
+                `   ${
+                  Array.isArray(responses[question.id])
+                    ? (responses[question.id] as string[]).join(', ')
+                    : responses[question.id]
+                }`
+              );
             }
           }
         }
@@ -181,7 +193,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
     if (question.id === 'enable-ai-auth') {
       // Check if already authenticated
       const alreadyAuth = await isAuthenticated();
-      
+
       if (alreadyAuth) {
         console.log('🔐 Already authenticated - AI recommendations enabled');
         responses[question.id] = 'Browser OAuth (recommended)';
@@ -213,8 +225,10 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
         }
       } else if (answer.value === 'Manual API key entry') {
         try {
-          console.log('\n📝 You can get your OpenRouter API key from: https://openrouter.ai/keys\n');
-          
+          console.log(
+            '\n📝 You can get your OpenRouter API key from: https://openrouter.ai/keys\n'
+          );
+
           const manualAnswer = await inquirer.prompt([
             {
               type: 'password',
@@ -240,7 +254,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
           } catch (error) {
             console.log('⚠️  Could not store API key in keychain, but continuing...');
           }
-          
+
           responses['api-key'] = manualAnswer.apiKey;
           console.log('');
         } catch (error) {
@@ -300,7 +314,10 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
         // For intermediate users, pre-select smart defaults
         let defaultChoices: string[] = [];
         if (experienceLevel.includes('Intermediate')) {
-          const defaults = getDefaultSelectionsForExperience(experienceLevel, responses['project-type'] as string);
+          const defaults = getDefaultSelectionsForExperience(
+            experienceLevel,
+            responses['project-type'] as string
+          );
           defaultChoices = (defaults[question.id as keyof typeof defaults] as string[]) || [];
         }
 
@@ -319,12 +336,12 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
             },
           },
         ]);
-        
+
         // Show helpful message if defaults were pre-selected
         if (defaultChoices.length > 0 && experienceLevel.includes('Intermediate')) {
           console.log(`   💡 Pre-selected common choices, modify as needed`);
         }
-        
+
         responses[question.id] = answer.value;
         break;
       }
@@ -344,14 +361,18 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
     // Store experience level for filtering subsequent questions
     if (question.id === 'experience-level') {
       experienceLevel = answer.value as string;
-      
+
       // Show helpful message based on experience level
       if (experienceLevel.includes('Beginner')) {
-        console.log('\n🌟 Great! I\'ll streamline the setup process and auto-select common choices for you.');
+        console.log(
+          "\n🌟 Great! I'll streamline the setup process and auto-select common choices for you."
+        );
       } else if (experienceLevel.includes('Intermediate')) {
-        console.log('\n🚀 Perfect! I\'ll ask key questions and provide smart defaults where helpful.');
+        console.log(
+          "\n🚀 Perfect! I'll ask key questions and provide smart defaults where helpful."
+        );
       } else {
-        console.log('\n⚡ Excellent! You\'ll have full control over all configuration options.');
+        console.log("\n⚡ Excellent! You'll have full control over all configuration options.");
       }
     }
   }

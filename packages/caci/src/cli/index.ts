@@ -82,13 +82,9 @@ async function runConfigurationCommand(projectDir: string) {
     console.error('\n❌ Configuration failed!');
     console.error(`   Error: ${result.error}`);
     console.log('\n💡 Troubleshooting tips:');
-    console.log(
-      '   - Use OAuth authentication or provide an OpenRouter API key when prompted'
-    );
+    console.log('   - Use OAuth authentication or provide an OpenRouter API key when prompted');
     console.log('   - Check that you have write permissions in the project directory');
-    console.log(
-      '   - Get your OpenRouter API key from: https://openrouter.ai/keys'
-    );
+    console.log('   - Get your OpenRouter API key from: https://openrouter.ai/keys');
     throw new Error('Configuration failed');
   }
 }

@@ -92,13 +92,13 @@ describe('AI Recommender', () => {
   it('should return default recommendations when no API key is provided', async () => {
     // Test with no API key - should return default recommendations
     const result = await recommendComponents(mockUserRequirements, mockComponentsData);
-    
+
     expect(result).toBeDefined();
     expect(result.agents).toBeDefined();
     expect(result.commands).toBeDefined();
     expect(result.hooks).toBeDefined();
     expect(result.mcps).toBeDefined();
-    
+
     // Should contain some default recommendations
     expect(result.agents.length).toBeGreaterThan(0);
     expect(result.commands.length).toBeGreaterThan(0);
@@ -108,7 +108,11 @@ describe('AI Recommender', () => {
     // Test with mock API key
     const mockApiKey = 'sk-test-api-key';
 
-    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData, mockApiKey);
+    const recommendation = await recommendComponents(
+      mockUserRequirements,
+      mockComponentsData,
+      mockApiKey
+    );
 
     expect(recommendation).toBeDefined();
     expect(Array.isArray(recommendation.agents)).toBe(true);
@@ -126,7 +130,11 @@ describe('AI Recommender', () => {
     // This test verifies filtering works correctly
 
     const mockApiKey = 'sk-test-api-key';
-    const recommendation = await recommendComponents(mockUserRequirements, mockComponentsData, mockApiKey);
+    const recommendation = await recommendComponents(
+      mockUserRequirements,
+      mockComponentsData,
+      mockApiKey
+    );
 
     // Should only include existing components
     expect(recommendation.agents).toContain('test-agent');

@@ -61,8 +61,12 @@ export async function runConfigurationWorkflow(projectDir: string): Promise<Work
     try {
       // Extract API key from user requirements if available
       const apiKey = userRequirements['api-key'] as string | null;
-      selectedComponents = await recommendComponents(userRequirements, componentsData, apiKey ?? undefined);
-      
+      selectedComponents = await recommendComponents(
+        userRequirements,
+        componentsData,
+        apiKey ?? undefined
+      );
+
       if (apiKey) {
         console.log('✅ Successfully generated AI-powered recommendations');
       } else {

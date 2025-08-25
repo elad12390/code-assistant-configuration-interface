@@ -185,21 +185,24 @@ function generatePrompt(
   const usageStats = calculateUsageStats(componentsData);
 
   // Create component lists with usage information
-  const formatComponentList = (components: Record<string, Component>, usage: Record<string, number>) => {
+  const formatComponentList = (
+    components: Record<string, Component>,
+    usage: Record<string, number>
+  ) => {
     return Object.keys(components)
       .map(name => `${name} (avg usage: ${usage[name] || 50}%)`)
       .join(', ');
   };
 
   // Extract experience level and adjust recommendations accordingly
-  const experienceLevel = userRequirements['experience-level'] as string || '';
+  const experienceLevel = (userRequirements['experience-level'] as string) || '';
   const isBeginnerLevel = experienceLevel.includes('Beginner');
   const isIntermediateLevel = experienceLevel.includes('Intermediate');
   const isAdvancedLevel = experienceLevel.includes('Advanced');
 
   let experienceGuidance = '';
   let componentCountGuidance = '';
-  
+
   if (isBeginnerLevel) {
     experienceGuidance = `
 CRITICAL: This is a BEGINNER user. Focus on:
@@ -286,28 +289,46 @@ RESPOND WITH ONLY THE JSON OBJECT`;
 /**
  * Provides default component recommendations when no API key is available
  */
-function getDefaultRecommendations(componentsData: ComponentsData, userRequirements?: UserRequirements): Recommendation {
-  const experienceLevel = userRequirements?.['experience-level'] as string || '';
+function getDefaultRecommendations(
+  componentsData: ComponentsData,
+  userRequirements?: UserRequirements
+): Recommendation {
+  const experienceLevel = (userRequirements?.['experience-level'] as string) || '';
   const isBeginnerLevel = experienceLevel.includes('Beginner');
   const isIntermediateLevel = experienceLevel.includes('Intermediate');
-  
+
   // Adjust count based on experience level
-  let agentCount = 10, commandCount = 10, hookCount = 8, mcpCount = 8;
-  
+  let agentCount = 10,
+    commandCount = 10,
+    hookCount = 8,
+    mcpCount = 8;
+
   if (isBeginnerLevel) {
-    agentCount = 6; commandCount = 6; hookCount = 4; mcpCount = 4;
+    agentCount = 6;
+    commandCount = 6;
+    hookCount = 4;
+    mcpCount = 4;
   } else if (isIntermediateLevel) {
-    agentCount = 8; commandCount = 8; hookCount = 6; mcpCount = 6;
+    agentCount = 8;
+    commandCount = 8;
+    hookCount = 6;
+    mcpCount = 6;
   }
 
   const getTopComponents = (components: Record<string, Component>, count: number) => {
     // For beginners, prioritize high-usage components
     if (isBeginnerLevel) {
-      const essentialComponents = Object.keys(components).filter(name => {
-        const usage = getCoreUsageScore(name, components[name].content, components[name].description);
-        return usage >= 70; // High usage only
-      }).slice(0, count);
-      
+      const essentialComponents = Object.keys(components)
+        .filter(name => {
+          const usage = getCoreUsageScore(
+            name,
+            components[name].content,
+            components[name].description
+          );
+          return usage >= 70; // High usage only
+        })
+        .slice(0, count);
+
       // If not enough high-usage components, fill with the most popular ones
       if (essentialComponents.length < count) {
         const remaining = Object.keys(components).slice(0, count - essentialComponents.length);
@@ -315,7 +336,7 @@ function getDefaultRecommendations(componentsData: ComponentsData, userRequireme
       }
       return essentialComponents;
     }
-    
+
     return Object.keys(components).slice(0, count);
   };
 
@@ -332,13 +353,13 @@ function getDefaultRecommendations(componentsData: ComponentsData, userRequireme
  */
 function parseAIResponse(response: string): unknown {
   let jsonText = response.trim();
-  
+
   // Remove any markdown code blocks if present
   const jsonMatch = jsonText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
   if (jsonMatch) {
     jsonText = jsonMatch[1];
   }
-  
+
   try {
     return JSON.parse(jsonText);
   } catch (error) {
@@ -349,7 +370,10 @@ function parseAIResponse(response: string): unknown {
 /**
  * Filter out non-existent components from recommendations
  */
-function filterValidComponents(recommendation: Recommendation, componentsData: ComponentsData): Recommendation {
+function filterValidComponents(
+  recommendation: Recommendation,
+  componentsData: ComponentsData
+): Recommendation {
   return {
     agents: recommendation.agents.filter(name => componentsData.agents[name]),
     commands: recommendation.commands.filter(name => componentsData.commands[name]),
@@ -361,7 +385,10 @@ function filterValidComponents(recommendation: Recommendation, componentsData: C
 /**
  * Merge default components with AI recommendations
  */
-function mergeWithDefaults(recommendation: Recommendation, componentsData: ComponentsData): Recommendation {
+function mergeWithDefaults(
+  recommendation: Recommendation,
+  componentsData: ComponentsData
+): Recommendation {
   const defaults = {
     mcps: ['context7'],
     agents: ['business-analyst', 'task-decomposition-expert'],
@@ -370,10 +397,30 @@ function mergeWithDefaults(recommendation: Recommendation, componentsData: Compo
   };
 
   return {
-    agents: [...new Set([...recommendation.agents, ...defaults.agents.filter(name => componentsData.agents[name])])],
-    commands: [...new Set([...recommendation.commands, ...defaults.commands.filter(name => componentsData.commands[name])])],
-    hooks: [...new Set([...recommendation.hooks, ...defaults.hooks.filter(name => componentsData.hooks[name])])],
-    mcps: [...new Set([...recommendation.mcps, ...defaults.mcps.filter(name => componentsData.mcps[name])])],
+    agents: [
+      ...new Set([
+        ...recommendation.agents,
+        ...defaults.agents.filter(name => componentsData.agents[name]),
+      ]),
+    ],
+    commands: [
+      ...new Set([
+        ...recommendation.commands,
+        ...defaults.commands.filter(name => componentsData.commands[name]),
+      ]),
+    ],
+    hooks: [
+      ...new Set([
+        ...recommendation.hooks,
+        ...defaults.hooks.filter(name => componentsData.hooks[name]),
+      ]),
+    ],
+    mcps: [
+      ...new Set([
+        ...recommendation.mcps,
+        ...defaults.mcps.filter(name => componentsData.mcps[name]),
+      ]),
+    ],
   };
 }
 
@@ -396,12 +443,14 @@ export async function recommendComponents(
     const parsedRecommendation = parseAIResponse(response);
     const validatedRecommendation = RecommendationSchema.parse(parsedRecommendation);
     const filteredRecommendation = filterValidComponents(validatedRecommendation, componentsData);
-    
+
     return mergeWithDefaults(filteredRecommendation, componentsData);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (errorMessage.includes('No API key found')) {
-      throw new Error('OpenRouter API key required. Please use OAuth authentication or provide an OpenRouter API key.');
+      throw new Error(
+        'OpenRouter API key required. Please use OAuth authentication or provide an OpenRouter API key.'
+      );
     }
     throw new Error(`Failed to get AI recommendations: ${errorMessage}`);
   }

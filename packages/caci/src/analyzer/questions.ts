@@ -12,11 +12,7 @@ export const PROJECT_REQUIREMENTS_QUESTIONS: Question[] = [
     id: 'enable-ai-auth',
     text: 'How would you like to enable AI-powered recommendations?',
     type: 'single-choice',
-    options: [
-      'Browser OAuth (recommended)',
-      'Manual API key entry', 
-      'Skip AI recommendations'
-    ],
+    options: ['Browser OAuth (recommended)', 'Manual API key entry', 'Skip AI recommendations'],
     required: false,
     showForLevels: ['beginner', 'intermediate', 'advanced'],
   },

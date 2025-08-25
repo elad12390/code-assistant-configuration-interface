@@ -22,12 +22,12 @@ const OPENROUTER_TOKEN_URL = 'https://openrouter.ai/api/v1/auth/keys';
 async function findAvailablePort(startPort: number = 3000): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = http.createServer();
-    
+
     server.listen(startPort, '127.0.0.1', () => {
       const port = (server.address() as any)?.port as number;
       server.close(() => resolve(port));
     });
-    
+
     server.on('error', (err: any) => {
       if (err.code === 'EADDRINUSE' && startPort < 3010) {
         resolve(findAvailablePort(startPort + 1));
@@ -54,7 +54,7 @@ interface TokenResponse {
 function generatePKCEChallenge(): PKCEChallenge {
   const codeVerifier = crypto.randomBytes(32).toString('base64url');
   const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url');
-  
+
   return {
     codeVerifier,
     codeChallenge,
@@ -124,7 +124,11 @@ function startCallbackServer(port: number): Promise<{ server: http.Server; code:
 
     server.on('error', (err: any) => {
       if (err.code === 'EADDRINUSE') {
-        reject(new Error(`Port ${port} is already in use. Please close other applications using this port.`));
+        reject(
+          new Error(
+            `Port ${port} is already in use. Please close other applications using this port.`
+          )
+        );
       } else {
         reject(new Error(`Failed to start callback server: ${err.message}`));
       }
@@ -151,7 +155,7 @@ async function exchangeCodeForToken(code: string, codeVerifier: string): Promise
   if (!response.ok) {
     const errorText = await response.text();
     let errorMessage = `Token exchange failed: ${response.status}`;
-    
+
     // Try to parse error details
     try {
       const errorData = JSON.parse(errorText);
@@ -159,7 +163,8 @@ async function exchangeCodeForToken(code: string, codeVerifier: string): Promise
         errorMessage += ` - ${errorData.error.message}`;
       }
       if (errorData.error?.code === 409) {
-        errorMessage += ' (OpenRouter OAuth service conflict - this usually means there\'s an issue with app creation or the OAuth flow)';
+        errorMessage +=
+          " (OpenRouter OAuth service conflict - this usually means there's an issue with app creation or the OAuth flow)";
         console.log(chalk.dim(`Debug: Full error response: ${errorText}`));
       }
       if (errorData.user_id) {
@@ -168,11 +173,11 @@ async function exchangeCodeForToken(code: string, codeVerifier: string): Promise
     } catch {
       errorMessage += ` ${errorText}`;
     }
-    
+
     throw new Error(errorMessage);
   }
 
-  const tokenResponse = await response.json() as TokenResponse;
+  const tokenResponse = (await response.json()) as TokenResponse;
   return tokenResponse.key;
 }
 
@@ -183,7 +188,7 @@ export async function storeApiKey(apiKey: string): Promise<void> {
   if (!keytar) {
     throw new Error('Keychain storage not available in this environment');
   }
-  
+
   try {
     await keytar.setPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, apiKey);
   } catch (error) {
@@ -198,7 +203,7 @@ export async function getStoredApiKey(): Promise<string | null> {
   if (!keytar) {
     return null; // Keytar not available
   }
-  
+
   try {
     return await keytar.getPassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
   } catch (error) {
@@ -214,7 +219,7 @@ export async function clearStoredApiKey(): Promise<void> {
   if (!keytar) {
     return; // Nothing to clear if keytar not available
   }
-  
+
   try {
     await keytar.deletePassword(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT);
   } catch (error) {
@@ -244,7 +249,7 @@ async function performSimpleOAuth(): Promise<string> {
   // Find an available port
   const availablePort = await findAvailablePort();
   const redirectUri = `http://localhost:${availablePort}/callback`;
-  
+
   // Build simple authorization URL
   const authUrl = new URL(OPENROUTER_AUTH_URL);
   authUrl.searchParams.set('callback_url', redirectUri);
@@ -255,7 +260,9 @@ async function performSimpleOAuth(): Promise<string> {
   const serverPromise = startCallbackServer(availablePort);
 
   console.log(chalk.yellow('Opening your browser for authentication...'));
-  console.log(chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`));
+  console.log(
+    chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`)
+  );
 
   // Open browser
   const { default: open } = await import('open');
@@ -289,7 +296,7 @@ async function performSimpleOAuth(): Promise<string> {
     throw new Error(`Simple OAuth token exchange failed: ${response.status} ${errorText}`);
   }
 
-  const tokenResponse = await response.json() as TokenResponse;
+  const tokenResponse = (await response.json()) as TokenResponse;
 
   // Store in keychain
   await storeApiKey(tokenResponse.key);
@@ -306,14 +313,14 @@ async function performPKCEOAuth(): Promise<string> {
     // Find an available port
     const availablePort = await findAvailablePort();
     const redirectUri = `http://localhost:${availablePort}/callback`;
-    
+
     // Generate PKCE challenge
     const { codeVerifier, codeChallenge } = generatePKCEChallenge();
 
     // Build authorization URL with minimal parameters first
     const authUrl = new URL(OPENROUTER_AUTH_URL);
     authUrl.searchParams.set('callback_url', redirectUri);
-    
+
     // Add PKCE parameters only if they might not be causing issues
     // Some OAuth services are sensitive to parameter order or format
     authUrl.searchParams.set('code_challenge_method', 'S256');
@@ -326,7 +333,9 @@ async function performPKCEOAuth(): Promise<string> {
     const serverPromise = startCallbackServer(availablePort);
 
     console.log(chalk.yellow('Opening your browser for authentication...'));
-    console.log(chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`));
+    console.log(
+      chalk.dim(`If the browser doesn't open automatically, visit: ${authUrl.toString()}\n`)
+    );
 
     // Open browser
     const { default: open } = await import('open');
@@ -334,7 +343,10 @@ async function performPKCEOAuth(): Promise<string> {
 
     // Wait for callback with timeout
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Authentication timed out after 5 minutes')), 5 * 60 * 1000);
+      setTimeout(
+        () => reject(new Error('Authentication timed out after 5 minutes')),
+        5 * 60 * 1000
+      );
     });
 
     const { server, code } = await Promise.race([serverPromise, timeoutPromise]);
@@ -352,10 +364,13 @@ async function performPKCEOAuth(): Promise<string> {
 
     console.log(chalk.green('🎉 Authentication successful! API key stored securely.'));
     return apiKey;
-
   } catch (error) {
-    console.log(chalk.yellow('\n⚠️  OAuth flow encountered an issue. Let\'s try manual authentication instead.\n'));
-    
+    console.log(
+      chalk.yellow(
+        "\n⚠️  OAuth flow encountered an issue. Let's try manual authentication instead.\n"
+      )
+    );
+
     // Fallback to manual API key entry
     return await promptForManualApiKey();
   }
@@ -366,9 +381,9 @@ async function performPKCEOAuth(): Promise<string> {
  */
 export async function promptForManualApiKey(): Promise<string> {
   const inquirer = (await import('inquirer')).default;
-  
+
   console.log(chalk.cyan('You can get your OpenRouter API key from: https://openrouter.ai/keys\n'));
-  
+
   const { apiKey } = await inquirer.prompt([
     {
       type: 'password',
@@ -414,7 +429,9 @@ export async function getApiKey(): Promise<string | null> {
     const newKey = await performOAuthFlow();
     return newKey;
   } catch (error) {
-    console.error(chalk.red(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`));
+    console.error(
+      chalk.red(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`)
+    );
     return null;
   }
 }

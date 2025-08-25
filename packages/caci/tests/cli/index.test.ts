@@ -233,15 +233,15 @@ describe('CACI CLI Interface', () => {
       const cleanup = () => {
         clearTimeout(timeoutId);
         clearTimeout(killTimer);
-        
+
         // Ensure process is fully cleaned up
         if (!cli.killed && cli.pid) {
           cli.kill('SIGKILL');
         }
-        
+
         // Remove all listeners
         cli.removeAllListeners();
-        
+
         resolve();
       };
 

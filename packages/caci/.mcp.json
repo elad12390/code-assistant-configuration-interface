@@ -3,47 +3,31 @@
     "test-mcp": {
       "type": "stdio",
       "command": "test-command",
-      "args": [
-        "--test"
-      ],
+      "args": ["--test"],
       "env": {}
     },
     "context7": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ],
+      "args": ["-y", "@upstash/context7-mcp"],
       "env": {}
     },
     "deepgraph-react": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-code-graph@latest",
-        "facebook/react"
-      ],
+      "args": ["-y", "mcp-code-graph@latest", "facebook/react"],
       "env": {}
     },
     "deepgraph-typescript": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-code-graph@latest",
-        "microsoft/TypeScript"
-      ],
+      "args": ["-y", "mcp-code-graph@latest", "microsoft/TypeScript"],
       "env": {}
     },
     "github-integration": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {}
     },
     "filesystem-access": {
@@ -59,27 +43,19 @@
     "postgresql-integration": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
       "env": {}
     },
     "mysql-integration": {
       "type": "stdio",
       "command": "uvx",
-      "args": [
-        "mcp-server-mysql"
-      ],
+      "args": ["mcp-server-mysql"],
       "env": {}
     },
     "web-fetch": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch"
-      ],
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
       "env": {}
     }
   }

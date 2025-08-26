@@ -23,9 +23,8 @@ function initializeOpenRouterModel(apiKey: string) {
 
   return new ChatOpenAI({
     apiKey,
-    model: 'anthropic/claude-3.5-sonnet',
+    model: 'qwen/qwen3-coder:free',
     temperature: 0,
-    maxTokens: 2000,
     configuration: {
       baseURL: 'https://openrouter.ai/api/v1',
     },

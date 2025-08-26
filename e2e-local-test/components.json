@@ -1,0 +1,15 @@
+{
+  "agents": {
+    "test-agent": {
+      "name": "test-agent", 
+      "path": "agents/test-agent.md",
+      "category": "development",
+      "type": "agent",
+      "content": "A test development agent",
+      "description": "Simple test agent for E2E testing"
+    }
+  },
+  "commands": {},
+  "hooks": {},
+  "mcps": {}
+}

@@ -75,6 +75,13 @@ act workflow_dispatch -W .github/workflows/security.yml -j npm-audit --pull=fals
 # Note: act provides containerized testing identical to GitHub Actions
 # Use act to catch configuration issues before they cause CI failures
 
+# Testing AI Functionality (Manual)
+# E2E tests cannot fully test OpenRouter AI integration due to OAuth/API key requirements
+# To manually test AI recommendations:
+export OPENROUTER_API_KEY="your-key"    # Get free key from openrouter.ai
+cd packages/caci && node bin/caci configure  # Test full AI workflow
+# The free qwen/qwen3-coder:free model provides real AI recommendations
+
 # Format code
 npm run format
 

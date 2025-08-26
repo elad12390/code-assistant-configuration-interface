@@ -143,10 +143,10 @@ function getDefaultSelectionsForExperience(
 export async function collectUserRequirements(projectDir: string): Promise<UserResponse> {
   const responses: UserResponse = {};
   let experienceLevel: string = '';
-  
+
   // CI environment detection - skip all interactive prompts
-  const isCIEnvironment = process.env.CI || process.env.GITHUB_ACTIONS || !process.stdin.isTTY;
-  
+  const isCIEnvironment = Boolean(process.env.CI) || Boolean(process.env.GITHUB_ACTIONS) || !process.stdin.isTTY;
+
   if (isCIEnvironment) {
     console.log('🤖 CI environment detected - using default configuration');
     return {
@@ -155,7 +155,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
       'project-type': 'Web Application',
       'programming-languages': ['JavaScript/TypeScript'],
       'web-frameworks': ['React'],
-      'project-description': 'CI test project'
+      'project-description': 'CI test project',
     };
   }
 
@@ -207,7 +207,7 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
     // Handle special OAuth authentication question
     if (question.id === 'enable-ai-auth') {
       // Skip AI authentication in CI environments
-      if (process.env.CI || process.env.GITHUB_ACTIONS || !process.stdin.isTTY) {
+      if (Boolean(process.env.CI) || Boolean(process.env.GITHUB_ACTIONS) || !process.stdin.isTTY) {
         console.log('🤖 CI environment detected - skipping AI recommendations');
         responses[question.id] = 'Skip AI recommendations';
         continue;

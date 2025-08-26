@@ -43,9 +43,25 @@ pids/
 coverage/
 *.lcov
 
+# Build artifacts and packages
+*.tgz
+*.tar.gz
+*.zip
+packages/*/dist/
+packages/*/build/
+
 # Temporary folders
 tmp/
 temp/
+
+# Test artifacts and generated files (not test source code)
+test-*.js
+test-*.md
+*-test-project/
+*.tgz
+*.tar.gz
+
+# Keep: tests/, test-cli/, test-workspace/ (actual test code)
 # Next.js build output
 .next/
 *.next/

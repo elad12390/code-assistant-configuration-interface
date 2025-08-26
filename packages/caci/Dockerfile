@@ -4,7 +4,7 @@ FROM node:20-alpine
 # Set metadata labels
 LABEL maintainer="Elad Benhaim"
 LABEL description="CACI - Code Assistant Configuration Interface for intelligent project setup"
-LABEL version="1.0.0"
+LABEL version="1.1.8"
 LABEL org.opencontainers.image.source="https://github.com/elad12390/claude-code-configurator"
 
 # Create a non-root user for security
@@ -17,16 +17,16 @@ WORKDIR /app
 # Copy package files first for better layer caching
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY components.json ./
+
+# Copy source code needed for build
+COPY src/ ./src/
 
 # Install dependencies only (skip prepare script to avoid build attempt without source)
 RUN npm ci --ignore-scripts && npm cache clean --force
 
-# Copy source code and build configuration
-COPY src/ ./src/
+# Copy bin after build
 COPY bin/ ./bin/
-
-# Build the TypeScript project
-RUN npm run build
 
 # Make the CLI globally accessible and ensure it's executable
 RUN npm link && \

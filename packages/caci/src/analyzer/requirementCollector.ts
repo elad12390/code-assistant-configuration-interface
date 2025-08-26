@@ -145,7 +145,8 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
   let experienceLevel: string = '';
 
   // CI environment detection - skip all interactive prompts
-  const isCIEnvironment = Boolean(process.env.CI) || Boolean(process.env.GITHUB_ACTIONS) || !process.stdin.isTTY;
+  const isCIEnvironment =
+    Boolean(process.env.CI) || Boolean(process.env.GITHUB_ACTIONS) || !process.stdin.isTTY;
 
   if (isCIEnvironment) {
     console.log('🤖 CI environment detected - using default configuration');

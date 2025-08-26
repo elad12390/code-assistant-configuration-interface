@@ -159,5 +159,5 @@ program.parse(process.argv);
 // Show help if no command is provided
 if (!process.argv.slice(2).length) {
   program.outputHelp();
-  process.exit(1);
+  throw new Error('No command provided');
 }

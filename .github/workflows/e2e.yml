@@ -47,7 +47,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Cache E2E testing artifacts
         uses: actions/cache@v4
@@ -184,7 +184,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci
@@ -271,10 +271,10 @@ jobs:
 
 
           # Test CLI with this setup
-          caci --help
-          echo "q" | caci configure || echo "Real world test completed"
-          caci init --help || echo "Init help test completed"
-          caci history || echo "History test completed"
+          node ../packages/caci/dist/cli/index.js --help
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Real world test completed"
+          node ../packages/caci/dist/cli/index.js init --help || echo "Init help test completed"
+          node ../packages/caci/dist/cli/index.js history || echo "History test completed"
 
       - name: Test with API key scenarios
         env:
@@ -306,10 +306,10 @@ jobs:
 
           if [ -n "$GOOGLE_API_KEY" ]; then
             echo "Testing with API key..."
-            echo "q" | caci configure || echo "API key test completed"
+            echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "API key test completed"
           else
             echo "Testing without API key..."
-            echo "q" | caci configure || echo "No API key test completed"
+            echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "No API key test completed"
           fi
 
       - name: Test edge cases
@@ -454,7 +454,7 @@ jobs:
           }
           EOF
 
-          echo "q" | caci configure || echo "Large config test completed"
+          echo "q" | node ../packages/caci/dist/cli/index.js configure || echo "Large config test completed"
 
   e2e-file-operations:
     name: CACI E2E File Operations
@@ -469,7 +469,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci
@@ -550,7 +550,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
+          cache-dependency-path: 'packages/caci/package-lock.json'
 
       - name: Install dependencies
         working-directory: packages/caci

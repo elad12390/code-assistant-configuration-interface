@@ -22,15 +22,16 @@ COPY components.json ./
 # Copy source code needed for build
 COPY src/ ./src/
 
-# Install dependencies only (skip prepare script to avoid build attempt without source)
-RUN npm ci --ignore-scripts && npm cache clean --force
+# Install dependencies and build
+RUN npm install --ignore-scripts && \
+    npm run build && \
+    npm cache clean --force
 
-# Copy bin after build
+# Copy bin after build  
 COPY bin/ ./bin/
 
-# Make the CLI globally accessible and ensure it's executable
-RUN npm link && \
-    chmod +x /app/bin/caci
+# Make the CLI executable (no need for global link in container)
+RUN chmod +x /app/bin/caci
 
 # Remove dev dependencies and source files to reduce image size
 RUN npm prune --production && \
@@ -48,10 +49,10 @@ WORKDIR /workspace
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD caci --version || exit 1
+  CMD /app/bin/caci --version || exit 1
 
 # Set the entrypoint to the CLI tool
-ENTRYPOINT ["caci"]
+ENTRYPOINT ["/app/bin/caci"]
 
 # Default command shows help
 CMD ["--help"]

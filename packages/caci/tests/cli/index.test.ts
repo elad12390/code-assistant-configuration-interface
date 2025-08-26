@@ -280,10 +280,12 @@ describe('CACI CLI Interface', () => {
     });
 
     const result = await new Promise<number>((resolve, reject) => {
+      // Increase timeout for macOS CI which can be slower
+      const timeout = process.platform === 'darwin' ? 20000 : 10000;
       const timeoutId = setTimeout(() => {
         cli.kill('SIGTERM');
         reject(new Error('Test timed out'));
-      }, 10000);
+      }, timeout);
 
       const cleanup = (code: number) => {
         if (timeoutId) clearTimeout(timeoutId);

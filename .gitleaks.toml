@@ -165,6 +165,16 @@ paths = [
     '''package-lock.json$''',
     '''yarn.lock$''',
     '''go.sum$''',
+    '''packages/website/\.next/.*''',
+    '''web-bundles/.*\.txt''',
+    '''components\.json''',
+    '''.*\.nft\.json''',
+    '''caci/tests/.*\.test\.(ts|js)''',
+    '''caci/tests/.*\.spec\.(ts|js)''',
+    '''caci/.*mock.*\.(ts|js|json)''',
+    '''caci/.*fixture.*\.(ts|js|json)''',
+    '''caci/test-workspace/.*''',
+    '''test-benchmark-workspace/.*''',
 ]
 
 commits = [
@@ -181,15 +191,4 @@ keywords = [
     "test",
     "api",
     "key",
-]
-
-# Rule to ignore test files and mock data
-[allowlist.files]
-paths = [
-    '''caci/tests/.*\.test\.(ts|js)$''',
-    '''caci/tests/.*\.spec\.(ts|js)$''',
-    '''caci/.*mock.*\.(ts|js|json)$''',
-    '''caci/.*fixture.*\.(ts|js|json)$''',
-    '''caci/test-workspace/.*$''',
-    '''test-benchmark-workspace/.*$''',
 ]

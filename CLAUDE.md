@@ -64,6 +64,17 @@ node bin/caci configure
 # Run E2E tests
 cd ../../e2e-test && node test-e2e.js
 
+# Local GitHub Actions Testing with act (RECOMMENDED)
+# Test workflows locally before pushing to avoid CI failures
+act --list                           # List all available workflows
+act -W .github/workflows/ci.yml -j format-check --pull=false  # Test format check
+act -W .github/workflows/ci.yml -j build --pull=false         # Test build job
+act workflow_dispatch -W .github/workflows/e2e.yml -j e2e-file-operations --pull=false  # Test E2E
+act workflow_dispatch -W .github/workflows/security.yml -j npm-audit --pull=false       # Test security
+
+# Note: act provides containerized testing identical to GitHub Actions
+# Use act to catch configuration issues before they cause CI failures
+
 # Format code
 npm run format
 

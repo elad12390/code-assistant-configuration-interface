@@ -143,6 +143,21 @@ function getDefaultSelectionsForExperience(
 export async function collectUserRequirements(projectDir: string): Promise<UserResponse> {
   const responses: UserResponse = {};
   let experienceLevel: string = '';
+  
+  // CI environment detection - skip all interactive prompts
+  const isCIEnvironment = process.env.CI || process.env.GITHUB_ACTIONS || !process.stdin.isTTY;
+  
+  if (isCIEnvironment) {
+    console.log('🤖 CI environment detected - using default configuration');
+    return {
+      'enable-ai-auth': 'Skip AI recommendations',
+      'experience-level': 'Intermediate - Some experience',
+      'project-type': 'Web Application',
+      'programming-languages': ['JavaScript/TypeScript'],
+      'web-frameworks': ['React'],
+      'project-description': 'CI test project'
+    };
+  }
 
   // Ensure clean terminal state
   console.log('\n'); // Add some spacing
@@ -191,6 +206,13 @@ export async function collectUserRequirements(projectDir: string): Promise<UserR
 
     // Handle special OAuth authentication question
     if (question.id === 'enable-ai-auth') {
+      // Skip AI authentication in CI environments
+      if (process.env.CI || process.env.GITHUB_ACTIONS || !process.stdin.isTTY) {
+        console.log('🤖 CI environment detected - skipping AI recommendations');
+        responses[question.id] = 'Skip AI recommendations';
+        continue;
+      }
+
       // Check if already authenticated
       const alreadyAuth = await isAuthenticated();
 

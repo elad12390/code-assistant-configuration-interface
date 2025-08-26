@@ -129,8 +129,8 @@ jobs:
         run: |
           cd e2e-test-workspace
 
-          # Test configure command with skip AI option (realistic for CI)
-          printf "s\nq\n" | timeout 30s node ../packages/caci/dist/cli/index.js configure || echo "Configure command test completed"
+          # Test configure command with skip AI option (CI environment)
+          printf "\n\ns\n\nq\n" | timeout 30s node ../packages/caci/dist/cli/index.js configure || echo "Configure command test completed"
 
           # Test init command
           node ../packages/caci/dist/cli/index.js init --help || echo "Init command test completed"

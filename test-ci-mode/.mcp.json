@@ -1,0 +1,60 @@
+{
+  "mcpServers": {
+    "browser-use-mcp-server": {
+      "type": "stdio",
+      "command": "browser-use-mcp-server",
+      "args": [
+        "run",
+        "server",
+        "--port",
+        "8000",
+        "--stdio",
+        "--proxy-port",
+        "9000"
+      ],
+      "env": {}
+    },
+    "mcp-server-browserbase": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@browserbasehq/mcp-server-browserbase"
+      ],
+      "env": {}
+    },
+    "mcp-server-playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@automatalabs/mcp-server-playwright"
+      ],
+      "env": {}
+    },
+    "playwright-mcp-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "env": {}
+    },
+    "playwright-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ],
+      "env": {}
+    },
+    "mysql-integration": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "mcp-server-mysql"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -38,12 +38,12 @@ describe('CACI CLI Interface', () => {
 
       const cleanup = (code: number | null) => {
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(code || 0);
+        resolve(code ?? 0);
       };
 
       cli.on('close', cleanup);
       cli.on('exit', cleanup);
-      cli.on('error', (err) => {
+      cli.on('error', err => {
         clearTimeout(timeoutId);
         reject(err);
       });
@@ -80,12 +80,12 @@ describe('CACI CLI Interface', () => {
 
       const cleanup = (code: number | null) => {
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(code || 0);
+        resolve(code ?? 0);
       };
 
       cli.on('close', cleanup);
       cli.on('exit', cleanup);
-      cli.on('error', (err) => {
+      cli.on('error', err => {
         clearTimeout(timeoutId);
         reject(err);
       });

@@ -1,0 +1,1 @@
+{"agents":{"dev":{"name":"dev","description":"Developer agent for coding tasks"}},"commands":{"test":{"name":"test","description":"Run tests"}},"hooks":{},"mcps":{}}

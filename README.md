@@ -290,7 +290,7 @@ npx code-assistant-config-interface configure
 </tr>
 <tr>
 <td><code>caci --version</code></td>
-<td>Display current version (v1.0.0)</td>
+<td>Display current version (v1.1.8)</td>
 <td>✅ Ready</td>
 </tr>
 </tbody>
